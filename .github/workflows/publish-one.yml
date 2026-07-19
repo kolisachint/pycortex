@@ -1,0 +1,26 @@
+name: Publish one package
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "Package distribution name to publish"
+        required: true
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+      - name: Sync workspace
+        run: uv sync --all-packages
+      - name: Build package
+        run: uv build --package "${{ inputs.package }}"
+      - name: Publish to PyPI
+        run: uv publish --token "$PYPI_TOKEN" "dist/${{ inputs.package }}/*"
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
