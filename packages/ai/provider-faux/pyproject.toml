@@ -1,12 +1,12 @@
 [project]
 name = "cortexcode-ai-provider-faux"
-version = "0.0.2"
+version = "0.0.3"
 description = "Cortex AI leaf: provider-faux"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "cortexcode-ai-stream>=0.0.2,<0.1.0",
-    "cortexcode-ai-types>=0.0.2,<0.1.0",
+    "cortexcode-ai-stream>=0.0.3,<0.1.0",
+    "cortexcode-ai-types>=0.0.3,<0.1.0",
 ]
 
 [tool.cortex]
