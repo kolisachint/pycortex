@@ -62,7 +62,7 @@ Parallelizable across these leaves; dependencies flow upward from util.
       + tests. Gate: `pytest packages/tui/fuzzy`.
 - [x] **1.3 keys** — `packages/tui/src/{keys,keybindings}.ts` →
       `packages/tui/keys/src/cortex/tui/keys.py` + tests. Gate: `pytest packages/tui/keys`.
-- [ ] **1.4 terminal** — `packages/tui/src/{terminal,stdin-buffer}.ts` →
+- [x] **1.4 terminal** — `packages/tui/src/{terminal,stdin-buffer}.ts` →
       `packages/tui/terminal/src/cortex/tui/terminal.py` + tests. Gate: `pytest packages/tui/terminal`.
 - [ ] **1.5 render** — `packages/tui/src/tui.ts` → `packages/tui/render/src/cortex/tui/render.py`
       (differential renderer) + ANSI snapshot tests. Gate: `pytest packages/tui/render`.
