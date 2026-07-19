@@ -1,0 +1,33 @@
+name: Merge Release
+
+# Auto-release when a merged PR carries a pypi:patch / pypi:minor / pypi:major
+# label (port of hoocode's npm:* labels).
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  level:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    outputs:
+      level: ${{ steps.pick.outputs.level }}
+    steps:
+      - id: pick
+        run: |
+          labels='${{ toJson(github.event.pull_request.labels.*.name) }}'
+          level=""
+          for l in major minor patch; do
+            echo "$labels" | grep -q "\"pypi:$l\"" && { level="$l"; break; }
+          done
+          echo "level=$level" >> "$GITHUB_OUTPUT"
+
+  release:
+    needs: level
+    if: needs.level.outputs.level != ''
+    uses: ./.github/workflows/release.yml
+    with:
+      level: ${{ needs.level.outputs.level }}
+    secrets: inherit

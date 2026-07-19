@@ -34,7 +34,7 @@ run in parallel (no cross-deps).
 - [x] **0.3 Name check + reservation** — verify `cortexcode-*` availability on PyPI;
       publish `0.0.1` placeholders using `PYPI_TOKEN` (manual dispatch of a one-off
       workflow) or record fallback names in doc 02. Gate: names secured.
-- [ ] **0.4 Release plumbing** — `scripts/bump_versions.py`, `scripts/release.py`,
+- [x] **0.4 Release plumbing** — `scripts/bump_versions.py`, `scripts/release.py`,
       `release.yml`, `merge-release.yml`. Gate: `release.yml` dry-run (publish step
       `--dry-run`) green.
 - [ ] **0.5 Migration driver** — `scripts/migrate_next.py` + `.hoocode/skills/` per
