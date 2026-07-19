@@ -13,6 +13,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 import tomllib
 import urllib.error
 import urllib.request
@@ -32,6 +33,23 @@ def on_pypi(name: str, version: str) -> bool:
         if e.code == 404:
             return False
         raise
+
+
+def _publish_with_retry(dist: Path, token: str, max_retries: int = 3) -> None:
+    for attempt in range(max_retries):
+        try:
+            subprocess.run(
+                ["uv", "publish", "--token", token, str(dist / "*")],
+                cwd=REPO_ROOT,
+                check=True,
+            )
+            return
+        except subprocess.CalledProcessError:
+            if attempt == max_retries - 1:
+                raise
+            wait = 2 ** (attempt + 1)
+            print(f"publish failed (attempt {attempt + 1}), retrying in {wait}s...")
+            time.sleep(wait)
 
 
 def main() -> int:
@@ -62,11 +80,9 @@ def main() -> int:
             cwd=REPO_ROOT,
             check=True,
         )
-        subprocess.run(
-            ["uv", "publish", "--token", token, str(dist / "*")],
-            cwd=REPO_ROOT,
-            check=True,
-        )
+        _publish_with_retry(dist, token)
+        # Rate-limiting: new project creation on PyPI is throttled.
+        time.sleep(5)
         published += 1
     print(f"published {published} package(s)")
     return 0
