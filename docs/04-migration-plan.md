@@ -71,7 +71,7 @@ Parallelizable across these leaves; dependencies flow upward from util.
 - [ ] **1.7 components** — `packages/tui/src/components/*.ts` →
       `packages/tui/components/src/cortex/tui/components/` + snapshot tests. Gate:
       `pytest packages/tui/components`.
-- [ ] **1.8 tui umbrella publishable** — leaf READMEs, pyright strict on every tui leaf,
+- [x] **1.8 tui umbrella publishable** — leaf READMEs, pyright strict on every tui leaf,
       flip `_meta/publish = true` for all T0 leaves, run `uv build --all-packages`.
       Gate: green release dry-run (`publish_packages.py --dry-run`).
 
@@ -108,7 +108,7 @@ providers; faux first).
 - [ ] **2.9 provider-google** — `packages/ai/src/providers/google*.ts` →
       `packages/ai/provider-google/src/cortex/ai/providers/google/` + tests. Gate:
       `pytest packages/ai/provider-google`.
-- [ ] **2.10 ai umbrella publishable** — leaf READMEs, strict types, flip T0/T1 leaves to
+- [x] **2.10 ai umbrella publishable** — leaf READMEs, strict types, flip T0/T1 leaves to
       `publish=true`. Gate: dry-run clean.
 
 ---

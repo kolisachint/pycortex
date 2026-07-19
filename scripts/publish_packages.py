@@ -42,10 +42,7 @@ def main() -> int:
         return 1
 
     published = 0
-    for pkg_dir in sorted(PACKAGES_DIR.iterdir()):
-        pyproject = pkg_dir / "pyproject.toml"
-        if not pyproject.is_file():
-            continue
+    for pyproject in sorted(PACKAGES_DIR.rglob("pyproject.toml")):
         data = tomllib.loads(pyproject.read_text())
         name = data["project"]["name"]
         version = data["project"]["version"]
@@ -57,6 +54,7 @@ def main() -> int:
             continue
         print(f"build {name} {version}")
         if dry_run:
+            published += 1
             continue
         dist = REPO_ROOT / "dist" / name
         subprocess.run(

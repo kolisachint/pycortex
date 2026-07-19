@@ -48,8 +48,10 @@ jobs:
           git commit -m "Release v${{ steps.bump.outputs.version }}"
           git tag "v${{ steps.bump.outputs.version }}"
           git push origin HEAD:main "v${{ steps.bump.outputs.version }}"
-      - name: Publish to PyPI
-        run: uv run scripts/publish_packages.py
+      - name: Build and publish to PyPI
+        run: |
+          uv build --all-packages
+          uv run scripts/publish_packages.py
         env:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
       - name: GitHub release
