@@ -56,7 +56,7 @@ parallel; the driver lists the first eligible parallel option.
 
 Parallelizable across these leaves; dependencies flow upward from util.
 
-- [ ] **1.1 util** — `packages/tui/src/utils.ts` → `packages/tui/util/src/cortex/tui/util.py`
+- [x] **1.1 util** — `packages/tui/src/utils.ts` → `packages/tui/util/src/cortex/tui/util.py`
       (ANSI width, grapheme handling, truncate/wrap) + tests. Gate: `pytest packages/tui/util`.
 - [ ] **1.2 fuzzy** — `packages/tui/src/fuzzy.ts` → `packages/tui/fuzzy/src/cortex/tui/fuzzy.py`
       + tests. Gate: `pytest packages/tui/fuzzy`.

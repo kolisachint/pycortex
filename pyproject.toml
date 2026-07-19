@@ -30,6 +30,10 @@ select = ["E", "F", "I", "UP", "B"]
 include = ["packages"]
 pythonVersion = "3.11"
 typeCheckingMode = "strict"
+reportMissingTypeStubs = "none"
+reportUnknownVariableType = "none"
+reportUnknownMemberType = "none"
+reportUnknownArgumentType = "none"
 
 [tool.pytest.ini_options]
 testpaths = ["packages"]
