@@ -1,0 +1,11 @@
+Resolved 65 packages in 156ms
+   Building cortexcode-ai-types @ file:///Users/sachinkoli/github/pycortex/packages/ai/types
+      Built cortexcode-ai-types @ file:///Users/sachinkoli/github/pycortex/packages/ai/types
+Prepared 1 package in 199ms
+Uninstalled 1 package in 1ms
+Installed 5 packages in 6ms
+ + annotated-types==0.7.0
+ ~ cortexcode-ai-types==0.0.1 (from file:///Users/sachinkoli/github/pycortex/packages/ai/types)
+ + pydantic==2.13.4
+ + pydantic-core==2.46.4
+ + typing-inspection==0.4.2

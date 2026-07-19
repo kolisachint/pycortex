@@ -82,7 +82,7 @@ Parallelizable across these leaves; dependencies flow upward from util.
 Parallelizable except where leaf deps require ordering (types/util/models → stream →
 providers; faux first).
 
-- [ ] **2.1 types** — `packages/ai/src/types.ts` →
+- [x] **2.1 types** — `packages/ai/src/types.ts` →
       `packages/ai/types/src/cortex/ai/types.py` (pydantic models) + tests. Gate:
       `pytest packages/ai/types`.
 - [ ] **2.2 util** — `packages/ai/src/utils/*` → `packages/ai/util/src/cortex/ai/util/`

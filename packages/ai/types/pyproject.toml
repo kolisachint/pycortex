@@ -4,7 +4,9 @@ version = "0.0.1"
 description = "Cortex AI leaf: types"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "pydantic>=2",
+]
 
 [tool.cortex]
 publish = false
