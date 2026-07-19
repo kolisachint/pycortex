@@ -4,11 +4,71 @@ requires-python = ">=3.11"
 
 [manifest]
 members = [
-    "cortexcode-agent-core",
+    "cortexcode-agent",
+    "cortexcode-agent-agent",
+    "cortexcode-agent-compaction",
+    "cortexcode-agent-harness",
+    "cortexcode-agent-loop",
+    "cortexcode-agent-mcp",
+    "cortexcode-agent-session",
+    "cortexcode-agent-tools",
+    "cortexcode-agent-types",
     "cortexcode-ai",
-    "cortexcode-cli",
+    "cortexcode-ai-env",
+    "cortexcode-ai-images",
+    "cortexcode-ai-models",
+    "cortexcode-ai-oauth",
+    "cortexcode-ai-provider-anthropic",
+    "cortexcode-ai-provider-azure",
+    "cortexcode-ai-provider-faux",
+    "cortexcode-ai-provider-google",
+    "cortexcode-ai-provider-openai",
+    "cortexcode-ai-stream",
+    "cortexcode-ai-types",
+    "cortexcode-ai-util",
+    "cortexcode-cli-config",
+    "cortexcode-cli-extensions",
+    "cortexcode-cli-main",
+    "cortexcode-cli-print",
+    "cortexcode-cli-prompts",
+    "cortexcode-cli-resources",
+    "cortexcode-cli-rpc",
+    "cortexcode-cli-session",
+    "cortexcode-cli-subagents",
+    "cortexcode-cli-tools",
+    "cortexcode-code",
     "cortexcode-tui",
+    "cortexcode-tui-components",
+    "cortexcode-tui-editing",
+    "cortexcode-tui-fuzzy",
+    "cortexcode-tui-images",
+    "cortexcode-tui-keys",
+    "cortexcode-tui-render",
+    "cortexcode-tui-terminal",
+    "cortexcode-tui-util",
     "pycortex-workspace",
+]
+
+[[package]]
+name = "anyio"
+version = "4.14.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "idna" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/61/cc/a381afa6efea9f496eff839d4a6a1aed3bfafc7b3ab4b0d1b243a12573dd/anyio-4.14.2.tar.gz", hash = "sha256:cfa139f3ed1a23ee8f88a145ddb5ac7605b8bbfd8592baacd7ce3d8bb4313c7f", size = 260176, upload-time = "2026-07-12T20:29:07.082Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/da/35/f2287558c17e29fafc8ef3daf819bb9834061cfa43bff8014f7df7f63bdc/anyio-4.14.2-py3-none-any.whl", hash = "sha256:9f505dda5ac9f0c8309b5e8bd445a8c2bf7246f3ce950121e45ea15bc41d1494", size = 125813, upload-time = "2026-07-12T20:29:05.763Z" },
+]
+
+[[package]]
+name = "certifi"
+version = "2026.6.17"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c9/c7/424b75da314c1045981bd9777432fad05a9e0c69daa4ed7e308bbaffe405/certifi-2026.6.17.tar.gz", hash = "sha256:024c88eeec92ca068db80f02b8b07c9cef7b9fe261d1d535abfd5abd6f6af432", size = 134594, upload-time = "2026-06-17T10:31:07.894Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ef/2f/c5464532e965badff2f4c4c1a3a83f5697f0d7c407ed0cda44aaa99bb451/certifi-2026.6.17-py3-none-any.whl", hash = "sha256:2227dcbaafe0d2f59279d1762ddddc37783ed4354594f194ffc31d20f41fc3db", size = 133289, upload-time = "2026-06-17T10:31:06.348Z" },
 ]
 
 [[package]]
@@ -21,24 +81,386 @@ wheels = [
 ]
 
 [[package]]
-name = "cortexcode-agent-core"
+name = "cortexcode-agent"
 version = "0.0.1"
-source = { editable = "packages/agent" }
+source = { editable = "packages/agent/_meta" }
+
+[[package]]
+name = "cortexcode-agent-agent"
+version = "0.0.1"
+source = { editable = "packages/agent/agent" }
+
+[[package]]
+name = "cortexcode-agent-compaction"
+version = "0.0.1"
+source = { editable = "packages/agent/compaction" }
+
+[[package]]
+name = "cortexcode-agent-harness"
+version = "0.0.1"
+source = { editable = "packages/agent/harness" }
+
+[[package]]
+name = "cortexcode-agent-loop"
+version = "0.0.1"
+source = { editable = "packages/agent/loop" }
+
+[[package]]
+name = "cortexcode-agent-mcp"
+version = "0.0.1"
+source = { editable = "packages/agent/mcp" }
+
+[[package]]
+name = "cortexcode-agent-session"
+version = "0.0.1"
+source = { editable = "packages/agent/session" }
+
+[[package]]
+name = "cortexcode-agent-tools"
+version = "0.0.1"
+source = { editable = "packages/agent/tools" }
+
+[[package]]
+name = "cortexcode-agent-types"
+version = "0.0.1"
+source = { editable = "packages/agent/types" }
 
 [[package]]
 name = "cortexcode-ai"
 version = "0.0.1"
-source = { editable = "packages/ai" }
+source = { editable = "packages/ai/_meta" }
 
 [[package]]
-name = "cortexcode-cli"
+name = "cortexcode-ai-env"
 version = "0.0.1"
-source = { editable = "packages/coding-agent" }
+source = { editable = "packages/ai/env" }
+dependencies = [
+    { name = "cortexcode-ai-types" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "cortexcode-ai-types", editable = "packages/ai/types" }]
+
+[[package]]
+name = "cortexcode-ai-images"
+version = "0.0.1"
+source = { editable = "packages/ai/images" }
+dependencies = [
+    { name = "cortexcode-ai-types" },
+    { name = "httpx" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-ai-types", editable = "packages/ai/types" },
+    { name = "httpx", specifier = ">=0.27" },
+]
+
+[[package]]
+name = "cortexcode-ai-models"
+version = "0.0.1"
+source = { editable = "packages/ai/models" }
+dependencies = [
+    { name = "cortexcode-ai-types" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "cortexcode-ai-types", editable = "packages/ai/types" }]
+
+[[package]]
+name = "cortexcode-ai-oauth"
+version = "0.0.1"
+source = { editable = "packages/ai/oauth" }
+dependencies = [
+    { name = "cortexcode-ai-types" },
+    { name = "httpx" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-ai-types", editable = "packages/ai/types" },
+    { name = "httpx", specifier = ">=0.27" },
+]
+
+[[package]]
+name = "cortexcode-ai-provider-anthropic"
+version = "0.0.1"
+source = { editable = "packages/ai/provider-anthropic" }
+dependencies = [
+    { name = "cortexcode-ai-models" },
+    { name = "cortexcode-ai-stream" },
+    { name = "cortexcode-ai-types" },
+    { name = "cortexcode-ai-util" },
+    { name = "httpx" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-ai-models", editable = "packages/ai/models" },
+    { name = "cortexcode-ai-stream", editable = "packages/ai/stream" },
+    { name = "cortexcode-ai-types", editable = "packages/ai/types" },
+    { name = "cortexcode-ai-util", editable = "packages/ai/util" },
+    { name = "httpx", specifier = ">=0.27" },
+]
+
+[[package]]
+name = "cortexcode-ai-provider-azure"
+version = "0.0.1"
+source = { editable = "packages/ai/provider-azure" }
+dependencies = [
+    { name = "cortexcode-ai-models" },
+    { name = "cortexcode-ai-stream" },
+    { name = "cortexcode-ai-types" },
+    { name = "cortexcode-ai-util" },
+    { name = "httpx" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-ai-models", editable = "packages/ai/models" },
+    { name = "cortexcode-ai-stream", editable = "packages/ai/stream" },
+    { name = "cortexcode-ai-types", editable = "packages/ai/types" },
+    { name = "cortexcode-ai-util", editable = "packages/ai/util" },
+    { name = "httpx", specifier = ">=0.27" },
+]
+
+[[package]]
+name = "cortexcode-ai-provider-faux"
+version = "0.0.1"
+source = { editable = "packages/ai/provider-faux" }
+dependencies = [
+    { name = "cortexcode-ai-stream" },
+    { name = "cortexcode-ai-types" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-ai-stream", editable = "packages/ai/stream" },
+    { name = "cortexcode-ai-types", editable = "packages/ai/types" },
+]
+
+[[package]]
+name = "cortexcode-ai-provider-google"
+version = "0.0.1"
+source = { editable = "packages/ai/provider-google" }
+dependencies = [
+    { name = "cortexcode-ai-models" },
+    { name = "cortexcode-ai-stream" },
+    { name = "cortexcode-ai-types" },
+    { name = "cortexcode-ai-util" },
+    { name = "httpx" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-ai-models", editable = "packages/ai/models" },
+    { name = "cortexcode-ai-stream", editable = "packages/ai/stream" },
+    { name = "cortexcode-ai-types", editable = "packages/ai/types" },
+    { name = "cortexcode-ai-util", editable = "packages/ai/util" },
+    { name = "httpx", specifier = ">=0.27" },
+]
+
+[[package]]
+name = "cortexcode-ai-provider-openai"
+version = "0.0.1"
+source = { editable = "packages/ai/provider-openai" }
+dependencies = [
+    { name = "cortexcode-ai-models" },
+    { name = "cortexcode-ai-stream" },
+    { name = "cortexcode-ai-types" },
+    { name = "cortexcode-ai-util" },
+    { name = "httpx" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-ai-models", editable = "packages/ai/models" },
+    { name = "cortexcode-ai-stream", editable = "packages/ai/stream" },
+    { name = "cortexcode-ai-types", editable = "packages/ai/types" },
+    { name = "cortexcode-ai-util", editable = "packages/ai/util" },
+    { name = "httpx", specifier = ">=0.27" },
+]
+
+[[package]]
+name = "cortexcode-ai-stream"
+version = "0.0.1"
+source = { editable = "packages/ai/stream" }
+dependencies = [
+    { name = "cortexcode-ai-env" },
+    { name = "cortexcode-ai-models" },
+    { name = "cortexcode-ai-types" },
+    { name = "cortexcode-ai-util" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-ai-env", editable = "packages/ai/env" },
+    { name = "cortexcode-ai-models", editable = "packages/ai/models" },
+    { name = "cortexcode-ai-types", editable = "packages/ai/types" },
+    { name = "cortexcode-ai-util", editable = "packages/ai/util" },
+]
+
+[[package]]
+name = "cortexcode-ai-types"
+version = "0.0.1"
+source = { editable = "packages/ai/types" }
+
+[[package]]
+name = "cortexcode-ai-util"
+version = "0.0.1"
+source = { editable = "packages/ai/util" }
+dependencies = [
+    { name = "cortexcode-ai-types" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "cortexcode-ai-types", editable = "packages/ai/types" }]
+
+[[package]]
+name = "cortexcode-cli-config"
+version = "0.0.1"
+source = { editable = "packages/code/config" }
+
+[[package]]
+name = "cortexcode-cli-extensions"
+version = "0.0.1"
+source = { editable = "packages/code/extensions" }
+
+[[package]]
+name = "cortexcode-cli-main"
+version = "0.0.1"
+source = { editable = "packages/code/main" }
+
+[[package]]
+name = "cortexcode-cli-print"
+version = "0.0.1"
+source = { editable = "packages/code/print" }
+
+[[package]]
+name = "cortexcode-cli-prompts"
+version = "0.0.1"
+source = { editable = "packages/code/prompts" }
+
+[[package]]
+name = "cortexcode-cli-resources"
+version = "0.0.1"
+source = { editable = "packages/code/resources" }
+
+[[package]]
+name = "cortexcode-cli-rpc"
+version = "0.0.1"
+source = { editable = "packages/code/rpc" }
+
+[[package]]
+name = "cortexcode-cli-session"
+version = "0.0.1"
+source = { editable = "packages/code/session" }
+
+[[package]]
+name = "cortexcode-cli-subagents"
+version = "0.0.1"
+source = { editable = "packages/code/subagents" }
+
+[[package]]
+name = "cortexcode-cli-tools"
+version = "0.0.1"
+source = { editable = "packages/code/tools" }
+
+[[package]]
+name = "cortexcode-code"
+version = "0.0.1"
+source = { editable = "packages/code/_meta" }
 
 [[package]]
 name = "cortexcode-tui"
 version = "0.0.1"
-source = { editable = "packages/tui" }
+source = { editable = "packages/tui/_meta" }
+
+[[package]]
+name = "cortexcode-tui-components"
+version = "0.0.1"
+source = { editable = "packages/tui/components" }
+
+[[package]]
+name = "cortexcode-tui-editing"
+version = "0.0.1"
+source = { editable = "packages/tui/editing" }
+
+[[package]]
+name = "cortexcode-tui-fuzzy"
+version = "0.0.1"
+source = { editable = "packages/tui/fuzzy" }
+
+[[package]]
+name = "cortexcode-tui-images"
+version = "0.0.1"
+source = { editable = "packages/tui/images" }
+
+[[package]]
+name = "cortexcode-tui-keys"
+version = "0.0.1"
+source = { editable = "packages/tui/keys" }
+
+[[package]]
+name = "cortexcode-tui-render"
+version = "0.0.1"
+source = { editable = "packages/tui/render" }
+
+[[package]]
+name = "cortexcode-tui-terminal"
+version = "0.0.1"
+source = { editable = "packages/tui/terminal" }
+
+[[package]]
+name = "cortexcode-tui-util"
+version = "0.0.1"
+source = { editable = "packages/tui/util" }
+
+[[package]]
+name = "h11"
+version = "0.16.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/01/ee/02a2c011bdab74c6fb3c75474d40b3052059d95df7e73351460c8588d963/h11-0.16.0.tar.gz", hash = "sha256:4e35b956cf45792e4caa5885e69fba00bdbc6ffafbfa020300e549b208ee5ff1", size = 101250, upload-time = "2025-04-24T03:35:25.427Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl", hash = "sha256:63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86", size = 37515, upload-time = "2025-04-24T03:35:24.344Z" },
+]
+
+[[package]]
+name = "httpcore"
+version = "1.0.9"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "certifi" },
+    { name = "h11" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/06/94/82699a10bca87a5556c9c59b5963f2d039dbd239f25bc2a63907a05a14cb/httpcore-1.0.9.tar.gz", hash = "sha256:6e34463af53fd2ab5d807f399a9b45ea31c3dfa2276f15a2c3f00afff6e176e8", size = 85484, upload-time = "2025-04-24T22:06:22.219Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl", hash = "sha256:2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55", size = 78784, upload-time = "2025-04-24T22:06:20.566Z" },
+]
+
+[[package]]
+name = "httpx"
+version = "0.28.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "certifi" },
+    { name = "httpcore" },
+    { name = "idna" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b1/df/48c586a5fe32a0f01324ee087459e112ebb7224f646c0b5023f5e79e9956/httpx-0.28.1.tar.gz", hash = "sha256:75e98c5f16b0f35b567856f597f06ff2270a374470a5c2392242528e3e3e42fc", size = 141406, upload-time = "2024-12-06T15:37:23.222Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl", hash = "sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad", size = 73517, upload-time = "2024-12-06T15:37:21.509Z" },
+]
+
+[[package]]
+name = "idna"
+version = "3.18"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/cd/63/9496c57188a2ee585e0f1db071d75089a11e98aa86eb99d9d7618fc1edce/idna-3.18.tar.gz", hash = "sha256:ffb385a7e039654cef1ab9ef32c6fafe283c0c0467bba1d9029738ce4a14a848", size = 196711, upload-time = "2026-06-02T14:34:07.794Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1e/5e/d4e9f1a599fb8e573b7b87160658329fbf28d19eac2718f51fc3def3aa5a/idna-3.18-py3-none-any.whl", hash = "sha256:7f952cbe720b688055e3f87de14f5c3e5fdaa8bc3928985c4077ca689de849a2", size = 65455, upload-time = "2026-06-02T14:34:06.319Z" },
+]
 
 [[package]]
 name = "iniconfig"
@@ -87,6 +509,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },
+    { name = "tomli-w" },
 ]
 
 [package.metadata]
@@ -97,6 +520,7 @@ dev = [
     { name = "pytest", specifier = ">=8" },
     { name = "pytest-asyncio", specifier = ">=0.24" },
     { name = "ruff", specifier = ">=0.8" },
+    { name = "tomli-w", specifier = ">=1.2.0" },
 ]
 
 [[package]]
@@ -173,6 +597,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/4d/76/3f72d8fc38c1cb77b38c56a70da9d0c17700cc1cc50f9649c9d3c8f5ba71/ruff-0.15.22-py3-none-win32.whl", hash = "sha256:e5ba0e4a13fd14abbed2a77b517a3911290c6c6c59ef67784328d1668fab76cf", size = 10789165, upload-time = "2026-07-16T15:14:04.16Z" },
     { url = "https://files.pythonhosted.org/packages/cb/46/4965251734c2b6fcdca1b1b187d20bcac3af0ee5b083b89c910bb961ce3a/ruff-0.15.22-py3-none-win_amd64.whl", hash = "sha256:9be63ba1eb936acd2d1342fb8337c356353706fce233b2a15a09a97037e6acde", size = 11938297, upload-time = "2026-07-16T15:14:07.316Z" },
     { url = "https://files.pythonhosted.org/packages/57/c9/e69b1ff4c8b69093ef08b8919ab767af0569666865b39c30a8795d88d3c6/ruff-0.15.22-py3-none-win_arm64.whl", hash = "sha256:e1168075b72158510839f250027659cdd78476f40507dd517892304c41318661", size = 11298172, upload-time = "2026-07-16T15:14:10.51Z" },
+]
+
+[[package]]
+name = "tomli-w"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/19/75/241269d1da26b624c0d5e110e8149093c759b7a286138f4efd61a60e75fe/tomli_w-1.2.0.tar.gz", hash = "sha256:2dd14fac5a47c27be9cd4c976af5a12d87fb1f0b4512f81d69cce3b35ae25021", size = 7184, upload-time = "2025-01-15T12:07:24.262Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c7/18/c86eb8e0202e32dd3df50d43d7ff9854f8e0603945ff398974c1d91ac1ef/tomli_w-1.2.0-py3-none-any.whl", hash = "sha256:188306098d013b691fcadc011abd66727d3c414c571bb01b1a174ba8c983cf90", size = 6675, upload-time = "2025-01-15T12:07:22.074Z" },
 ]
 
 [[package]]

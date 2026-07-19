@@ -1,0 +1,26 @@
+[project]
+name = "cortexcode-ai-env"
+version = "0.0.1"
+description = "Cortex AI leaf: env"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "cortexcode-ai-types>=0.0.1,<0.1.0",
+]
+
+[tool.cortex]
+publish = false
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "src/cortex",
+]
+
+[tool.uv.sources.cortexcode-ai-types]
+workspace = true
+
+[build-system]
+requires = [
+    "hatchling",
+]
+build-backend = "hatchling.build"

@@ -1,0 +1,21 @@
+[project]
+name = "cortexcode-tui-fuzzy"
+version = "0.0.1"
+description = "Cortex TUI leaf: fuzzy"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.cortex]
+publish = false
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "src/cortex",
+]
+
+[build-system]
+requires = [
+    "hatchling",
+]
+build-backend = "hatchling.build"

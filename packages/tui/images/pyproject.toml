@@ -1,0 +1,21 @@
+[project]
+name = "cortexcode-tui-images"
+version = "0.0.1"
+description = "Cortex TUI leaf: images"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.cortex]
+publish = false
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "src/cortex",
+]
+
+[build-system]
+requires = [
+    "hatchling",
+]
+build-backend = "hatchling.build"

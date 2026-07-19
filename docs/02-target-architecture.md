@@ -2,49 +2,66 @@
 
 **Status:** DRAFT
 
-## 1. Naming
+## 1. Naming & the ultramodular model
 
-`pycortex` is **taken on PyPI** (neuroimaging). Proposal — one shared import namespace,
-distinct distribution names:
+`pycortex` is **taken on PyPI** (neuroimaging). We use **one shared import namespace**
+(`cortex.*`, PEP 420) but explode each hoocode package into **many independently
+versioned leaf distributions**, grouped by *co-change*: files that change together live
+in one leaf; files that evolve independently live in separate leaves. The four names
+already reserved on PyPI (`cortexcode-tui`, `cortexcode-ai`, `cortexcode-agent-core`,
+`cortexcode-cli`) become **umbrella meta-packages** — they carry no code, only pinned
+dependencies on their leaves, so `pip install cortexcode-tui` still installs the whole
+TUI and `import cortex.tui` still works.
 
-| hoocode package | PyPI distribution | Import | Tier |
-| --- | --- | --- | --- |
-| tui | `cortexcode-tui` | `cortex.tui` | T0 |
-| ai | `cortexcode-ai` | `cortex.ai` | T0/T1 |
-| agent | `cortexcode-agent-core` | `cortex.agent` | T1 |
-| coding-agent | `cortexcode-cli` (CLI: `cortex`) | `cortex.code` | T2/T3 |
+**Principle (ultramodular):** a leaf is the smallest unit with a single reason to
+change. Churn stays contained — a fix to the renderer never forces a version bump of the
+key-parser. Each leaf: one responsibility, its own `pyproject.toml`, own version, own
+tests, minimal deps. Stable leaves publish first; volatile leaves stay `publish=false`.
 
-`cortex.*` uses PEP 420 namespace packages so each distribution owns one subpackage.
-**Resolved 2026-07-19:** `cortexcode` was squatted on PyPI (an unrelated code-indexing
-package), so the CLI distribution is **`cortexcode-cli`**. The three lib names were
-free and were reserved as-is at 0.0.1.
+### Distribution map
+
+| Umbrella (reserved) | Import namespace | Leaf distributions |
+| --- | --- | --- |
+| `cortexcode-tui` | `cortex.tui.*` | `cortexcode-tui-util`, `-keys`, `-terminal`, `-render`, `-editing`, `-components` |
+| `cortexcode-ai` | `cortex.ai.*` | `cortexcode-ai-types`, `-util`, `-models`, `-stream`, `-provider-faux`, `-provider-anthropic`, `-provider-openai`, `-provider-google`, `-oauth`, `-images` |
+| `cortexcode-agent-core` | `cortex.agent.*` | `cortexcode-agent-types`, `-loop`, `-harness`, `-session`, `-compaction`, `-tools`, `-mcp` |
+| `cortexcode-cli` | `cortex.code.*` | sliced later (phases 4–5); T2/T3 stays in-repo longer, published as fewer, coarser leaves |
+
+Each leaf owns a distinct subpackage under its namespace (e.g. `cortex.tui.util`,
+`cortex.tui.render`) so there is never a file-ownership collision across distributions.
+**Resolved 2026-07-19:** `cortexcode` was squatted on PyPI, so the CLI umbrella is
+**`cortexcode-cli`**; the three lib umbrellas were free and reserved at 0.0.1 alongside
+their first leaves.
 
 ## 2. Repository layout (uv workspace)
 
+Every leaf **and** every umbrella is a workspace member under `packages/`. Leaves are
+grouped in a directory per umbrella for humans; uv flattens them via `packages/*/*`.
+
 ```
 pycortex/
-├── pyproject.toml            # workspace root: uv, ruff, pyright, pytest config
+├── pyproject.toml            # workspace root: members = packages/*, packages/*/*
 ├── uv.lock
 ├── packages/
 │   ├── tui/
-│   │   ├── pyproject.toml    # name=cortexcode-tui, own version, own deps
-│   │   ├── src/cortex/tui/   # namespace package (no __init__.py at cortex/)
-│   │   └── tests/
-│   ├── ai/
-│   │   ├── pyproject.toml
-│   │   ├── src/cortex/ai/
-│   │   └── tests/
-│   ├── agent/
-│   │   ├── pyproject.toml
-│   │   ├── src/cortex/agent/
-│   │   └── tests/
-│   └── coding-agent/
-│       ├── pyproject.toml    # entry point: cortex = cortex.code.main:main
-│       ├── src/cortex/code/
-│       └── tests/
+│   │   ├── _meta/            # umbrella: name=cortexcode-tui, deps on leaves, NO code
+│   │   │   └── pyproject.toml
+│   │   ├── util/            # leaf: name=cortexcode-tui-util
+│   │   │   ├── pyproject.toml
+│   │   │   ├── src/cortex/tui/util/   # PEP 420 namespace, owns this subpackage only
+│   │   │   └── tests/
+│   │   ├── keys/           # cortexcode-tui-keys  -> cortex.tui.keys
+│   │   ├── terminal/       # cortexcode-tui-terminal -> cortex.tui.terminal
+│   │   ├── render/         # cortexcode-tui-render   -> cortex.tui.render
+│   │   ├── editing/        # cortexcode-tui-editing  -> cortex.tui.editing
+│   │   └── components/     # cortexcode-tui-components -> cortex.tui.components
+│   ├── ai/   (_meta + leaves: types, util, models, stream, provider-*, oauth, images)
+│   ├── agent/(_meta + leaves: types, loop, harness, session, compaction, tools, mcp)
+│   └── code/ (_meta + coarser leaves, sliced in phases 4–5)
 ├── scripts/
-│   ├── bump_versions.py      # lockstep bump (port of bump-versions.mjs)
-│   ├── release.py            # bump → tag → push (CI does the publish)
+│   ├── bump_versions.py      # per-leaf independent bump + sibling re-pin
+│   ├── release.py            # bump → tag → push (CI publishes changed leaves)
+│   ├── publish_packages.py   # publish every publish=true leaf whose version is new
 │   └── migrate_next.py       # executes next step of 04-migration-plan.md
 ├── docs/                     # these design docs + ported design notes
 ├── .hoocode/skills/          # migration skills (05-skills-and-commands.md)
@@ -53,77 +70,106 @@ pycortex/
 
 Rationale:
 
-- **uv workspaces** mirror npm workspaces: one lockfile, editable path deps between
-  members, per-package publishing.
+- **uv workspaces** give one lockfile, editable path deps between leaves, per-leaf
+  publishing. Leaves depend on sibling leaves by distribution name; uv resolves them
+  from the workspace locally and from PyPI once published.
 - **src layout** ensures tests run against installed/importable code, not the cwd.
-- **Lockstep versions** initially (like hoocode's 0.4.x for all four). Revisit
-  independent versioning after Phase 1.
+- **PEP 420 namespaces**: no `__init__.py` at `cortex/` or `cortex/tui/`; each leaf
+  ships only its own deepest subpackage (`cortex/tui/util/__init__.py`), so two
+  distributions never write the same file.
+- **Per-leaf versioning.** Leaves version independently (a leaf bumps only when its own
+  code changes); each umbrella re-pins to its leaves' new versions and bumps too. This
+  is the whole point of ultramodular: contained churn, minimal release blast radius.
 
-## 3. Package designs (module mapping)
+## 3. Ultramodular leaf map
 
-### 3.1 `cortex.tui` (from packages/tui — ~11.4K LOC TS)
+A "leaf" is the smallest unit that can version, test, and publish independently.
+Umbrellas group leaves by import namespace and install path.
 
-| TS | Py module | Notes |
-| --- | --- | --- |
-| `tui.ts` | `tui.py` | container + differential renderer; the hard part |
-| `terminal.ts` | `terminal.py` | `termios`/`tty` raw mode, resize via `signal.SIGWINCH` |
-| `keys.ts`, `keybindings.ts` | `keys.py`, `keybindings.py` | Kitty protocol parsing ports directly |
-| `components/*` | `components/*.py` | text, input, editor, markdown, select_list, loader, image, box, spacer |
-| `stdin-buffer.ts` | `stdin_buffer.py` | asyncio reader |
-| `fuzzy.ts`, `utils.ts`, `kill-ring.ts`, `undo-stack.ts` | same names | pure logic, mechanical port |
-| chalk usage | `ansi.py` | tiny internal ANSI helper |
+### 3.1 `cortex.tui` umbrella (`cortexcode-tui`)
 
-Zero runtime deps beyond stdlib + mistune. Phase 2 ports the *minimal viable subset*
-(renderer, terminal, keys, text/input/select components); editor/image/markdown follow.
+| Leaf dist | Import | Owns (from TS) | Stability |
+| --- | --- | --- | --- |
+| `cortexcode-tui-util` | `cortex.tui.util` | `utils.ts` (text width, ANSI wrap/truncate, graphemes) | T0 |
+| `cortexcode-tui-fuzzy` | `cortex.tui.fuzzy` | `fuzzy.ts` | T0 |
+| `cortexcode-tui-keys` | `cortex.tui.keys` | `keys.ts`, `keybindings.ts` | T0 |
+| `cortexcode-tui-terminal` | `cortex.tui.terminal` | `terminal.ts`, `stdin-buffer.ts` | T0 |
+| `cortexcode-tui-render` | `cortex.tui.render` | `tui.ts` (differential renderer) | T0 |
+| `cortexcode-tui-editing` | `cortex.tui.editing` | `editor-component.ts`, `kill-ring.ts`, `undo-stack.ts` | T0 |
+| `cortexcode-tui-components` | `cortex.tui.components` | `components/*.ts` (text, box, spacer, loader, input, select-list, autocomplete, editor, markdown, image) | T0 |
+| `cortexcode-tui-images` | `cortex.tui.images` | `terminal-image.ts` | T1 (post-core) |
 
-### 3.2 `cortex.ai` (from packages/ai — ~27.7K LOC TS)
+All leaves depend only on lower / same-tier tui leaves (components → editing → render
+→ keys → terminal → util). Fuzzy is a shared leaf used by components.
 
-| TS | Py module |
-| --- | --- |
-| `types.ts` | `types.py` (pydantic models: `Model`, `Context`, `Tool`, stream events) |
-| `stream.ts` | `stream.py` (async generators for streaming) |
-| `api-registry.ts`, `models.generated.ts` | `registry.py`, `models_generated.py` (+ `scripts/generate_models.py`) |
-| `providers/*.ts` | `providers/{anthropic,openai_responses,openai_completions,google,faux}.py` — Phase 3 ports these five; the long tail (bedrock, mistral, vertex, azure…) is post-migration |
-| `env-api-keys.ts` | `env_api_keys.py` |
-| `oauth.ts` | `oauth.py` (Phase 3b — needed for subscription auth only) |
-| `images*.ts` | deferred post-migration |
-| `utils/*` | `utils/` (json repair/partial parse via `partial-json` equivalents; port logic directly) |
+### 3.2 `cortex.ai` umbrella (`cortexcode-ai`)
 
-Deps: `httpx`, `pydantic`. The **`faux` provider is ported first** — it powers all
-downstream tests without keys.
+| Leaf dist | Import | Owns (from TS) | Stability |
+| --- | --- | --- | --- |
+| `cortexcode-ai-types` | `cortex.ai.types` | `types.ts` (pydantic models, events, tools) | T0 |
+| `cortexcode-ai-util` | `cortex.ai.util` | `utils/*` (json repair, validation, overflow, diagnostics, hash, headers) | T0 |
+| `cortexcode-ai-models` | `cortex.ai.models` | `api-registry.ts`, `models.generated.ts`, `image-models*.ts` | T0/T1 |
+| `cortexcode-ai-stream` | `cortex.ai.stream` | `stream.ts` | T0 |
+| `cortexcode-ai-provider-faux` | `cortex.ai.providers.faux` | `providers/faux.ts` | T0 — **port first** |
+| `cortexcode-ai-provider-anthropic` | `cortex.ai.providers.anthropic` | `providers/anthropic.ts` | T1 |
+| `cortexcode-ai-provider-openai` | `cortex.ai.providers.openai` | `providers/openai-completions.ts`, `providers/openai-responses.ts`, `providers/openai-responses-shared.ts`, `providers/openai-codex-responses.ts` | T1 |
+| `cortexcode-ai-provider-google` | `cortex.ai.providers.google` | `providers/google.ts`, `providers/google-shared.ts`, `providers/google-vertex.ts` | T1 |
+| `cortexcode-ai-provider-azure` | `cortex.ai.providers.azure` | `providers/azure-openai-responses.ts` | T2 (long tail) |
+| `cortexcode-ai-oauth` | `cortex.ai.oauth` | `oauth.ts`, `utils/oauth/*` | T2 |
+| `cortexcode-ai-images` | `cortex.ai.images` | `images*.ts`, `providers/images/*` | T2 |
 
-### 3.3 `cortex.agent` (from packages/agent — ~9.5K LOC TS)
+Leaf deps:
 
-| TS | Py module |
-| --- | --- |
-| `agent.ts` | `agent.py` (event-emitting Agent class) |
-| `agent-loop.ts` | `loop.py` (turn loop, tool dispatch, background tools) |
-| `types.ts` | `types.py` |
-| `harness/` | `harness/` (session jsonl/memory repos, compaction, messages, system-prompt, skills) |
-| `tools/default-tools.ts` | `tools/defaults.py` |
-| `tools/mcp-*.ts` | `tools/mcp.py` (official `mcp` SDK) |
-| `proxy.ts` | deferred |
+- `types` has no leaf deps.
+- `util` depends on `types`.
+- `models` depends on `types`.
+- `stream` depends on `types`, `models`, `util`, `env-api-keys` (add a tiny `cortexcode-ai-env` leaf if it turns out to need no ai types; otherwise it sits in `stream`).
+- every `provider-*` depends on `stream`, `types`, `util`, `models`.
+- `faux` has the fewest deps and is ported before any provider that consumes it.
 
-Deps: `cortexcode-ai`, `mcp`, `pyyaml`, `pathspec`.
+All ai leaves use `httpx` + `pydantic`.
 
-### 3.4 `cortex.code` (from packages/coding-agent — ~71.5K LOC TS)
+### 3.3 `cortex.agent` umbrella (`cortexcode-agent-core`)
 
-Ported in slices, volatile-last:
+| Leaf dist | Import | Owns (from TS) | Stability |
+| --- | --- | --- | --- |
+| `cortexcode-agent-types` | `cortex.agent.types` | `types.ts` | T0 |
+| `cortexcode-agent-loop` | `cortex.agent.loop` | `agent-loop.ts` | T0 |
+| `cortexcode-agent` | `cortex.agent.agent` | `agent.ts` (the Agent class) | T0 |
+| `cortexcode-agent-harness` | `cortex.agent.harness` | `harness/{messages,system-prompt,prompt-templates,skills,types,agent-harness}` | T1 |
+| `cortexcode-agent-session` | `cortex.agent.session` | `harness/session/*`, `harness/execution-env*` | T1 |
+| `cortexcode-agent-compaction` | `cortex.agent.compaction` | `harness/compaction/*` | T1 |
+| `cortexcode-agent-tools` | `cortex.agent.tools` | `tools/default-tools.ts` | T1 |
+| `cortexcode-agent-mcp` | `cortex.agent.mcp` | `tools/mcp-*.ts` | T2 |
 
-| Slice | TS area | Py area |
-| --- | --- | --- |
-| A. config + settings | `config.ts`, `core/settings-*` | `config.py`, `settings/` |
-| B. core tools | `core/tools/{read,bash,edit,write,grep,find,ls}.ts` | `tools/` |
-| C. session | `core/agent-session*.ts`, `session-manager.ts` | `session/` |
-| D. system prompt + modes | `core/{system-prompt,mode-prompts,prompt-templates}.ts` | `prompts/` |
-| E. print mode + CLI | `main.ts`, `cli/`, `modes/print-mode.ts` | `main.py`, `cli/`, `modes/print.py` |
-| F. rpc mode | `modes/rpc-mode.ts` | `modes/rpc.py` |
-| G. skills + resources | `core/{skills,resource-loader}.ts` | `resources/` |
-| H. interactive mode | `modes/interactive/**` | `modes/interactive/` |
-| I. subagents | `core/subagent*.ts`, `core/tools/subagent.ts` | `subagents/` |
-| J. extensions | `core/extensions/**` | `extensions/` (Python-module plugins via importlib; **API redesigned for Python — port semantics, not the jiti mechanism**) |
+Leaf deps: `loop`/`agent`/`tools` depend on `types`; `harness` depends on `agent`,
+`loop`, `types`; `session` depends on `harness`; `compaction` depends on `session`;
+`mcp` depends on `tools` and `session`.
 
-Deps: siblings + `pyyaml`, `pathspec`, `Pillow` (later slices).
+Runtime deps include `cortexcode-ai`, `mcp`, `pyyaml`, `pathspec`.
+
+### 3.4 `cortex.code` umbrella (`cortexcode-cli`)
+
+The coding-agent source is too volatile to split finely during migration. We slice it
+into coarser leaves, each published only when stable:
+
+| Leaf dist | Import | Owns (from TS) | Stability |
+| --- | --- | --- | --- |
+| `cortexcode-cli-config` | `cortex.code.config` | `config.ts`, `core/settings-*` | T2 |
+| `cortexcode-cli-tools` | `cortex.code.tools` | `core/tools/{read,bash,edit,write,grep,find,ls}` | T2 |
+| `cortexcode-cli-session` | `cortex.code.session` | `core/agent-session*.ts`, `session-manager.ts` | T2 |
+| `cortexcode-cli-prompts` | `cortex.code.prompts` | `core/{system-prompt,mode-prompts,prompt-templates}` | T2 |
+| `cortexcode-cli-print` | `cortex.code.print` | `modes/print-mode.ts` | T2 |
+| `cortexcode-cli-rpc` | `cortex.code.rpc` | `modes/rpc-mode.ts` | T3 |
+| `cortexcode-cli-resources` | `cortex.code.resources` | `core/{skills,resource-loader}` | T3 |
+| `cortexcode-cli-interactive` | `cortex.code.interactive` | `modes/interactive/**` | T3 |
+| `cortexcode-cli-subagents` | `cortex.code.subagents` | `core/subagent*.ts`, `core/tools/subagent.ts` | T3 |
+| `cortexcode-cli-extensions` | `cortex.code.extensions` | `core/extensions/**` — port semantics only, Python plugin API redesigned | T3 |
+| `cortexcode-cli-main` | `cortex.code.main` | `main.ts`, `cli/args.ts` | T2 |
+
+The umbrella `cortexcode-cli` also provides the console script `cortex =
+cortex.code.main:main`. CLI deps: sibling agent/ai/tui leaves + `pyyaml`, `pathspec`,
+`Pillow` (later slices).
 
 Not ported in Phase 1 (explicit non-goals): web-ui, mini-lit, voice transcribe, HTML
 export, clipboard-native FFI, image tooling beyond read-tool image support, the
