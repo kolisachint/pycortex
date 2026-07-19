@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from functools import lru_cache
 
 # East Asian Width category → terminal width mapping (matches get-east-asian-width).
@@ -681,11 +681,21 @@ def is_punctuation_char(char: str) -> bool:
     return bool(_PUNCTUATION_REGEX.match(char))
 
 
-def apply_background_to_line(line: str, width: int, bg_fn: str) -> str:
-    """Pad line to width and apply background color (placeholder for bg function)."""
+def apply_background_to_line(line: str, width: int, bg_fn: Callable[[str], str]) -> str:
+    """Pad line to width and apply background color.
+
+    Args:
+        line: The line to apply background to.
+        width: Total width to pad to.
+        bg_fn: Background color function that takes a string and returns a string.
+
+    Returns:
+        Line with background applied and padded to width.
+    """
     visible_len = visible_width(line)
     padding_needed = max(0, width - visible_len)
-    return line + " " * padding_needed
+    padded = line + " " * padding_needed
+    return bg_fn(padded)
 
 
 def truncate_to_width(text: str, max_width: int, ellipsis: str = "...", pad: bool = False) -> str:

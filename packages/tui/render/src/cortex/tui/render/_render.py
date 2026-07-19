@@ -59,6 +59,10 @@ class Component(Protocol):
         """Render component to lines."""
         ...
 
+    def invalidate(self) -> None:
+        """Invalidate any cached rendering state."""
+        ...
+
 
 class TestComponent:
     """Simple test component for testing."""
@@ -70,6 +74,10 @@ class TestComponent:
     def render(self, width: int) -> list[str]:
         """Render component to lines."""
         return self.lines
+
+    def invalidate(self) -> None:
+        """Invalidate any cached rendering state."""
+        pass
 
 
 class TUI:

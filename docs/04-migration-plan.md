@@ -68,7 +68,7 @@ Parallelizable across these leaves; dependencies flow upward from util.
       (differential renderer) + ANSI snapshot tests. Gate: `pytest packages/tui/render`.
 - [x] **1.6 editing** — `packages/tui/src/{editor-component,kill-ring,undo-stack}.ts` →
       `packages/tui/editing/src/cortex/tui/editing/` + tests. Gate: `pytest packages/tui/editing`.
-- [ ] **1.7 components** — `packages/tui/src/components/*.ts` →
+- [x] **1.7 components** — `packages/tui/src/components/*.ts` →
       `packages/tui/components/src/cortex/tui/components/` + snapshot tests. Gate:
       `pytest packages/tui/components`.
 - [x] **1.8 tui umbrella publishable** — leaf READMEs, pyright strict on every tui leaf,

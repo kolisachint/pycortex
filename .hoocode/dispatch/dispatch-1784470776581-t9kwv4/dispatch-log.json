@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-07-19T14:19:36.583Z",
+  "task_id": "dispatch-1784470776581-t9kwv4",
+  "agent_type": "general-purpose",
+  "depth": 1,
+  "reason": "user_override",
+  "complexity": "high",
+  "task": "Port the following simple TypeScript components from /Users/sachinkoli/github/hoocode/packages/tui/src/components/ to Python in /Users/sachinkoli/github/pycortex/packages/tui/components/src/cortex/tui/components/\n\nComponents to port:\n1. spacer.ts - Simple spacer component\n2. truncated-text.ts - Text component that truncates to fit viewport width\n3. text.ts - Text component with word wrapping\n4. box.ts - Container component with padding and background\n\nFor each component:\n1. Read the TypeScript source file\n2. Create a Python module with snake_case naming\n3. Use Protocol for Component interface (import from cortex.tui.render)\n4. Use the utility functions from cortex.tui.util (visible_width, wrap_text_with_ansi, apply_background_to_line, truncate_to_width)\n5. Match the TypeScript API exactly (same methods, same behavior)\n\nAlso create tests for each component in /Users/sachinkoli/github/pycortex/packages/tui/editing/tests/test_components.py\n\nAfter porting, run:\n- uv run ruff check packages/tui/components/ --fix\n- uv run ruff format packages/tui/components/\n- uv run pyright packages/tui/components/"
+}

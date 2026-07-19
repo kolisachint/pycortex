@@ -4,7 +4,11 @@ version = "0.0.3"
 description = "Cortex TUI leaf: components"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "cortexcode-tui-render",
+    "cortexcode-tui-util",
+    "cortexcode-tui-editing",
+]
 
 [tool.cortex]
 publish = false
@@ -13,6 +17,11 @@ publish = false
 packages = [
     "src/cortex",
 ]
+
+[tool.uv.sources]
+cortexcode-tui-render = { workspace = true }
+cortexcode-tui-util = { workspace = true }
+cortexcode-tui-editing = { workspace = true }
 
 [build-system]
 requires = [

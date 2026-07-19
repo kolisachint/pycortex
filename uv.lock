@@ -395,6 +395,18 @@ source = { editable = "packages/tui/_meta" }
 name = "cortexcode-tui-components"
 version = "0.0.3"
 source = { editable = "packages/tui/components" }
+dependencies = [
+    { name = "cortexcode-tui-editing" },
+    { name = "cortexcode-tui-render" },
+    { name = "cortexcode-tui-util" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-tui-editing", editable = "packages/tui/editing" },
+    { name = "cortexcode-tui-render", editable = "packages/tui/render" },
+    { name = "cortexcode-tui-util", editable = "packages/tui/util" },
+]
 
 [[package]]
 name = "cortexcode-tui-editing"
