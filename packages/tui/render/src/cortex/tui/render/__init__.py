@@ -2,6 +2,6 @@
 Differential renderer for TUI.
 """
 
-from ._render import TUI, TestComponent
+from ._render import TUI, Component, TestComponent
 
-__all__ = ["TUI", "TestComponent"]
+__all__ = ["Component", "TUI", "TestComponent"]

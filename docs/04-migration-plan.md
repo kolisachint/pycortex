@@ -66,7 +66,7 @@ Parallelizable across these leaves; dependencies flow upward from util.
       `packages/tui/terminal/src/cortex/tui/terminal.py` + tests. Gate: `pytest packages/tui/terminal`.
 - [x] **1.5 render** — `packages/tui/src/tui.ts` → `packages/tui/render/src/cortex/tui/render.py`
       (differential renderer) + ANSI snapshot tests. Gate: `pytest packages/tui/render`.
-- [ ] **1.6 editing** — `packages/tui/src/{editor-component,kill-ring,undo-stack}.ts` →
+- [x] **1.6 editing** — `packages/tui/src/{editor-component,kill-ring,undo-stack}.ts` →
       `packages/tui/editing/src/cortex/tui/editing/` + tests. Gate: `pytest packages/tui/editing`.
 - [ ] **1.7 components** — `packages/tui/src/components/*.ts` →
       `packages/tui/components/src/cortex/tui/components/` + snapshot tests. Gate:

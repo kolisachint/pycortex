@@ -400,6 +400,12 @@ source = { editable = "packages/tui/components" }
 name = "cortexcode-tui-editing"
 version = "0.0.3"
 source = { editable = "packages/tui/editing" }
+dependencies = [
+    { name = "cortexcode-tui-render" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "cortexcode-tui-render", editable = "packages/tui/render" }]
 
 [[package]]
 name = "cortexcode-tui-fuzzy"
