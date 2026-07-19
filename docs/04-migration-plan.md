@@ -30,7 +30,7 @@ run in parallel (no cross-deps).
       pytest config), `.gitignore`, `.python-version` (3.11), empty
       `packages/{tui,ai,agent,coding-agent}` members with placeholder `pyproject.toml`
       (`publish=false`), `uv sync` green. Gate: `uv run pytest` (collects 0), `ruff`, CI-less.
-- [ ] **0.2 CI** — `.github/workflows/ci.yml` per doc 03. Gate: green run on a PR.
+- [x] **0.2 CI** — `.github/workflows/ci.yml` per doc 03. Gate: green run on a PR.
 - [ ] **0.3 Name check + reservation** — verify `cortexcode-*` availability on PyPI;
       publish `0.0.1` placeholders using `PYPI_TOKEN` (manual dispatch of a one-off
       workflow) or record fallback names in doc 02. Gate: names secured.
