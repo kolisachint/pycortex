@@ -32,9 +32,7 @@ def bump(version: str, kind: str) -> str:
 
 
 def workspace_pyprojects() -> list[Path]:
-    return sorted(
-        p / "pyproject.toml" for p in PACKAGES_DIR.iterdir() if (p / "pyproject.toml").is_file()
-    )
+    return sorted(PACKAGES_DIR.rglob("pyproject.toml"))
 
 
 def main() -> int:

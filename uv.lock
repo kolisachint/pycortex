@@ -91,57 +91,57 @@ wheels = [
 
 [[package]]
 name = "cortexcode-agent"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/agent/_meta" }
 
 [[package]]
 name = "cortexcode-agent-agent"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/agent/agent" }
 
 [[package]]
 name = "cortexcode-agent-compaction"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/agent/compaction" }
 
 [[package]]
 name = "cortexcode-agent-harness"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/agent/harness" }
 
 [[package]]
 name = "cortexcode-agent-loop"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/agent/loop" }
 
 [[package]]
 name = "cortexcode-agent-mcp"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/agent/mcp" }
 
 [[package]]
 name = "cortexcode-agent-session"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/agent/session" }
 
 [[package]]
 name = "cortexcode-agent-tools"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/agent/tools" }
 
 [[package]]
 name = "cortexcode-agent-types"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/agent/types" }
 
 [[package]]
 name = "cortexcode-ai"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/ai/_meta" }
 
 [[package]]
 name = "cortexcode-ai-env"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/ai/env" }
 dependencies = [
     { name = "cortexcode-ai-types" },
@@ -152,7 +152,7 @@ requires-dist = [{ name = "cortexcode-ai-types", editable = "packages/ai/types" 
 
 [[package]]
 name = "cortexcode-ai-images"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/ai/images" }
 dependencies = [
     { name = "cortexcode-ai-types" },
@@ -167,7 +167,7 @@ requires-dist = [
 
 [[package]]
 name = "cortexcode-ai-models"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/ai/models" }
 dependencies = [
     { name = "cortexcode-ai-types" },
@@ -178,7 +178,7 @@ requires-dist = [{ name = "cortexcode-ai-types", editable = "packages/ai/types" 
 
 [[package]]
 name = "cortexcode-ai-oauth"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/ai/oauth" }
 dependencies = [
     { name = "cortexcode-ai-types" },
@@ -193,7 +193,7 @@ requires-dist = [
 
 [[package]]
 name = "cortexcode-ai-provider-anthropic"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/ai/provider-anthropic" }
 dependencies = [
     { name = "cortexcode-ai-models" },
@@ -214,7 +214,7 @@ requires-dist = [
 
 [[package]]
 name = "cortexcode-ai-provider-azure"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/ai/provider-azure" }
 dependencies = [
     { name = "cortexcode-ai-models" },
@@ -235,7 +235,7 @@ requires-dist = [
 
 [[package]]
 name = "cortexcode-ai-provider-faux"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/ai/provider-faux" }
 dependencies = [
     { name = "cortexcode-ai-stream" },
@@ -250,7 +250,7 @@ requires-dist = [
 
 [[package]]
 name = "cortexcode-ai-provider-google"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/ai/provider-google" }
 dependencies = [
     { name = "cortexcode-ai-models" },
@@ -271,7 +271,7 @@ requires-dist = [
 
 [[package]]
 name = "cortexcode-ai-provider-openai"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/ai/provider-openai" }
 dependencies = [
     { name = "cortexcode-ai-models" },
@@ -292,7 +292,7 @@ requires-dist = [
 
 [[package]]
 name = "cortexcode-ai-stream"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/ai/stream" }
 dependencies = [
     { name = "cortexcode-ai-env" },
@@ -311,7 +311,7 @@ requires-dist = [
 
 [[package]]
 name = "cortexcode-ai-types"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/ai/types" }
 dependencies = [
     { name = "pydantic" },
@@ -322,7 +322,7 @@ requires-dist = [{ name = "pydantic", specifier = ">=2" }]
 
 [[package]]
 name = "cortexcode-ai-util"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/ai/util" }
 dependencies = [
     { name = "cortexcode-ai-types" },
@@ -333,102 +333,102 @@ requires-dist = [{ name = "cortexcode-ai-types", editable = "packages/ai/types" 
 
 [[package]]
 name = "cortexcode-cli-config"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/code/config" }
 
 [[package]]
 name = "cortexcode-cli-extensions"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/code/extensions" }
 
 [[package]]
 name = "cortexcode-cli-main"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/code/main" }
 
 [[package]]
 name = "cortexcode-cli-print"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/code/print" }
 
 [[package]]
 name = "cortexcode-cli-prompts"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/code/prompts" }
 
 [[package]]
 name = "cortexcode-cli-resources"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/code/resources" }
 
 [[package]]
 name = "cortexcode-cli-rpc"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/code/rpc" }
 
 [[package]]
 name = "cortexcode-cli-session"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/code/session" }
 
 [[package]]
 name = "cortexcode-cli-subagents"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/code/subagents" }
 
 [[package]]
 name = "cortexcode-cli-tools"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/code/tools" }
 
 [[package]]
 name = "cortexcode-code"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/code/_meta" }
 
 [[package]]
 name = "cortexcode-tui"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/tui/_meta" }
 
 [[package]]
 name = "cortexcode-tui-components"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/tui/components" }
 
 [[package]]
 name = "cortexcode-tui-editing"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/tui/editing" }
 
 [[package]]
 name = "cortexcode-tui-fuzzy"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/tui/fuzzy" }
 
 [[package]]
 name = "cortexcode-tui-images"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/tui/images" }
 
 [[package]]
 name = "cortexcode-tui-keys"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/tui/keys" }
 
 [[package]]
 name = "cortexcode-tui-render"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/tui/render" }
 
 [[package]]
 name = "cortexcode-tui-terminal"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/tui/terminal" }
 
 [[package]]
 name = "cortexcode-tui-util"
-version = "0.0.1"
+version = "0.0.2"
 source = { editable = "packages/tui/util" }
 
 [[package]]

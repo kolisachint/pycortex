@@ -1,6 +1,6 @@
 [project]
 name = "cortexcode-agent-harness"
-version = "0.0.1"
+version = "0.0.2"
 description = "Cortex agent leaf: harness"
 readme = "README.md"
 requires-python = ">=3.11"

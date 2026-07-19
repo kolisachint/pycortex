@@ -1,6 +1,6 @@
 [project]
 name = "cortexcode-ai"
-version = "0.0.1"
+version = "0.0.2"
 description = "Umbrella meta-package for the cortex ai namespace"
 readme = "README.md"
 requires-python = ">=3.11"

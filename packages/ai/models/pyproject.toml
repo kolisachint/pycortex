@@ -1,11 +1,11 @@
 [project]
 name = "cortexcode-ai-models"
-version = "0.0.1"
+version = "0.0.2"
 description = "Cortex AI leaf: models"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "cortexcode-ai-types>=0.0.1,<0.1.0",
+    "cortexcode-ai-types>=0.0.2,<0.1.0",
 ]
 
 [tool.cortex]

@@ -1,14 +1,14 @@
 [project]
 name = "cortexcode-ai-stream"
-version = "0.0.1"
+version = "0.0.2"
 description = "Cortex AI leaf: stream"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "cortexcode-ai-types>=0.0.1,<0.1.0",
-    "cortexcode-ai-models>=0.0.1,<0.1.0",
-    "cortexcode-ai-util>=0.0.1,<0.1.0",
-    "cortexcode-ai-env>=0.0.1,<0.1.0",
+    "cortexcode-ai-types>=0.0.2,<0.1.0",
+    "cortexcode-ai-models>=0.0.2,<0.1.0",
+    "cortexcode-ai-util>=0.0.2,<0.1.0",
+    "cortexcode-ai-env>=0.0.2,<0.1.0",
 ]
 
 [tool.cortex]

@@ -1,6 +1,6 @@
 [project]
 name = "cortexcode-tui-render"
-version = "0.0.1"
+version = "0.0.2"
 description = "Cortex TUI leaf: render"
 readme = "README.md"
 requires-python = ">=3.11"

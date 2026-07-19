@@ -1,14 +1,14 @@
 [project]
 name = "cortexcode-ai-provider-anthropic"
-version = "0.0.1"
+version = "0.0.2"
 description = "Cortex AI leaf: provider-anthropic"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "cortexcode-ai-stream>=0.0.1,<0.1.0",
-    "cortexcode-ai-types>=0.0.1,<0.1.0",
-    "cortexcode-ai-models>=0.0.1,<0.1.0",
-    "cortexcode-ai-util>=0.0.1,<0.1.0",
+    "cortexcode-ai-stream>=0.0.2,<0.1.0",
+    "cortexcode-ai-types>=0.0.2,<0.1.0",
+    "cortexcode-ai-models>=0.0.2,<0.1.0",
+    "cortexcode-ai-util>=0.0.2,<0.1.0",
     "httpx>=0.27",
 ]
 

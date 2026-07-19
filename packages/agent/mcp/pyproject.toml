@@ -1,6 +1,6 @@
 [project]
 name = "cortexcode-agent-mcp"
-version = "0.0.1"
+version = "0.0.2"
 description = "Cortex agent leaf: mcp"
 readme = "README.md"
 requires-python = ">=3.11"
