@@ -37,7 +37,7 @@ run in parallel (no cross-deps).
 - [x] **0.4 Release plumbing** — `scripts/bump_versions.py`, `scripts/release.py`,
       `release.yml`, `merge-release.yml`. Gate: `release.yml` dry-run (publish step
       `--dry-run`) green.
-- [ ] **0.5 Migration driver** — `scripts/migrate_next.py` + `.hoocode/skills/` per
+- [x] **0.5 Migration driver** — `scripts/migrate_next.py` + `.hoocode/skills/` per
       doc 05. Gate: driver correctly reports "next step = 1.1".
 
 ## Phase 1 — cortex.tui foundations (T0, source: packages/tui)
