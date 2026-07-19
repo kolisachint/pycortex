@@ -1,0 +1,23 @@
+name: Reserve PyPI names
+
+# One-off (step 0.3): publish 0.0.1 placeholder sdists/wheels for all four
+# distribution names to reserve them. Safe to re-run: already-published
+# versions are skipped.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  reserve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+      - name: Build all packages
+        run: uv build --all-packages
+      - name: Publish placeholders
+        run: uv publish --token "$PYPI_TOKEN" --check-url https://pypi.org/simple/
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}

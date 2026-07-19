@@ -1,5 +1,5 @@
 [project]
-name = "cortexcode"
+name = "cortexcode-cli"
 version = "0.0.1"
 description = "cortex — a deterministic terminal coding agent"
 readme = "README.md"

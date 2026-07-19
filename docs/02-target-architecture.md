@@ -12,11 +12,12 @@ distinct distribution names:
 | tui | `cortexcode-tui` | `cortex.tui` | T0 |
 | ai | `cortexcode-ai` | `cortex.ai` | T0/T1 |
 | agent | `cortexcode-agent-core` | `cortex.agent` | T1 |
-| coding-agent | `cortexcode` (CLI: `cortex`) | `cortex.code` | T2/T3 |
+| coding-agent | `cortexcode-cli` (CLI: `cortex`) | `cortex.code` | T2/T3 |
 
 `cortex.*` uses PEP 420 namespace packages so each distribution owns one subpackage.
-**Decision needed at review:** confirm names (check availability at publish time; fall
-back to `pycortexcode-*` if squatted).
+**Resolved 2026-07-19:** `cortexcode` was squatted on PyPI (an unrelated code-indexing
+package), so the CLI distribution is **`cortexcode-cli`**. The three lib names were
+free and were reserved as-is at 0.0.1.
 
 ## 2. Repository layout (uv workspace)
 

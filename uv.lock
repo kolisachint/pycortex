@@ -4,9 +4,9 @@ requires-python = ">=3.11"
 
 [manifest]
 members = [
-    "cortexcode",
     "cortexcode-agent-core",
     "cortexcode-ai",
+    "cortexcode-cli",
     "cortexcode-tui",
     "pycortex-workspace",
 ]
@@ -21,11 +21,6 @@ wheels = [
 ]
 
 [[package]]
-name = "cortexcode"
-version = "0.0.1"
-source = { editable = "packages/coding-agent" }
-
-[[package]]
 name = "cortexcode-agent-core"
 version = "0.0.1"
 source = { editable = "packages/agent" }
@@ -34,6 +29,11 @@ source = { editable = "packages/agent" }
 name = "cortexcode-ai"
 version = "0.0.1"
 source = { editable = "packages/ai" }
+
+[[package]]
+name = "cortexcode-cli"
+version = "0.0.1"
+source = { editable = "packages/coding-agent" }
 
 [[package]]
 name = "cortexcode-tui"
