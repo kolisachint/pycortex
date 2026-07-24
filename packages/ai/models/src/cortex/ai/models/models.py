@@ -106,12 +106,17 @@ def calculate_cost(model: Model, usage: Usage) -> dict[str, float]:
 
     Returns:
         The cost breakdown.
+
+    Note: model cost keys use camelCase (``cacheRead``, ``cacheWrite``) to
+    match the TS source, but the returned dict uses snake_case.
     """
+    cache_read_rate = model.cost.get("cache_read", model.cost.get("cacheRead", 0))
+    cache_write_rate = model.cost.get("cache_write", model.cost.get("cacheWrite", 0))
     cost = {
         "input": (model.cost["input"] / 1_000_000) * usage.input,
         "output": (model.cost["output"] / 1_000_000) * usage.output,
-        "cache_read": (model.cost["cache_read"] / 1_000_000) * usage.cache_read,
-        "cache_write": (model.cost["cache_write"] / 1_000_000) * usage.cache_write,
+        "cache_read": (cache_read_rate / 1_000_000) * usage.cache_read,
+        "cache_write": (cache_write_rate / 1_000_000) * usage.cache_write,
     }
     cost["total"] = cost["input"] + cost["output"] + cost["cache_read"] + cost["cache_write"]
     return cost

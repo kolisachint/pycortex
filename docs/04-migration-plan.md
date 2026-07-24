@@ -110,7 +110,7 @@ providers; faux first).
       (`transform_messages`), `providers/github-copilot-headers.ts`
       (`build_copilot_dynamic_headers`, `has_copilot_vision_input`) + tests. Every
       `provider-*` depends on it. Gate: `pytest packages/ai/provider-common`.
-- [ ] **2.7 provider-anthropic** — `packages/ai/src/providers/anthropic.ts` →
+- [x] **2.7 provider-anthropic** — `packages/ai/src/providers/anthropic.ts` →
       `packages/ai/provider-anthropic/src/cortex/ai/providers/anthropic.py` + fixture
       tests. Depends on 2.11 + 2.12. Gate: `pytest packages/ai/provider-anthropic`.
 - [ ] **2.8 provider-openai** — `packages/ai/src/providers/openai-*.ts` →

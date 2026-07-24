@@ -9,6 +9,8 @@ dependencies = [
     "cortexcode-ai-types>=0.0.3,<0.1.0",
     "cortexcode-ai-models>=0.0.3,<0.1.0",
     "cortexcode-ai-util>=0.0.3,<0.1.0",
+    "cortexcode-ai-env>=0.0.3,<0.1.0",
+    "cortexcode-ai-provider-common>=0.0.3,<0.1.0",
     "httpx>=0.27",
 ]
 
@@ -30,7 +32,13 @@ workspace = true
 workspace = true
 
 [tool.uv.sources.cortexcode-ai-util]
-workspace = true
+    workspace = true
+
+[tool.uv.sources.cortexcode-ai-env]
+    workspace = true
+
+[tool.uv.sources.cortexcode-ai-provider-common]
+    workspace = true
 
 [build-system]
 requires = [
