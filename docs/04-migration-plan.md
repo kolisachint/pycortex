@@ -91,7 +91,7 @@ providers; faux first).
 - [x] **2.3 models** — `packages/ai/src/{api-registry,models.generated,image-models,models}.ts` →
       `packages/ai/models/src/cortex/ai/models/` + tests. Gate:
       `pytest packages/ai/models`.
-- [ ] **2.4 env-api-keys** — `packages/ai/src/env-api-keys.ts` →
+- [x] **2.4 env-api-keys** — `packages/ai/src/env-api-keys.ts` →
       `packages/ai/env/src/cortex/ai/env.py` + tests. Gate: `pytest packages/ai/env`.
 - [ ] **2.5 stream** — `packages/ai/src/stream.ts` →
       `packages/ai/stream/src/cortex/ai/stream.py` + tests against faux. Gate:
