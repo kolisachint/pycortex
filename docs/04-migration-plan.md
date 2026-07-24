@@ -113,7 +113,7 @@ providers; faux first).
 - [x] **2.7 provider-anthropic** — `packages/ai/src/providers/anthropic.ts` →
       `packages/ai/provider-anthropic/src/cortex/ai/providers/anthropic.py` + fixture
       tests. Depends on 2.11 + 2.12. Gate: `pytest packages/ai/provider-anthropic`.
-- [ ] **2.8 provider-openai** — `packages/ai/src/providers/openai-*.ts` →
+- [x] **2.8 provider-openai** — `packages/ai/src/providers/openai-*.ts` →
       `packages/ai/provider-openai/src/cortex/ai/providers/openai/` + tests. Gate:
       `pytest packages/ai/provider-openai`.
 - [ ] **2.9 provider-google** — `packages/ai/src/providers/google*.ts` →
