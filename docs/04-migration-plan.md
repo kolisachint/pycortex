@@ -96,7 +96,7 @@ providers; faux first).
 - [x] **2.5 stream** — `packages/ai/src/stream.ts` →
       `packages/ai/stream/src/cortex/ai/stream.py` + tests against faux. Gate:
       `pytest packages/ai/stream`.
-- [ ] **2.6 provider-faux** — `packages/ai/src/providers/faux.ts` →
+- [x] **2.6 provider-faux** — `packages/ai/src/providers/faux.ts` →
       `packages/ai/provider-faux/src/cortex/ai/providers/faux.py` + tests. Blocks all
       downstream testing — prioritize. Gate: `pytest packages/ai/provider-faux`.
 - [ ] **2.7 provider-anthropic** — `packages/ai/src/providers/anthropic.ts` →

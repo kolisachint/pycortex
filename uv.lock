@@ -238,12 +238,14 @@ name = "cortexcode-ai-provider-faux"
 version = "0.0.3"
 source = { editable = "packages/ai/provider-faux" }
 dependencies = [
+    { name = "cortexcode-ai-models" },
     { name = "cortexcode-ai-stream" },
     { name = "cortexcode-ai-types" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "cortexcode-ai-models", editable = "packages/ai/models" },
     { name = "cortexcode-ai-stream", editable = "packages/ai/stream" },
     { name = "cortexcode-ai-types", editable = "packages/ai/types" },
 ]
