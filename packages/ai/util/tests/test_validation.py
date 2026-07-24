@@ -10,7 +10,9 @@ from cortex.ai.types import Tool, ToolCall
 from cortex.ai.util.validation import validate_tool_arguments
 
 
-def _create_tool_call_with_plain_schema(schema: dict[str, object], value: object) -> tuple[Tool, ToolCall]:
+def _create_tool_call_with_plain_schema(
+    schema: dict[str, object], value: object
+) -> tuple[Tool, ToolCall]:
     """Helper to create a Tool and ToolCall with a plain JSON schema."""
     tool = Tool(
         name="echo",

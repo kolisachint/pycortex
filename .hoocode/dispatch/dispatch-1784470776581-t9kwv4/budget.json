@@ -1,9 +1,0 @@
-{
-  "task_id": "dispatch-1784470776581-t9kwv4",
-  "agent_type": "general-purpose",
-  "budget": 60000,
-  "used": 92225,
-  "warned": true,
-  "exceeded": true,
-  "last_updated": 1784470818094
-}

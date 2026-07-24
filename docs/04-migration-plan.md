@@ -85,7 +85,7 @@ providers; faux first).
 - [x] **2.1 types** — `packages/ai/src/types.ts` →
       `packages/ai/types/src/cortex/ai/types.py` (pydantic models) + tests. Gate:
       `pytest packages/ai/types`.
-- [ ] **2.2 util** — `packages/ai/src/utils/*` → `packages/ai/util/src/cortex/ai/util/`
+- [x] **2.2 util** — `packages/ai/src/utils/*` → `packages/ai/util/src/cortex/ai/util/`
       (json repair, validation, overflow, hash, headers) + tests. Gate:
       `pytest packages/ai/util`.
 - [ ] **2.3 models** — `packages/ai/src/{api-registry,models.generated,image-models,models}.ts` →

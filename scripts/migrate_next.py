@@ -92,8 +92,9 @@ def next_steps(steps: list[Step]) -> list[Step]:
 
 
 def gates(packages: list[str] | None = None) -> bool:
+    pytest_targets = [f"packages/{p}" for p in packages] if packages else None
     checks: list[list[str]] = [
-        ["uv", "run", "pytest"],
+        ["uv", "run", "pytest", *pytest_targets] if pytest_targets else ["uv", "run", "pytest"],
         ["uv", "run", "ruff", "check", "."],
         ["uv", "run", "ruff", "format", "--check", "."],
     ]
@@ -133,6 +134,17 @@ def cmd_show(steps: list[Step], start: bool) -> int:
     return 0
 
 
+def extract_packages_from_step(step: Step) -> list[str] | None:
+    """Extract package names from step body's gate specification.
+
+    Looks for patterns like `pytest packages/ai/util` and returns ['ai/util'].
+    """
+    match = re.search(r"pytest packages/([^\s`]+)", step.body)
+    if match:
+        return [match.group(1)]
+    return None
+
+
 def cmd_done(steps: list[Step], step_id: str) -> int:
     matching = [s for s in steps if s.id == step_id]
     if not matching:
@@ -149,7 +161,8 @@ def cmd_done(steps: list[Step], step_id: str) -> int:
             file=sys.stderr,
         )
         return 1
-    if not gates():
+    packages = extract_packages_from_step(step)
+    if not gates(packages):
         print("Refusing to mark step done with a dirty gate.", file=sys.stderr)
         return 1
 
