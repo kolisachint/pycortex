@@ -99,7 +99,7 @@ providers; faux first).
 - [x] **2.6 provider-faux** — `packages/ai/src/providers/faux.ts` →
       `packages/ai/provider-faux/src/cortex/ai/providers/faux.py` + tests. Blocks all
       downstream testing — prioritize. Gate: `pytest packages/ai/provider-faux`.
-- [ ] **2.11 sanitize-unicode** — `packages/ai/src/utils/sanitize-unicode.ts` →
+- [x] **2.11 sanitize-unicode** — `packages/ai/src/utils/sanitize-unicode.ts` →
       `packages/ai/util/src/cortex/ai/util/sanitize_unicode.py` (`sanitize_surrogates`) +
       tests. Shared by anthropic/openai/google providers. Gate: `pytest packages/ai/util`.
 - [ ] **2.12 provider-common** — shared provider helpers →

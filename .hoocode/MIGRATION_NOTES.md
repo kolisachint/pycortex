@@ -99,6 +99,14 @@ TS `packages/ai/src/` is split across MULTIPLE python packages:
   NO on_response field → the TS `options.onResponse?.()` call is OMITTED (no-op).
 
 ## Step log
+- 2.11 sanitize-unicode — DONE. utils/sanitize-unicode.ts (`sanitizeSurrogates`) →
+  `cortex.ai.util.sanitize_unicode` (`sanitize_surrogates`) + 7 tests. No TS test file
+  existed. KEY INSIGHT: Python str is a sequence of Unicode code points (not UTF-16
+  units), so valid emoji/BMP+ chars are single code points OUTSIDE the surrogate range
+  and lone surrogates are single code points in 0xD800-0xDFFF. So the TS regex
+  `[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]` collapses to
+  simply stripping any 0xD800-0xDFFF code point. Re-exported from util `__init__`.
+
 - 2.6 provider-faux — DONE. providers/faux.ts (455) + faux-provider.test.ts (597) →
   `cortex.ai.providers.faux` (+ `providers/__init__.py` re-export) + 22 tests, all green.
   Skeleton dir was `src/cortex/ai/provider-faux/` (hyphen, invalid module) → moved to
