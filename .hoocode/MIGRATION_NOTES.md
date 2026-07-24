@@ -146,4 +146,30 @@ TS `packages/ai/src/` is split across MULTIPLE python packages:
   `src/cortex/ai/providers/faux.py`. Added `cortexcode-ai-models` dep (faux needs
   api-registry). register_faux_provider + faux_assistant_message use KWARGS (not
   options objects).
+
+- 2.7 provider-anthropic — DONE. providers/anthropic.ts (1177) →
+  `cortex.ai.providers.anthropic` + 9 fixture tests. Key design decisions:
+  1. NO ANTHROPIC SDK: Replaced `@anthropic-ai/sdk` with `httpx` directly. Defined
+     `AnthropicClient` class with `create_message()` method that POSTs to
+     `/v1/messages`. SSE parsing ported to Python using `response.aiter_bytes()` with
+     incremental UTF-8 decoding. The TS SDK's `.asResponse()` call is eliminated.
+  2. CLIENT INJECTION: `options.client` accepts any object with `create_message(params,
+     **kwargs)`. Default is `AnthropicClient`. Tests pass mock objects via
+     `unittest.mock.patch` on `create_client` or `AnthropicClient`.
+  3. SSE PARSER: Custom incremental SSE decoder (`_IncrementalSseDecoder`) mirrors the
+     TS `consumeLine`/`decodeSseLine` pattern. Uses `_Utf8Decoder` for incremental
+     byte→str conversion.
+  4. BLOCK TRACKING: TS uses `Block[]` cast with `.index` property. Python maintains
+     `block_map: dict[int, dict]` (event_index → block data) and
+     `_find_block_index()` to map event indices to content positions.
+  5. OPTIONS: `AnthropicOptions` is a plain `@dataclass` (not a pydantic model or
+     StreamOptions subclass) to avoid inheritance conflicts. `build_params()` and
+     `convert_messages()` take `AnthropicOptions | None`.
+  6. COST BUG FIX: `calculate_cost()` in models.py used snake_case keys
+     (`cache_read`) but model cost dicts use camelCase (`cacheRead`). Fixed with
+     `.get("cache_read", .get("cacheRead", 0))` fallback.
+  7. TESTS: 9 tests ported — SSE parsing (2), thinking disable (4), eager tool input
+     (2), copilot auth (1). E2e tests (oauth, long-cache, opus-smoke, tool-name-norm)
+     skipped (require real API keys). All tests use mock clients; no network calls.
+  Deps: `cortexcode-ai-env`, `cortexcode-ai-provider-common`, `httpx`.
 </content>
