@@ -99,9 +99,20 @@ providers; faux first).
 - [x] **2.6 provider-faux** — `packages/ai/src/providers/faux.ts` →
       `packages/ai/provider-faux/src/cortex/ai/providers/faux.py` + tests. Blocks all
       downstream testing — prioritize. Gate: `pytest packages/ai/provider-faux`.
+- [ ] **2.11 sanitize-unicode** — `packages/ai/src/utils/sanitize-unicode.ts` →
+      `packages/ai/util/src/cortex/ai/util/sanitize_unicode.py` (`sanitize_surrogates`) +
+      tests. Shared by anthropic/openai/google providers. Gate: `pytest packages/ai/util`.
+- [ ] **2.12 provider-common** — shared provider helpers →
+      new leaf `cortexcode-ai-provider-common` (`packages/ai/provider-common/`,
+      `cortex.ai.providers._common`). Ports `providers/cache-retention.ts`
+      (`resolve_cache_retention`), `providers/simple-options.ts` (`build_base_options`,
+      `adjust_max_tokens_for_thinking`), `providers/transform-messages.ts`
+      (`transform_messages`), `providers/github-copilot-headers.ts`
+      (`build_copilot_dynamic_headers`, `has_copilot_vision_input`) + tests. Every
+      `provider-*` depends on it. Gate: `pytest packages/ai/provider-common`.
 - [ ] **2.7 provider-anthropic** — `packages/ai/src/providers/anthropic.ts` →
       `packages/ai/provider-anthropic/src/cortex/ai/providers/anthropic.py` + fixture
-      tests. Gate: `pytest packages/ai/provider-anthropic`.
+      tests. Depends on 2.11 + 2.12. Gate: `pytest packages/ai/provider-anthropic`.
 - [ ] **2.8 provider-openai** — `packages/ai/src/providers/openai-*.ts` →
       `packages/ai/provider-openai/src/cortex/ai/providers/openai/` + tests. Gate:
       `pytest packages/ai/provider-openai`.
