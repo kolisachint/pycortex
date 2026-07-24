@@ -102,7 +102,7 @@ providers; faux first).
 - [x] **2.11 sanitize-unicode** — `packages/ai/src/utils/sanitize-unicode.ts` →
       `packages/ai/util/src/cortex/ai/util/sanitize_unicode.py` (`sanitize_surrogates`) +
       tests. Shared by anthropic/openai/google providers. Gate: `pytest packages/ai/util`.
-- [ ] **2.12 provider-common** — shared provider helpers →
+- [x] **2.12 provider-common** — shared provider helpers →
       new leaf `cortexcode-ai-provider-common` (`packages/ai/provider-common/`,
       `cortex.ai.providers._common`). Ports `providers/cache-retention.ts`
       (`resolve_cache_retention`), `providers/simple-options.ts` (`build_base_options`,

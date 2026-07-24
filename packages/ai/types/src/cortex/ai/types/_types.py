@@ -85,6 +85,14 @@ class StreamOptions(BaseModel):
     transport: Transport | None = None
     cache_retention: CacheRetention | None = None
     session_id: str | None = None
+    on_payload: Any | None = None
+    on_response: Any | None = None
+    headers: dict[str, str] | None = None
+    timeout_ms: int | None = None
+    max_retries: int | None = None
+    max_retry_delay_ms: int | None = None
+    metadata: dict[str, Any] | None = None
+    constrain_tool_calls: bool | None = None
 
 
 class ImagesOptions(BaseModel):
@@ -363,9 +371,7 @@ class ImagesModel(BaseModel):
     headers: dict[str, str] | None = None
 
 
-class SimpleStreamOptions(BaseModel):
-    model: str
-    api: str
-    provider: str
-    api_key: str | None = None
-    base_url: str | None = None
+class SimpleStreamOptions(StreamOptions):
+    reasoning: ThinkingLevel | None = None
+    thinking_budgets: ThinkingBudgets | None = None
+    thinking_display: Literal["summarized", "omitted"] | None = None

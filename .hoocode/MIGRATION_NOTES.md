@@ -99,6 +99,39 @@ TS `packages/ai/src/` is split across MULTIPLE python packages:
   NO on_response field → the TS `options.onResponse?.()` call is OMITTED (no-op).
 
 ## Step log
+- 2.12 provider-common — DONE. New shared leaf `cortexcode-ai-provider-common`
+  (`cortex.ai.providers._common`). Ported 4 helpers from `providers/*.ts`:
+  `cache_retention.py` (`resolve_cache_retention`), `simple_options.py`
+  (`build_base_options`, `clamp_reasoning`, `adjust_max_tokens_for_thinking`),
+  `transform_messages.py` (`transform_messages`), `github_copilot_headers.py`
+  (`infer_copilot_initiator`, `has_copilot_vision_input`, `build_copilot_dynamic_headers`).
+  31 tests (transform-messages ported from
+  transform-messages-copilot-openai-to-anthropic.test.ts; cache/simple-options/copilot
+  are new unit tests since the TS cache-retention.test.ts is e2e/API-gated).
+  TWO PREREQUISITES resolved in this step (both required for faithful port, not
+  enhancements):
+  1. NAMESPACE: `cortex.ai.providers` was a REGULAR package because faux shipped
+     `providers/__init__.py` (a barrel re-exporting faux). That pins the namespace
+     `__path__` to faux's dir only, so a second wheel (provider-common) can't add
+     `_common` under it. FIX: deleted faux's `providers/__init__.py` → PEP 420
+     namespace package. TS has no providers barrel either; all imports already use
+     `cortex.ai.providers.faux` directly, so nothing broke. RULE: never ship
+     `providers/__init__.py` from any provider leaf — keep `cortex.ai.providers` a
+     namespace. Each provider is a submodule (`.faux`, `._common`, later `.anthropic`).
+  2. TYPES GAP: pycortex `StreamOptions` was a partial stub missing 8 fields that
+     `build_base_options` copies (on_payload, on_response, headers, timeout_ms,
+     max_retries, max_retry_delay_ms, metadata, constrain_tool_calls) — added them in
+     TS field order. `SimpleStreamOptions` was a WRONG stub (model/api/provider/base_url,
+     unused anywhere) → replaced with faithful `class SimpleStreamOptions(StreamOptions)`
+     + reasoning/thinking_budgets/thinking_display. Exported `ThinkingBudgets` from
+     types `__init__`. Callbacks (onPayload/onResponse/signal) typed `Any | None`.
+  `adjust_max_tokens_for_thinking` returns a dict with SNAKE keys
+  `{"max_tokens", "thinking_budget"}` (not TS camel). Deps: only `cortexcode-ai-types`
+  (the 4 helpers import nothing else), narrower than arch doc §128's list — fine.
+  VENV GOTCHA: `uv pip install -e <one pkg>` / plain `uv sync` collapsed the venv to a
+  couple editables and broke faux's namespace merge. Use `uv sync --all-packages` to
+  restore all workspace editables so `cortex.ai.providers.__path__` lists BOTH dirs.
+
 - 2.11 sanitize-unicode — DONE. utils/sanitize-unicode.ts (`sanitizeSurrogates`) →
   `cortex.ai.util.sanitize_unicode` (`sanitize_surrogates`) + 7 tests. No TS test file
   existed. KEY INSIGHT: Python str is a sequence of Unicode code points (not UTF-16

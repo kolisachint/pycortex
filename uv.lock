@@ -20,6 +20,7 @@ members = [
     "cortexcode-ai-oauth",
     "cortexcode-ai-provider-anthropic",
     "cortexcode-ai-provider-azure",
+    "cortexcode-ai-provider-common",
     "cortexcode-ai-provider-faux",
     "cortexcode-ai-provider-google",
     "cortexcode-ai-provider-openai",
@@ -232,6 +233,17 @@ requires-dist = [
     { name = "cortexcode-ai-util", editable = "packages/ai/util" },
     { name = "httpx", specifier = ">=0.27" },
 ]
+
+[[package]]
+name = "cortexcode-ai-provider-common"
+version = "0.0.3"
+source = { editable = "packages/ai/provider-common" }
+dependencies = [
+    { name = "cortexcode-ai-types" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "cortexcode-ai-types", editable = "packages/ai/types" }]
 
 [[package]]
 name = "cortexcode-ai-provider-faux"
