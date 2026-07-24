@@ -5,7 +5,8 @@
       "cron": "*/15 * * * *",
       "prompt": "continue migration",
       "recurring": true,
-      "createdAt": 1784894303392
+      "createdAt": 1784894303392,
+      "lastRunMinute": 29748255
     }
   ]
 }

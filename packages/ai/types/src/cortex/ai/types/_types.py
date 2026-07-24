@@ -354,8 +354,8 @@ class ImagesModel(BaseModel):
     name: str
     api: ImagesApi
     provider: ImagesProvider
-    base_url: str
-    reasoning: bool
+    base_url: str = ""
+    reasoning: bool = False
     thinking_level_map: dict[str, str | None] | None = None
     input: list[Literal["text", "image"]]
     cost: dict[str, float]

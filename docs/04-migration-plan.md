@@ -88,7 +88,7 @@ providers; faux first).
 - [x] **2.2 util** — `packages/ai/src/utils/*` → `packages/ai/util/src/cortex/ai/util/`
       (json repair, validation, overflow, hash, headers) + tests. Gate:
       `pytest packages/ai/util`.
-- [ ] **2.3 models** — `packages/ai/src/{api-registry,models.generated,image-models,models}.ts` →
+- [x] **2.3 models** — `packages/ai/src/{api-registry,models.generated,image-models,models}.ts` →
       `packages/ai/models/src/cortex/ai/models/` + tests. Gate:
       `pytest packages/ai/models`.
 - [ ] **2.4 env-api-keys** — `packages/ai/src/env-api-keys.ts` →
