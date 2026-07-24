@@ -6,7 +6,7 @@
       "prompt": "In /Users/sachinkoli/github/pycortex, check which of [cortexcode-tui-util, cortexcode-tui-fuzzy, cortexcode-ai-types] is not yet on PyPI at its current repo version. If any are missing and the working tree is clean, run `uv build --package <name>` and `uv publish --token $PYPI_TOKEN` for exactly one missing package, then commit the built artifacts removal if any. Stop after all three are live.",
       "recurring": true,
       "createdAt": 1784467033385,
-      "lastRunMinute": 29741130
+      "lastRunMinute": 29741286
     }
   ]
 }
