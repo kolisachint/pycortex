@@ -160,9 +160,15 @@ providers; faux first).
       `pytest packages/ai/provider-openai`. Also absorbed `azure-openai-responses.ts`
       (it is an openai-responses variant), so the `packages/ai/provider-azure`
       placeholder is dead and gets removed.
-- [ ] **2.9 provider-google** — `packages/ai/src/providers/{google,google-shared,google-vertex}.ts`
-      → `packages/ai/provider-google/src/cortex/ai/providers/google/` + tests. Gate:
-      `pytest packages/ai/provider-google`.
+- [ ] **2.9 provider-google** — `packages/ai/src/providers/{google-shared,google}.ts` →
+      `packages/ai/provider-google/src/cortex/ai/providers/google/{shared,google}.py` +
+      tests. Gate: `pytest packages/ai/provider-google`.
+- [ ] **2.16 provider-google-vertex** — `packages/ai/src/providers/google-vertex.ts`
+      (564 lines) → `.../google/vertex.py` + tests. Split out of 2.9: Vertex adds a
+      whole second concern — GCP credential resolution (service-account JWT, ADC,
+      `GOOGLE_APPLICATION_CREDENTIALS`, express-mode API keys) — on top of the same
+      generate-content protocol, and `google-vertex-api-key-resolution.test.ts` is
+      223 lines on its own. Depends on 2.9. Gate: `pytest packages/ai/provider-google`.
 - [ ] **2.13 register-builtins** — `packages/ai/src/providers/register-builtins.ts` →
       `packages/ai/models/src/cortex/ai/models/register_builtins.py` (lazy provider
       registration) + tests. Depends on 2.6–2.9. Gate: `pytest packages/ai/models`.
