@@ -38,10 +38,34 @@ function makeBgFn(spec: Json | undefined): ((text: string) => string) | undefine
 	return (text: string) => `${spec.open}${text}${spec.close}`;
 }
 
+/**
+ * Fixed-line component, the counterpart of hoocode's own `StaticOverlay` test
+ * double. Lets scenarios exercise the renderer (cursor markers, ANSI runs, wide
+ * characters, exact-width lines) without waiting on components that are still
+ * unported. Cached so repeated renders stay reference-stable — the root's
+ * memoization keys on array identity, so a fresh array every frame would
+ * silently disable the patch path this is meant to test.
+ */
+class StaticLines {
+	private cached: string[];
+	constructor(lines: string[]) {
+		this.cached = lines;
+	}
+	setLines(lines: string[]): void {
+		this.cached = lines;
+	}
+	render(_width: number): string[] {
+		return this.cached;
+	}
+	invalidate(): void {}
+}
+
 function build(spec: Json): any {
 	const args = spec.args ?? {};
 	const bg = makeBgFn(spec.bgFn);
 	switch (spec.component) {
+		case "StaticLines":
+			return new StaticLines(args.lines ?? []);
 		case "Text":
 			return new Text(args.text ?? "", args.paddingX ?? 1, args.paddingY ?? 1, bg);
 		case "TruncatedText":
@@ -122,6 +146,7 @@ for (const spec of corpus.renderer ?? []) {
 	const tui = new TUI(terminal as any, false);
 	const children: any[] = [];
 	const frames: Json[] = [];
+	const overlayHandles: any[] = [];
 	let overlayHandle: any = null;
 	let frameIndex = 0;
 
@@ -136,12 +161,30 @@ for (const spec of corpus.renderer ?? []) {
 			case "setText":
 				children[step.target].setText(step.text);
 				break;
+			case "setLines":
+				children[step.target].setLines(step.lines);
+				break;
+			case "removeChild":
+				tui.removeChild(children[step.target]);
+				break;
+			case "clearOnShrink":
+				tui.setClearOnShrink(step.enabled);
+				break;
+			case "overlayHandle": {
+				const handle = overlayHandles[step.target];
+				if (step.action === "setHidden") handle.setHidden(step.hidden);
+				else if (step.action === "hide") handle.hide();
+				else if (step.action === "focus") handle.focus();
+				terminal.take();
+				break;
+			}
 			case "resize":
 				terminal.columns = step.cols;
 				terminal.rows = step.rows;
 				break;
 			case "overlay":
 				overlayHandle = tui.showOverlay(build(step), step.options ?? {});
+				overlayHandles.push(overlayHandle);
 				terminal.take(); // showOverlay hides the cursor; not part of the frame
 				break;
 			case "hideOverlay":

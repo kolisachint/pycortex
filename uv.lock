@@ -449,6 +449,24 @@ requires-dist = [{ name = "cortexcode-tui-util", editable = "packages/tui/util" 
 name = "cortexcode-tui-render"
 version = "0.0.3"
 source = { editable = "packages/tui/render" }
+dependencies = [
+    { name = "cortexcode-tui-keys" },
+    { name = "cortexcode-tui-util" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "cortexcode-tui-testkit" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-tui-keys", editable = "packages/tui/keys" },
+    { name = "cortexcode-tui-util", editable = "packages/tui/util" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "cortexcode-tui-testkit", editable = "packages/tui/testkit" }]
 
 [[package]]
 name = "cortexcode-tui-terminal"

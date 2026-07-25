@@ -106,12 +106,37 @@ COMPONENT_STEPS = {
 }
 
 
+class StaticLines:
+    """Fixed-line component — the mirror of `StaticLines` in `reference/dump.ts`.
+
+    Lets scenarios exercise the renderer (cursor markers, ANSI runs, wide
+    characters, exact-width lines) without waiting on components that are still
+    unported. Caches the list so repeated renders stay *identity*-stable: the
+    root memoizes on list identity, so returning a fresh list every frame would
+    silently disable the very patch path these scenarios test.
+    """
+
+    def __init__(self, lines: list[str]) -> None:
+        self._cached = list(lines)
+
+    def set_lines(self, lines: list[str]) -> None:
+        self._cached = list(lines)
+
+    def render(self, width: int) -> list[str]:
+        return self._cached
+
+    def invalidate(self) -> None:
+        pass
+
+
 def build_component(spec: dict[str, Any]) -> Renderable:
     """Instantiate the component a scenario describes, or raise `Unported`."""
     name = spec["component"]
     args = spec.get("args", {})
     bg = _bg_fn(spec.get("bgFn"))
 
+    if name == "StaticLines":
+        return StaticLines(args.get("lines", []))
     if name == "Text":
         from cortex.tui.components import Text
 

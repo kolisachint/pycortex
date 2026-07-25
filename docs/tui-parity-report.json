@@ -1,5 +1,5 @@
 {
-  "generated_from": "db79647",
+  "generated_from": "e6fa95f",
   "note": "Written by scripts/tui_parity.py. Consumed by scripts/migrate_next.py --status.",
   "matched": [
     "component/box-empty",
@@ -27,38 +27,45 @@
     "component/truncated-padding",
     "component/truncated-stops-at-newline",
     "component/truncated-wide-chars",
+    "renderer/ansi-styles-preserved",
     "renderer/append-line",
     "renderer/change-in-place",
+    "renderer/clear-on-shrink-enabled",
+    "renderer/cursor-marker",
+    "renderer/cursor-marker-below-changed-child",
+    "renderer/cursor-marker-moves",
     "renderer/first-render",
+    "renderer/grow-past-viewport",
+    "renderer/height-change",
+    "renderer/hyperlink-osc8",
+    "renderer/line-shrinks-in-place",
     "renderer/multiple-children",
+    "renderer/multiple-lines-shrink-in-place",
     "renderer/no-change-is-silent",
-    "renderer/shrink-content"
+    "renderer/overlay-anchored-top-right",
+    "renderer/overlay-centered",
+    "renderer/overlay-hidden-then-shown",
+    "renderer/overlay-margin-bottom-right",
+    "renderer/overlay-max-height",
+    "renderer/overlay-min-width",
+    "renderer/overlay-non-capturing",
+    "renderer/overlay-offsets",
+    "renderer/overlay-over-styled-base",
+    "renderer/overlay-percentage-size-and-position",
+    "renderer/overlay-set-hidden-and-back",
+    "renderer/overlay-stacked-two",
+    "renderer/overlay-taller-than-base",
+    "renderer/overlay-then-content-changes",
+    "renderer/overlay-truncates-overlong-line",
+    "renderer/patch-child-grows",
+    "renderer/patch-child-shrinks",
+    "renderer/patch-single-child-of-three",
+    "renderer/remove-child",
+    "renderer/scroll-repeated-growth",
+    "renderer/shrink-content",
+    "renderer/shrink-to-empty",
+    "renderer/wide-chars-exact-width",
+    "renderer/width-change"
   ],
-  "unported": [
-    {
-      "id": "renderer/grow-past-viewport",
-      "kind": "renderer",
-      "blocked_by": "1.5"
-    },
-    {
-      "id": "renderer/overlay-anchored-top-right",
-      "kind": "renderer",
-      "blocked_by": "1.5"
-    },
-    {
-      "id": "renderer/overlay-centered",
-      "kind": "renderer",
-      "blocked_by": "1.5"
-    },
-    {
-      "id": "renderer/overlay-hidden-then-shown",
-      "kind": "renderer",
-      "blocked_by": "1.5"
-    },
-    {
-      "id": "renderer/width-change",
-      "kind": "renderer",
-      "blocked_by": "1.5"
-    }
-  ]
+  "unported": []
 }

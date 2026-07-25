@@ -4,10 +4,10 @@ Frames are cumulative — a differential renderer's second write only means
 anything applied on top of its first — so each scenario replays every frame into
 one long-lived `Surface` per side and compares after each.
 
-Today almost all of these are expected to fail: the current render leaf is not a
-port of `tui.ts` (see step 1.5). They are reported rather than asserted, so the
-gates stay meaningful while `scripts/tui_parity.py` and `migrate_next.py --status`
-keep the gap visible. When 1.5 lands, flip `STRICT` on and delete this note.
+Strict since step 1.5 re-ported `tui.ts`: any divergence from the TypeScript is
+a failure, not a tracked gap. An `UNPORTED` verdict still skips — that is for
+scenarios naming something genuinely absent, which the parity report tracks
+against the step that will add it.
 """
 
 from __future__ import annotations
@@ -17,8 +17,7 @@ from typing import Any
 import pytest
 from cortex.tui.testkit import Verdict, evaluate_renderer, load_corpus, load_golden
 
-# Set to True once step 1.5 re-ports tui.ts; the suite then fails on any divergence.
-STRICT = False
+STRICT = True
 
 CORPUS = load_corpus()
 GOLDENS: dict[str, Any] = {s["id"]: s for s in load_golden("ts-renderer.json")["scenarios"]}

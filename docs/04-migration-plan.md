@@ -80,7 +80,7 @@ Parallelizable across these leaves; dependencies flow upward from util.
       components and renderer. Every subsequent tui step is verified by rendering the
       same scenario in Python and diffing surfaces — not by eyeballing a refactor.
       Gate: `pytest packages/tui/testkit`.
-- [ ] **1.5 render** — `packages/tui/src/tui.ts` (1545 lines: `Container` render memo,
+- [x] **1.5 render** — `packages/tui/src/tui.ts` (1545 lines: `Container` render memo,
       root flatten + patch tracking, overlay stack & compositing, `CURSOR_MARKER`
       extraction, kitty image bookkeeping, synchronized output, viewport/scroll
       accounting) → `packages/tui/render/src/cortex/tui/render/`. **Re-port required:**

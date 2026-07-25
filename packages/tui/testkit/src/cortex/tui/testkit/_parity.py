@@ -96,16 +96,33 @@ def evaluate_component(spec: dict[str, Any], golden: dict[str, Any]) -> Result:
     return Result(spec["id"], "component", Verdict.MATCH)
 
 
+def _overlay_options(raw: dict[str, Any]) -> dict[str, Any]:
+    """Corpus overlay options are TS-shaped (camelCase); the port is snake_case.
+
+    Translated here rather than in either implementation so the one corpus keeps
+    driving both sides.
+    """
+    renames = {
+        "minWidth": "min_width",
+        "maxHeight": "max_height",
+        "offsetX": "offset_x",
+        "offsetY": "offset_y",
+        "nonCapturing": "non_capturing",
+    }
+    return {renames.get(key, key): value for key, value in raw.items()}
+
+
 def _drive_python_renderer(spec: dict[str, Any]) -> list[dict[str, Any]]:
     """Run a renderer scenario against the Python TUI, returning captured frames."""
-    # Imported late: the render leaf is mid-re-port (step 1.5) and may not
-    # expose what a scenario needs.
+    # Imported late so a scenario needing something unported reports as a gap
+    # rather than breaking collection.
     from cortex.tui.render import TUI
     from cortex.tui.testkit._capture import CaptureTerminal
 
     terminal = CaptureTerminal(spec["cols"], spec["rows"])
     tui = TUI(terminal)  # pyright: ignore[reportArgumentType]
     children: list[Any] = []
+    overlay_handles: list[Any] = []
     frames: list[dict[str, Any]] = []
 
     for step in spec["steps"]:
@@ -116,13 +133,32 @@ def _drive_python_renderer(spec: dict[str, Any]) -> list[dict[str, Any]]:
             tui.add_child(component)  # pyright: ignore[reportArgumentType]
         elif op == "setText":
             children[step["target"]].set_text(step["text"])
+        elif op == "setLines":
+            children[step["target"]].set_lines(step["lines"])
+        elif op == "removeChild":
+            tui.remove_child(children[step["target"]])
+        elif op == "clearOnShrink":
+            tui.set_clear_on_shrink(step["enabled"])
         elif op == "resize":
             terminal.resize(step["cols"], step["rows"])
+        elif op == "overlayHandle":
+            handle = overlay_handles[step["target"]]
+            action = step["action"]
+            if action == "setHidden":
+                handle.set_hidden(step["hidden"])
+            elif action == "hide":
+                handle.hide()
+            elif action == "focus":
+                handle.focus()
+            terminal.writes.clear()
         elif op == "overlay":
             show = getattr(tui, "show_overlay", None)
             if show is None:
                 raise Unported("TUI.show_overlay", "1.5")
-            show(build_component(step), step.get("options", {}))
+            overlay_handles.append(
+                show(build_component(step), _overlay_options(step.get("options", {})))
+            )
+            # show_overlay hides the cursor; that is not part of the frame.
             terminal.writes.clear()
         elif op == "hideOverlay":
             hide = getattr(tui, "hide_overlay", None)
@@ -131,9 +167,11 @@ def _drive_python_renderer(spec: dict[str, Any]) -> list[dict[str, Any]]:
             hide()
             terminal.writes.clear()
         elif op == "render":
-            render_now = getattr(tui, "_render", None)
+            # The public path is debounced through timers; reach for the frame
+            # method directly, exactly as reference/dump.ts calls `doRender`.
+            render_now = getattr(tui, "_do_render", None)
             if render_now is None:
-                raise Unported("TUI._render", "1.5")
+                raise Unported("TUI._do_render", "1.5")
             render_now()
             frames.append(
                 {

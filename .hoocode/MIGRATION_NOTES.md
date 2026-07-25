@@ -159,6 +159,43 @@ TS `packages/ai/src/` is split across MULTIPLE python packages:
   their own leaf.
 
 ## Step log
+- 1.5 render — DONE (re-port). `tui.ts` (1545) → `cortex.tui.render._render` (~1150),
+  one module to stay diffable. Replaced the invented 191-line version wholesale.
+  Ported in full: `Container` render memo, root flatten + patch tracking, overlay
+  stack/layout/compositing, `CURSOR_MARKER` extraction, kitty image bookkeeping,
+  synchronized output, viewport/scroll accounting, the width crash guard.
+  1. IDENTITY, NOT EQUALITY. The memo compares child line arrays with `is`, mirroring
+     TS `!==` on arrays. Components must return the SAME list object when unchanged
+     — a fresh equal list silently disables the whole patch path. `StaticLines` in
+     the corpus caches for exactly this reason.
+  2. `request_render()` MUST NOT PAINT SYNCHRONOUSLY. My first version fell back to
+     rendering inline when no event loop was running; `show_overlay` calls
+     `request_render`, so the overlay frame was emitted early and then discarded.
+     Three overlay scenarios failed until the fallback became "leave it pending".
+     Added `render_now()` as the explicit flush (what the harness drives, matching
+     the TS tests reaching for `doRender`).
+  3. `_do_render` is the port of `doRender`; the parity driver calls it directly.
+  4. `OverlayHandle` is a dataclass OF CLOSURES built inside `show_overlay`, not a
+     class holding a `TUI`. That is what the TS returns, and it keeps every mutation
+     of the overlay stack inside `TUI` (a sibling class reaching into `_overlay_stack`
+     also produced 23 pyright `reportPrivateUsage` errors).
+  5. `fullRender` counts the FIRST render in `fullRedraws`. The old fabricated version
+     excluded it; do not "fix" that back.
+  6. IMAGES ARE A SOFT DEP. `getCapabilities`/`setCellDimensions` live in
+     `terminal-image.ts` → step 1.15. Resolved via `importlib` + `getattr`, returning
+     "no image support" until then — a real runtime state the TS also has, not a stub.
+     `_delete_kitty_image` is inlined (one format string) so the kitty bookkeeping is
+     a real port and testable today; 1.15 replaces it with an import.
+  7. Env var names kept as `HOOCODE_*`, matching what step 1.4 did in `terminal.py`.
+  8. VERIFICATION: corpus grown 11 → 39 renderer scenarios (cursor markers, patch
+     paths, child grow/shrink/remove, clearOnShrink, scrolling, height change, ANSI,
+     wide chars, OSC-8, and 13 overlay cases). All 39 + all 25 component scenarios
+     match the TS. Mutation-tested the harness: an off-by-one in overlay centring
+     trips 11 scenarios, dropping the per-line `ESC [ 2K` trips 3 (that mutation
+     initially caught only 1, which is why `renderer/*-shrink-in-place` exist).
+     `test_renderer_parity.py` is now `STRICT = True`.
+  9. Also ported `overlay-non-capturing.test.ts` as `test_overlay_focus.py` — focus
+     never reaches the screen, so the surface harness cannot see it.
 - 2.9 provider-google — DONE. `google-shared.ts` (350) + `google.ts` (496) →
   `cortex.ai.providers.google.{shared,google}` + 58 tests.
   1. NO `@google/genai` SDK — follows 2.7's httpx decision, which also SETTLES the

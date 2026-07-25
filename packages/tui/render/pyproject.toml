@@ -4,7 +4,21 @@ version = "0.0.3"
 description = "Cortex TUI leaf: render"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "cortexcode-tui-util",
+    "cortexcode-tui-keys",
+]
+
+[dependency-groups]
+# Test-only: the parity harness (see packages/tui/testkit).
+dev = [
+    "cortexcode-tui-testkit",
+]
+
+[tool.uv.sources]
+cortexcode-tui-util = { workspace = true }
+cortexcode-tui-keys = { workspace = true }
+cortexcode-tui-testkit = { workspace = true }
 
 [tool.cortex]
 publish = false
