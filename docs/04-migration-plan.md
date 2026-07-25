@@ -24,6 +24,14 @@ relative to that repo root.
 Legend: `[ ]` pending · `[x]` done. Leaves with no cross-leaf deps may run in
 parallel; the driver lists the first eligible parallel option.
 
+**A checkbox is a claim, not evidence.** `uv run scripts/migrate_next.py --status`
+re-derives progress from this file and then audits every ticked step against the
+tree (leaf has code + tests; `publishable` steps really flipped `publish`; TUI
+steps clear the parity harness). `--done` runs the same audit and refuses to tick
+a box the tree does not back up. Prerequisite steps discovered mid-phase are
+appended at the end of the numbering but placed **in dependency order** in this
+file — the driver walks file order, not numeric order.
+
 ---
 
 ## Phase 0 — Workspace bootstrap
@@ -64,16 +72,85 @@ Parallelizable across these leaves; dependencies flow upward from util.
       `packages/tui/keys/src/cortex/tui/keys.py` + tests. Gate: `pytest packages/tui/keys`.
 - [x] **1.4 terminal** — `packages/tui/src/{terminal,stdin-buffer}.ts` →
       `packages/tui/terminal/src/cortex/tui/terminal.py` + tests. Gate: `pytest packages/tui/terminal`.
-- [x] **1.5 render** — `packages/tui/src/tui.ts` → `packages/tui/render/src/cortex/tui/render.py`
-      (differential renderer) + ANSI snapshot tests. Gate: `pytest packages/tui/render`.
+- [x] **1.9 tui testkit — authoritative rendering surface** *(prerequisite for 1.5/1.7;
+      out of numeric order on purpose)* — `packages/tui/testkit/` (`cortex.tui.testkit`,
+      `publish=false`): a cell-grid `Surface` + ANSI interpreter that turns a write
+      stream into the grid a user would actually see, cross-validated against
+      `@xterm/headless`, plus a golden corpus captured from the **real hoocode TS**
+      components and renderer. Every subsequent tui step is verified by rendering the
+      same scenario in Python and diffing surfaces — not by eyeballing a refactor.
+      Gate: `pytest packages/tui/testkit`.
+- [x] **1.5 render** — `packages/tui/src/tui.ts` (1545 lines: `Container` render memo,
+      root flatten + patch tracking, overlay stack & compositing, `CURSOR_MARKER`
+      extraction, kitty image bookkeeping, synchronized output, viewport/scroll
+      accounting) → `packages/tui/render/src/cortex/tui/render/`. **Re-port required:**
+      the current 191-line module is not a port of `tui.ts` — it invents its own
+      redraw algorithm and its tests only agree with themselves. Gate:
+      `pytest packages/tui/render` **and** zero unported renderer scenarios in the
+      1.9 parity report.
 - [x] **1.6 editing** — `packages/tui/src/{editor-component,kill-ring,undo-stack}.ts` →
       `packages/tui/editing/src/cortex/tui/editing/` + tests. Gate: `pytest packages/tui/editing`.
-- [x] **1.7 components** — `packages/tui/src/components/*.ts` →
-      `packages/tui/components/src/cortex/tui/components/` + snapshot tests. Gate:
+- [x] **1.7 components (simple)** — `packages/tui/src/components/{text,truncated-text,box,spacer,loader,cancellable-loader}.ts`
+      → `packages/tui/components/src/cortex/tui/components/`, all six clearing the 1.9
+      surface goldens. Gate: `pytest packages/tui/components` + zero unported
+      `component/*` scenarios in the parity report.
+- [x] **1.16 keybindings + grapheme segmentation** *(prerequisite for 1.10; out of
+      numeric order on purpose)* — step 1.3 was explicitly a "minimal" port and left
+      `TUI_KEYBINDINGS` **16 of 31 ids short**, invented three names not in the TS
+      (`tui.editor.{backspace,deleteChar,deleteWord}`), and truncated the default key
+      lists so every Emacs alternate (`ctrl+b/f/a/e`, `alt+b/f`, …) is missing.
+      `input.ts` alone needs 10 of the absent ids. Port `keybindings.ts`
+      `TUI_KEYBINDINGS` in full. Also make grapheme segmentation public in
+      `cortex.tui.util`: `get_segmenter()` currently returns `None` as a stub, but it
+      is the TS's public API for what `input.ts` and `editor.ts` split text with.
+      Gate: `pytest packages/tui/keys packages/tui/util`.
+- [x] **1.17 keys — legacy escape sequences** *(prerequisite for 1.10; out of numeric
+      order on purpose)* — the second half of 1.3's "minimal" `keys.ts` port.
+      `parse_key` returns `None` for the whole legacy ESC-prefixed family: `\x1f`
+      (`ctrl+-`, the undo binding), `\x1c`/`\x1d`, the `\x1b\x1b`/`\x1c`/`\x1d`/`\x1f`
+      ctrl+alt forms, `\x1b\r`/`\x1b ` , and every `ESC <letter>` alt binding —
+      including the Emacs aliases the TS maps to arrows (`\x1bb` → `alt+left`,
+      `\x1bf` → `alt+right`, `\x1bp`/`\x1bn` → `alt+up`/`alt+down`). Found by the
+      `component/input-{undo,word-motion}` parity scenarios diverging. Gate:
+      `pytest packages/tui/keys`.
+- [x] **1.10 components — input** — `packages/tui/src/components/input.ts` →
+      `components/input.py` + parity goldens. Depends on 1.16 and 1.17. Gate:
       `pytest packages/tui/components`.
-- [x] **1.8 tui umbrella publishable** — leaf READMEs, pyright strict on every tui leaf,
-      flip `_meta/publish = true` for all T0 leaves, run `uv build --all-packages`.
-      Gate: green release dry-run (`publish_packages.py --dry-run`).
+- [x] **1.11 components — lists** — `packages/tui/src/components/{select-list,settings-list}.ts`
+      → `components/{select_list,settings_list}.py` + parity goldens. Gate:
+      `pytest packages/tui/components`.
+- [x] **1.18 markdown AST adapter** *(prerequisite for 1.12; out of numeric order on
+      purpose)* — `markdown.ts` is written against `marked`'s token tree, and Python has
+      no `marked`. Measured both candidates against real `marked` output before
+      choosing: **markdown-it-py** emits a flat `_open`/`_close` stream that would need
+      tree reconstruction; **mistune** already gives a nested AST carrying every field
+      the renderer reads (`heading.level`, `block_code.info/raw`, list `ordered`,
+      `task_list_item.checked`, table `align`/`head`, `strong`/`emphasis`/`codespan`/
+      `link`) and agreed with `marked` on 19 of 20 block-type sequences. Port an adapter
+      `cortex.tui.components._markdown_ast` normalising mistune → marked token shape:
+      rename types (`block_code`→`code`, `block_quote`→`blockquote`,
+      `thematic_break`→`hr`, `emphasis`→`em`, …), rebuild `List.items` and
+      `Table.header/rows/align`, and **synthesise the `space` tokens mistune omits** —
+      `markdown.ts` keys its blank-line spacing off `nextToken.type === "space"`, so a
+      missing one is directly visible on screen. Verified token-for-token against AST
+      goldens captured from the real `marked`, the same way the surface harness works.
+      Gate: `pytest packages/tui/components`.
+- [ ] **1.12 components — markdown** — `packages/tui/src/components/markdown.ts` (808 lines,
+      `marked` AST → styled lines) → `components/markdown.py` + parity goldens. Depends
+      on 1.18. Gate: `pytest packages/tui/components`.
+- [ ] **1.13 components — editor** — `packages/tui/src/components/editor.ts` (2309 lines) →
+      `components/editor.py` + parity goldens. Depends on 1.6. Gate:
+      `pytest packages/tui/components`.
+- [ ] **1.14 autocomplete** — `packages/tui/src/autocomplete.ts` (783 lines) →
+      `packages/tui/components/src/cortex/tui/components/autocomplete.py` + tests. Gate:
+      `pytest packages/tui/components`.
+- [ ] **1.15 images** — `packages/tui/src/terminal-image.ts` + `components/image.ts` →
+      `packages/tui/images/src/cortex/tui/images/` + tests. Unblocks the kitty-image
+      bookkeeping in 1.5. Gate: `pytest packages/tui/images`.
+- [ ] **1.8 tui umbrella publishable** — leaf READMEs, pyright strict on every tui leaf,
+      flip `publish = true` for all T0 leaves (`_meta` included), run
+      `uv build --all-packages`. Gate: green release dry-run
+      (`publish_packages.py --dry-run`). Runs last in this phase.
 
 ---
 
@@ -115,12 +192,28 @@ providers; faux first).
       tests. Depends on 2.11 + 2.12. Gate: `pytest packages/ai/provider-anthropic`.
 - [x] **2.8 provider-openai** — `packages/ai/src/providers/openai-*.ts` →
       `packages/ai/provider-openai/src/cortex/ai/providers/openai/` + tests. Gate:
-      `pytest packages/ai/provider-openai`.
-- [ ] **2.9 provider-google** — `packages/ai/src/providers/google*.ts` →
-      `packages/ai/provider-google/src/cortex/ai/providers/google/` + tests. Gate:
-      `pytest packages/ai/provider-google`.
-- [x] **2.10 ai umbrella publishable** — leaf READMEs, strict types, flip T0/T1 leaves to
-      `publish=true`. Gate: dry-run clean.
+      `pytest packages/ai/provider-openai`. Also absorbed `azure-openai-responses.ts`
+      (it is an openai-responses variant), so the `packages/ai/provider-azure`
+      placeholder is dead and gets removed.
+- [x] **2.9 provider-google** — `packages/ai/src/providers/{google-shared,google}.ts` →
+      `packages/ai/provider-google/src/cortex/ai/providers/google/{shared,google}.py` +
+      tests. Gate: `pytest packages/ai/provider-google`.
+- [ ] **2.16 provider-google-vertex** — `packages/ai/src/providers/google-vertex.ts`
+      (564 lines) → `.../google/vertex.py` + tests. Split out of 2.9: Vertex adds a
+      whole second concern — GCP credential resolution (service-account JWT, ADC,
+      `GOOGLE_APPLICATION_CREDENTIALS`, express-mode API keys) — on top of the same
+      generate-content protocol, and `google-vertex-api-key-resolution.test.ts` is
+      223 lines on its own. Depends on 2.9. Gate: `pytest packages/ai/provider-google`.
+- [ ] **2.13 register-builtins** — `packages/ai/src/providers/register-builtins.ts` →
+      `packages/ai/models/src/cortex/ai/models/register_builtins.py` (lazy provider
+      registration) + tests. Depends on 2.6–2.9. Gate: `pytest packages/ai/models`.
+- [ ] **2.14 oauth** — `packages/ai/src/oauth.ts` + `utils/oauth/*` →
+      `packages/ai/oauth/src/cortex/ai/oauth/` + tests. Gate: `pytest packages/ai/oauth`.
+- [ ] **2.15 images** — `packages/ai/src/{images,images-api-registry}.ts` +
+      `providers/images/*` → `packages/ai/images/src/cortex/ai/images/` + tests. Gate:
+      `pytest packages/ai/images`.
+- [ ] **2.10 ai umbrella publishable** — leaf READMEs, strict types, flip T0/T1 leaves to
+      `publish=true`. Gate: dry-run clean. Runs last in this phase.
 
 ---
 

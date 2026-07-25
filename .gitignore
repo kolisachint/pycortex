@@ -19,5 +19,10 @@ venv/
 # uv
 # (uv.lock is committed)
 
+# TUI parity harness (bun deps + the staged copy of the TS source it reads).
+# The goldens themselves ARE committed, so tests need neither bun nor hoocode.
+packages/tui/testkit/reference/node_modules/
+packages/tui/testkit/reference/.hoocode-src/
+
 # OS
 .DS_Store

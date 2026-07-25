@@ -1,0 +1,930 @@
+{
+  "source": "hoocode TS",
+  "scenarios": [
+    {
+      "id": "component/text-basic",
+      "width": 20,
+      "lines": [
+        "                    ",
+        " hello              ",
+        "                    "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-no-padding",
+      "width": 20,
+      "lines": [
+        "hello               "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-empty",
+      "width": 20,
+      "lines": [],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-whitespace-only",
+      "width": 20,
+      "lines": [],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-wrap-words",
+      "width": 20,
+      "lines": [
+        " the quick brown    ",
+        " fox jumps over the ",
+        " lazy dog           "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-wrap-long-word",
+      "width": 14,
+      "lines": [
+        " supercalifra ",
+        " gilisticexpi ",
+        " alidocious   "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-explicit-newlines",
+      "width": 20,
+      "lines": [
+        " first              ",
+        " second             ",
+        " third              "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-tabs",
+      "width": 20,
+      "lines": [
+        "a   b   c           "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-ansi-colors",
+      "width": 24,
+      "lines": [
+        " \u001b[31mred\u001b[39m and \u001b[1mbold\u001b[22m           "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-ansi-wrapped",
+      "width": 18,
+      "lines": [
+        " \u001b[32mgreen text that  ",
+        " \u001b[32mmust wrap across ",
+        " \u001b[32mlines\u001b[39m            "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-wide-chars",
+      "width": 16,
+      "lines": [
+        " 你好世界 hello "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-wide-chars-wrap",
+      "width": 12,
+      "lines": [
+        " 今日は世界 ",
+        " こんにちは ",
+        " みなさん   "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-with-bg",
+      "width": 18,
+      "lines": [
+        "\u001b[44m                  \u001b[49m",
+        "\u001b[44m on blue          \u001b[49m",
+        "\u001b[44m                  \u001b[49m"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/truncated-fits",
+      "width": 20,
+      "lines": [
+        "short               "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/truncated-cuts",
+      "width": 16,
+      "lines": [
+        "a line that i\u001b[0m...\u001b[0m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/truncated-padding",
+      "width": 16,
+      "lines": [
+        "                ",
+        "  padded        ",
+        "                "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/truncated-stops-at-newline",
+      "width": 20,
+      "lines": [
+        "first line          "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/truncated-ansi",
+      "width": 16,
+      "lines": [
+        "\u001b[36mcyan text tha\u001b[0m...\u001b[0m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/truncated-wide-chars",
+      "width": 9,
+      "lines": [
+        "你好世\u001b[0m...\u001b[0m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/spacer-default",
+      "width": 10,
+      "lines": [
+        ""
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/spacer-three",
+      "width": 10,
+      "lines": [
+        "",
+        "",
+        ""
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/box-empty",
+      "width": 20,
+      "lines": [],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/box-with-text",
+      "width": 20,
+      "lines": [
+        "                    ",
+        "  inside            ",
+        "                    "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/box-nested-padding",
+      "width": 18,
+      "lines": [
+        "  wrapped         ",
+        "  content here    ",
+        "                  ",
+        " tail             "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/box-with-bg",
+      "width": 16,
+      "lines": [
+        "\u001b[41m                \u001b[49m",
+        "\u001b[41m warn           \u001b[49m",
+        "\u001b[41m                \u001b[49m"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/loader-default",
+      "width": 24,
+      "lines": [
+        "",
+        " \u001b[36m⠋\u001b[39m \u001b[2mLoading...\u001b[22m           "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/loader-plain-colour-fns",
+      "width": 20,
+      "lines": [
+        "",
+        " ⠋ Working          "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/loader-custom-message",
+      "width": 30,
+      "lines": [
+        "",
+        " \u001b[36m⠋\u001b[39m \u001b[2mThinking about it\u001b[22m          "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/loader-message-wraps",
+      "width": 20,
+      "lines": [
+        "",
+        " ⠋ a rather long    ",
+        " status message     ",
+        " that will not fit  ",
+        " on one line        "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/loader-custom-indicator",
+      "width": 20,
+      "lines": [
+        "",
+        " * \u001b[2mCustom\u001b[22m           "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/loader-no-indicator",
+      "width": 20,
+      "lines": [
+        "",
+        " \u001b[2mSilent\u001b[22m             "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/loader-multi-frame-indicator",
+      "width": 20,
+      "lines": [
+        "",
+        " - Spin             "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/loader-wide-char-message",
+      "width": 20,
+      "lines": [
+        "",
+        " \u001b[36m⠋\u001b[39m \u001b[2m読み込み中\u001b[22m       "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/cancellable-loader-default",
+      "width": 24,
+      "lines": [
+        "",
+        " \u001b[36m⠋\u001b[39m \u001b[2mCancellable\u001b[22m          "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-empty",
+      "width": 20,
+      "lines": [
+        "> \u001b[7m \u001b[27m                 "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-empty-focused",
+      "width": 20,
+      "lines": [
+        "> \u001b_pi:c\u0007\u001b[7m \u001b[27m                 "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-typed",
+      "width": 20,
+      "lines": [
+        "> hello\u001b[7m \u001b[27m            "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-set-value",
+      "width": 20,
+      "lines": [
+        "> \u001b[7mp\u001b[27mreset            "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-cursor-mid",
+      "width": 20,
+      "lines": [
+        "> hel\u001b[7ml\u001b[27mo             "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-cursor-home",
+      "width": 20,
+      "lines": [
+        "> \u001b[7mh\u001b[27mello             "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-backspace",
+      "width": 20,
+      "lines": [
+        "> hel\u001b[7m \u001b[27m              "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-forward-delete",
+      "width": 20,
+      "lines": [
+        "> \u001b[7me\u001b[27mllo              "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-delete-to-line-end",
+      "width": 20,
+      "lines": [
+        "> \u001b[7m \u001b[27m                 "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-delete-to-line-start",
+      "width": 20,
+      "lines": [
+        "> \u001b[7m \u001b[27m                 "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-kill-and-yank",
+      "width": 24,
+      "lines": [
+        "> hello world\u001b[7m \u001b[27m          "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-delete-word-backward",
+      "width": 24,
+      "lines": [
+        "> alpha beta \u001b[7m \u001b[27m          "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-word-motion",
+      "width": 24,
+      "lines": [
+        "> alpha \u001b[7mb\u001b[27meta gamma      "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-undo",
+      "width": 24,
+      "lines": [
+        "> hello\u001b[7m \u001b[27m                "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-scroll-at-end",
+      "width": 20,
+      "lines": [
+        "> over the lazy dog\u001b[7m \u001b[27m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-scroll-at-start",
+      "width": 20,
+      "lines": [
+        "> \u001b[7mt\u001b[27mhe quick brown fo"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-scroll-middle",
+      "width": 20,
+      "lines": [
+        "> rown fox \u001b[7mj\u001b[27mumps ove"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-exact-fit",
+      "width": 20,
+      "lines": [
+        "> \u001b[7m1\u001b[27m234567890123456  "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-wide-chars",
+      "width": 20,
+      "lines": [
+        "> 你好世界\u001b[7m \u001b[27m         "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-wide-chars-cursor-mid",
+      "width": 20,
+      "lines": [
+        "> 你好世\u001b[7m界\u001b[27m          "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-focused-marker",
+      "width": 20,
+      "lines": [
+        "> abc\u001b_pi:c\u0007\u001b[7m \u001b[27m              "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-paste",
+      "width": 30,
+      "lines": [
+        "> pasted    linemore\u001b[7m \u001b[27m         "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-control-chars-rejected",
+      "width": 20,
+      "lines": [
+        "> abc\u001b[7m \u001b[27m              "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-narrow-width",
+      "width": 2,
+      "lines": [
+        "> "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-empty",
+      "width": 60,
+      "lines": [
+        "\u001b[2m  No matching commands\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-filter-no-match",
+      "width": 60,
+      "lines": [
+        "\u001b[2m  No matching commands\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-basic",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ Alpha                           Description for alpha\u001b[22m",
+        "  Beta\u001b[2m                            Description for beta\u001b[22m",
+        "  Gamma\u001b[2m                           Description for gamma\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-no-descriptions",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ Alpha\u001b[22m",
+        "  Beta",
+        "  Gamma"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-narrow-single-column",
+      "width": 36,
+      "lines": [
+        "\u001b[1m→ Alpha\u001b[22m",
+        "  Beta",
+        "  Gamma"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-exactly-40",
+      "width": 40,
+      "lines": [
+        "\u001b[1m→ Alpha\u001b[22m",
+        "  Beta",
+        "  Gamma"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-41-two-column",
+      "width": 41,
+      "lines": [
+        "\u001b[1m→ Alpha\u001b[22m",
+        "  Beta",
+        "  Gamma"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-scrolled-middle",
+      "width": 60,
+      "lines": [
+        "  Delta\u001b[2m                           Description for delta\u001b[22m",
+        "\u001b[1m→ Epsilon                         Description for epsilon\u001b[22m",
+        "  Zeta\u001b[2m                            Description for zeta\u001b[22m",
+        "\u001b[2m  (5/8)\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-scrolled-end",
+      "width": 60,
+      "lines": [
+        "  Zeta\u001b[2m                            Description for zeta\u001b[22m",
+        "  Eta\u001b[2m                             Description for eta\u001b[22m",
+        "\u001b[1m→ Theta                           Description for theta\u001b[22m",
+        "\u001b[2m  (8/8)\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-wraps-up-from-top",
+      "width": 60,
+      "lines": [
+        "  Alpha\u001b[2m                           Description for alpha\u001b[22m",
+        "  Beta\u001b[2m                            Description for beta\u001b[22m",
+        "  Gamma\u001b[2m                           Description for gamma\u001b[22m",
+        "\u001b[1m→ Delta                           Description for delta\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-wraps-down-from-bottom",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ Alpha                           Description for alpha\u001b[22m",
+        "  Beta\u001b[2m                            Description for beta\u001b[22m",
+        "  Gamma\u001b[2m                           Description for gamma\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-arrow-navigation",
+      "width": 60,
+      "lines": [
+        "  Alpha\u001b[2m                           Description for alpha\u001b[22m",
+        "  Beta\u001b[2m                            Description for beta\u001b[22m",
+        "\u001b[1m→ Gamma                           Description for gamma\u001b[22m",
+        "  Delta\u001b[2m                           Description for delta\u001b[22m",
+        "  Epsilon\u001b[2m                         Description for epsilon\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-filter-prefix",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ Epsilon                         Description for epsilon\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-long-labels-truncate",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ a very long label that will no\u001b[0m  and a description that i\u001b[0m\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-multiline-description-normalized",
+      "width": 70,
+      "lines": [
+        "\u001b[1m→ Item                            line one line two line three\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-column-bounds",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ Alpha     Description for alpha\u001b[22m",
+        "  Beta\u001b[2m      Description for beta\u001b[22m",
+        "  Gamma\u001b[2m     Description for gamma\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-column-min-only",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ Alpha               Description for alpha\u001b[22m",
+        "  Beta\u001b[2m                Description for beta\u001b[22m",
+        "  Gamma\u001b[2m               Description for gamma\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-value-used-when-no-label",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ raw-value\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-wide-chars",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ 日本語のラベル                  説明文です\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-empty",
+      "width": 60,
+      "lines": [
+        "\u001b[2m  No settings available\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-basic",
+      "width": 60,
+      "lines": [
+        "> \u001b[1mTheme          \u001b[22m  \u001b[36mdark\u001b[39m",
+        "  Model            opus",
+        "  Verbose logging  off",
+        "",
+        "\u001b[2m  Enter/Space to change · Esc to cancel\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-with-description",
+      "width": 60,
+      "lines": [
+        "> \u001b[1mTheme          \u001b[22m  \u001b[36mdark\u001b[39m",
+        "  Model            opus",
+        "  Verbose logging  off",
+        "",
+        "\u001b[2m  Colour scheme used across the whole interface\u001b[22m",
+        "",
+        "\u001b[2m  Enter/Space to change · Esc to cancel\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-scrolled",
+      "width": 60,
+      "lines": [
+        "  Verbose logging  off",
+        "> \u001b[1mExternal editor\u001b[22m  \u001b[36mvim\u001b[39m",
+        "\u001b[2m  (4/5)\u001b[22m",
+        "",
+        "\u001b[2m  Enter/Space to change · Esc to cancel\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-cycle-value",
+      "width": 60,
+      "lines": [
+        "> \u001b[1mTheme          \u001b[22m  \u001b[36mlight\u001b[39m",
+        "  Model            opus",
+        "  Verbose logging  off",
+        "",
+        "\u001b[2m  Enter/Space to change · Esc to cancel\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-cycle-with-space",
+      "width": 60,
+      "lines": [
+        "> \u001b[1mTheme          \u001b[22m  \u001b[36mdark\u001b[39m",
+        "  Model            opus",
+        "  Verbose logging  off",
+        "",
+        "\u001b[2m  Enter/Space to change · Esc to cancel\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-search-enabled",
+      "width": 60,
+      "lines": [
+        "> \u001b[7m \u001b[27m                                                         ",
+        "",
+        "> \u001b[1mTheme          \u001b[22m  \u001b[36mdark\u001b[39m",
+        "  Model            opus",
+        "  Verbose logging  off",
+        "  External editor  vim",
+        "  Wrap             on",
+        "",
+        "\u001b[2m  Type to search · Enter/Space to change · Esc to cancel\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-search-typed",
+      "width": 60,
+      "lines": [
+        "> mod\u001b[7m \u001b[27m                                                      ",
+        "",
+        "> \u001b[1mModel          \u001b[22m  \u001b[36mopus\u001b[39m",
+        "",
+        "\u001b[2m  Type to search · Enter/Space to change · Esc to cancel\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-search-no-match",
+      "width": 60,
+      "lines": [
+        "> zzzz\u001b[7m \u001b[27m                                                     ",
+        "",
+        "\u001b[2m  No matching settings\u001b[22m",
+        "",
+        "\u001b[2m  Type to search · Enter/Space to change · Esc to cancel\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-narrow",
+      "width": 28,
+      "lines": [
+        "> \u001b[1mTheme          \u001b[22m  \u001b[36mdark\u001b[39m",
+        "  Model            opus",
+        "  Verbose logging  off",
+        "",
+        "\u001b[2m  Enter/Space to change ·\u001b[0m...\u001b[0m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-long-label-capped-at-30",
+      "width": 70,
+      "lines": [
+        "> \u001b[1man extremely long setting label well past thirty columns\u001b[22m  \u001b[36mvalue\u001b[39m",
+        "  Short                           x",
+        "",
+        "\u001b[2m  Enter/Space to change · Esc to cancel\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-40-short-column",
+      "width": 40,
+      "lines": [
+        "\u001b[1m→ Alpha\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-41-short-column",
+      "width": 41,
+      "lines": [
+        "\u001b[1m→ Alpha   Description for alpha\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-column-width-from-widest",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ Al       desc a\u001b[22m",
+        "  Bertram\u001b[2m  desc b\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    }
+  ]
+}

@@ -98,9 +98,18 @@ Umbrellas group leaves by import namespace and install path.
 | `cortexcode-tui-editing` | `cortex.tui.editing` | `editor-component.ts`, `kill-ring.ts`, `undo-stack.ts` | T0 |
 | `cortexcode-tui-components` | `cortex.tui.components` | `components/*.ts` (text, box, spacer, loader, input, select-list, autocomplete, editor, markdown, image) | T0 |
 | `cortexcode-tui-images` | `cortex.tui.images` | `terminal-image.ts` | T1 (post-core) |
+| `cortexcode-tui-testkit` | `cortex.tui.testkit` | *no TS counterpart* — the authoritative rendering surface + parity harness | **never published** |
 
 All leaves depend only on lower / same-tier tui leaves (components → editing → render
 → keys → terminal → util). Fuzzy is a shared leaf used by components.
+
+**`cortexcode-tui-testkit` is test infrastructure, not a port.** TUI code is the one
+place where "reads like the TS" is not evidence of correctness: the observable
+contract is the grid of cells a user ends up looking at, and two very different line
+buffers can produce it (or fail to). The testkit models that grid — a `Surface` plus
+an ANSI interpreter — so every tui leaf is verified by diffing surfaces against
+frames captured from the real hoocode TS implementation. It is `publish=false`
+forever and never imported by shipped code.
 
 ### 3.2 `cortex.ai` umbrella (`cortexcode-ai`)
 
@@ -113,9 +122,8 @@ All leaves depend only on lower / same-tier tui leaves (components → editing �
 | `cortexcode-ai-provider-faux` | `cortex.ai.providers.faux` | `providers/faux.ts` | T0 — **port first** |
 | `cortexcode-ai-provider-common` | `cortex.ai.providers._common` | `providers/cache-retention.ts`, `providers/simple-options.ts`, `providers/transform-messages.ts`, `providers/github-copilot-headers.ts` | T1 — shared by all providers |
 | `cortexcode-ai-provider-anthropic` | `cortex.ai.providers.anthropic` | `providers/anthropic.ts` | T1 |
-| `cortexcode-ai-provider-openai` | `cortex.ai.providers.openai` | `providers/openai-completions.ts`, `providers/openai-responses.ts`, `providers/openai-responses-shared.ts`, `providers/openai-codex-responses.ts` | T1 |
+| `cortexcode-ai-provider-openai` | `cortex.ai.providers.openai` | `providers/openai-completions.ts`, `providers/openai-responses.ts`, `providers/openai-responses-shared.ts`, `providers/openai-codex-responses.ts`, `providers/azure-openai-responses.ts` | T1 |
 | `cortexcode-ai-provider-google` | `cortex.ai.providers.google` | `providers/google.ts`, `providers/google-shared.ts`, `providers/google-vertex.ts` | T1 |
-| `cortexcode-ai-provider-azure` | `cortex.ai.providers.azure` | `providers/azure-openai-responses.ts` | T2 (long tail) |
 | `cortexcode-ai-oauth` | `cortex.ai.oauth` | `oauth.ts`, `utils/oauth/*` | T2 |
 | `cortexcode-ai-images` | `cortex.ai.images` | `images*.ts`, `providers/images/*` | T2 |
 
@@ -128,6 +136,10 @@ Leaf deps:
 - `provider-common` depends on `stream`, `types`, `util`, `models`; holds helpers shared across providers (cache retention, simple-options, message transforms, copilot headers).
 - every `provider-*` depends on `stream`, `types`, `util`, `models`, and `provider-common`.
 - `faux` has the fewest deps and is ported before any provider that consumes it.
+- **No `provider-azure` leaf.** `azure-openai-responses.ts` is a thin variant of
+  `openai-responses.ts` and shares its request/response shapes, so it lives in
+  `cortexcode-ai-provider-openai` (done in step 2.8) rather than in a leaf that would
+  always version in lockstep with it.
 
 All ai leaves use `httpx` + `pydantic`.
 

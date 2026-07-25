@@ -71,6 +71,13 @@ LEGACY_SEQUENCE_KEY_IDS: dict[str, str] = {
     "\x1bOH": "home",
     "\x1bOF": "end",
     "\x1bOM": "enter",
+    # Emacs word-motion aliases. These must stay in the table rather than fall
+    # through to the generic `ESC <letter>` rule below, which would yield
+    # "alt+b"/"alt+f" and miss the alt+left/alt+right keybindings entirely.
+    "\x1bb": "alt+left",
+    "\x1bf": "alt+right",
+    "\x1bp": "alt+up",
+    "\x1bn": "alt+down",
 }
 
 
@@ -267,6 +274,20 @@ def parse_key(data: str) -> str | None:
 
     if data == "\x1b":
         return "escape"
+    if data == "\x1c":
+        return "ctrl+\\"
+    if data == "\x1d":
+        return "ctrl+]"
+    if data == "\x1f":
+        return "ctrl+-"
+    if data == "\x1b\x1b":
+        return "ctrl+alt+["
+    if data == "\x1b\x1c":
+        return "ctrl+alt+\\"
+    if data == "\x1b\x1d":
+        return "ctrl+alt+]"
+    if data == "\x1b\x1f":
+        return "ctrl+alt+-"
     if data == "\t":
         return "tab"
     if data == "\r" or data == "\n":
@@ -275,12 +296,29 @@ def parse_key(data: str) -> str | None:
         return "space"
     if data == "\x7f":
         return "backspace"
+    if data == "\x08":
+        return "backspace"
     if data == "\x00":
         return "ctrl+space"
     if data == "\x1b[Z":
         return "shift+tab"
+    if data == "\x1b\r":
+        return "alt+enter"
+    if data == "\x1b ":
+        return "alt+space"
     if data == "\x1b\x7f" or data == "\x1b\b":
         return "alt+backspace"
+    if data == "\x1bB":
+        return "alt+left"
+    if data == "\x1bF":
+        return "alt+right"
+    if len(data) == 2 and data[0] == "\x1b":
+        # ESC-prefixed legacy alt combinations.
+        code = ord(data[1])
+        if 1 <= code <= 26:
+            return f"ctrl+alt+{chr(code + 96)}"
+        if (97 <= code <= 122) or (48 <= code <= 57):
+            return f"alt+{chr(code)}"
     if data == "\x1b[A":
         return "up"
     if data == "\x1b[B":
@@ -310,7 +348,7 @@ def parse_key(data: str) -> str | None:
     return None
 
 
-def _decode_kitty_printable(data: str) -> str | None:
+def decode_kitty_printable(data: str) -> str | None:
     m = KITTY_CSI_U_REGEX.match(data)
     if not m:
         return None
@@ -349,7 +387,7 @@ def _decode_modify_other_keys_printable(data: str) -> str | None:
 
 def decode_printable_key(data: str) -> str | None:
     """Decode a Kitty CSI-u or modifyOtherKeys sequence into a printable char."""
-    return _decode_kitty_printable(data) or _decode_modify_other_keys_printable(data)
+    return decode_kitty_printable(data) or _decode_modify_other_keys_printable(data)
 
 
 # Keybindings
@@ -450,18 +488,77 @@ def get_keybindings() -> KeybindingsManager:
     return _global_keybindings
 
 
+# Full port of `TUI_KEYBINDINGS` in keybindings.ts — id, default keys and
+# description, in TS order. Step 1.3 shipped a 15-id subset with truncated key
+# lists; the missing Emacs alternates (ctrl+b/f/a/e, alt+b/f/d/y) are not
+# decoration, they are how the editor components are driven.
 TUI_KEYBINDINGS: KeybindingDefinitions = {
     "tui.editor.cursorUp": {"defaultKeys": "up", "description": "Move cursor up"},
     "tui.editor.cursorDown": {"defaultKeys": "down", "description": "Move cursor down"},
-    "tui.editor.cursorLeft": {"defaultKeys": "left", "description": "Move cursor left"},
-    "tui.editor.cursorRight": {"defaultKeys": "right", "description": "Move cursor right"},
-    "tui.editor.cursorWordLeft": {"defaultKeys": "alt+left", "description": "Word left"},
-    "tui.editor.cursorWordRight": {"defaultKeys": "alt+right", "description": "Word right"},
-    "tui.editor.cursorLineStart": {"defaultKeys": "home", "description": "Line start"},
-    "tui.editor.cursorLineEnd": {"defaultKeys": "end", "description": "Line end"},
-    "tui.editor.deleteChar": {"defaultKeys": "delete", "description": "Delete character"},
-    "tui.editor.backspace": {"defaultKeys": "backspace", "description": "Backspace"},
-    "tui.editor.deleteWord": {"defaultKeys": "alt+backspace", "description": "Delete word"},
+    "tui.editor.cursorLeft": {
+        "defaultKeys": ["left", "ctrl+b"],
+        "description": "Move cursor left",
+    },
+    "tui.editor.cursorRight": {
+        "defaultKeys": ["right", "ctrl+f"],
+        "description": "Move cursor right",
+    },
+    "tui.editor.cursorWordLeft": {
+        "defaultKeys": ["alt+left", "ctrl+left", "alt+b"],
+        "description": "Move cursor word left",
+    },
+    "tui.editor.cursorWordRight": {
+        "defaultKeys": ["alt+right", "ctrl+right", "alt+f"],
+        "description": "Move cursor word right",
+    },
+    "tui.editor.cursorLineStart": {
+        "defaultKeys": ["home", "ctrl+a"],
+        "description": "Move to line start",
+    },
+    "tui.editor.cursorLineEnd": {
+        "defaultKeys": ["end", "ctrl+e"],
+        "description": "Move to line end",
+    },
+    "tui.editor.jumpForward": {
+        "defaultKeys": "ctrl+]",
+        "description": "Jump forward to character",
+    },
+    "tui.editor.jumpBackward": {
+        "defaultKeys": "ctrl+alt+]",
+        "description": "Jump backward to character",
+    },
+    "tui.editor.pageUp": {"defaultKeys": "pageUp", "description": "Page up"},
+    "tui.editor.pageDown": {"defaultKeys": "pageDown", "description": "Page down"},
+    "tui.editor.deleteCharBackward": {
+        "defaultKeys": "backspace",
+        "description": "Delete character backward",
+    },
+    "tui.editor.deleteCharForward": {
+        "defaultKeys": ["delete", "ctrl+d"],
+        "description": "Delete character forward",
+    },
+    "tui.editor.deleteWordBackward": {
+        "defaultKeys": ["ctrl+w", "alt+backspace"],
+        "description": "Delete word backward",
+    },
+    "tui.editor.deleteWordForward": {
+        "defaultKeys": ["alt+d", "alt+delete"],
+        "description": "Delete word forward",
+    },
+    "tui.editor.deleteToLineStart": {
+        "defaultKeys": "ctrl+u",
+        "description": "Delete to line start",
+    },
+    "tui.editor.deleteToLineEnd": {
+        "defaultKeys": "ctrl+k",
+        "description": "Delete to line end",
+    },
+    "tui.editor.yank": {"defaultKeys": "ctrl+y", "description": "Yank"},
+    "tui.editor.yankPop": {"defaultKeys": "alt+y", "description": "Yank pop"},
+    "tui.editor.undo": {"defaultKeys": "ctrl+-", "description": "Undo"},
+    "tui.input.newLine": {"defaultKeys": "shift+enter", "description": "Insert newline"},
+    "tui.input.submit": {"defaultKeys": "enter", "description": "Submit input"},
+    "tui.input.tab": {"defaultKeys": "tab", "description": "Tab / autocomplete"},
     "tui.input.copy": {"defaultKeys": "ctrl+c", "description": "Copy selection"},
     "tui.select.up": {"defaultKeys": "up", "description": "Move selection up"},
     "tui.select.down": {"defaultKeys": "down", "description": "Move selection down"},

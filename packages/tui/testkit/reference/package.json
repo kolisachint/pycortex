@@ -1,0 +1,11 @@
+{
+  "name": "cortex-tui-parity-reference",
+  "private": true,
+  "type": "module",
+  "description": "Captures reference frames from the real hoocode TS TUI, plus xterm cross-validation of the Python Surface. Run via `uv run scripts/tui_goldens.py --refresh`.",
+  "dependencies": {
+    "@xterm/headless": "^5.5.0",
+    "get-east-asian-width": "^1.3.0",
+    "marked": "^15.0.12"
+  }
+}

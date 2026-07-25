@@ -8,6 +8,9 @@ dependencies = [
     "cortexcode-tui-render",
     "cortexcode-tui-util",
     "cortexcode-tui-editing",
+    "cortexcode-tui-keys",
+    "cortexcode-tui-fuzzy",
+    "mistune>=3.0",
 ]
 
 [tool.cortex]
@@ -22,6 +25,8 @@ packages = [
 cortexcode-tui-render = { workspace = true }
 cortexcode-tui-util = { workspace = true }
 cortexcode-tui-editing = { workspace = true }
+cortexcode-tui-keys = { workspace = true }
+cortexcode-tui-fuzzy = { workspace = true }
 
 [build-system]
 requires = [

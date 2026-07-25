@@ -1,0 +1,3939 @@
+{
+  "$comment": "Shared corpus. Both the TS reference dumper (reference/*.ts) and the Python parity tests read THIS file, so the two sides cannot drift into testing different things. Add a scenario here first, then regenerate goldens with `uv run scripts/tui_goldens.py --refresh`.",
+  "ansi": [
+    {
+      "id": "ansi/plain-text",
+      "cols": 20,
+      "rows": 4,
+      "data": "hello world"
+    },
+    {
+      "id": "ansi/crlf-lines",
+      "cols": 20,
+      "rows": 4,
+      "data": "one\r\ntwo\r\nthree"
+    },
+    {
+      "id": "ansi/carriage-return-overwrite",
+      "cols": 20,
+      "rows": 3,
+      "data": "abcdef\rXY"
+    },
+    {
+      "id": "ansi/cursor-absolute",
+      "cols": 20,
+      "rows": 4,
+      "data": "\u001b[2;5Hmid\u001b[1;1Htop"
+    },
+    {
+      "id": "ansi/cursor-relative",
+      "cols": 20,
+      "rows": 4,
+      "data": "a\u001b[2Bb\u001b[1Ac\u001b[3Dd"
+    },
+    {
+      "id": "ansi/column-absolute",
+      "cols": 20,
+      "rows": 3,
+      "data": "abcdefgh\u001b[3Gxy"
+    },
+    {
+      "id": "ansi/erase-line-to-end",
+      "cols": 20,
+      "rows": 3,
+      "data": "abcdefgh\u001b[4G\u001b[K"
+    },
+    {
+      "id": "ansi/erase-whole-line",
+      "cols": 20,
+      "rows": 3,
+      "data": "abcdefgh\u001b[2K"
+    },
+    {
+      "id": "ansi/erase-display",
+      "cols": 20,
+      "rows": 4,
+      "data": "one\r\ntwo\r\nthree\u001b[2;1H\u001b[J"
+    },
+    {
+      "id": "ansi/clear-and-home",
+      "cols": 20,
+      "rows": 4,
+      "data": "junk\r\nmore\u001b[2J\u001b[Hfresh"
+    },
+    {
+      "id": "ansi/sgr-basic",
+      "cols": 20,
+      "rows": 3,
+      "data": "\u001b[1mbold\u001b[0m \u001b[31mred\u001b[39m plain"
+    },
+    {
+      "id": "ansi/sgr-256-and-truecolor",
+      "cols": 24,
+      "rows": 3,
+      "data": "\u001b[38;5;208mx\u001b[38;2;10;20;30my\u001b[0mz"
+    },
+    {
+      "id": "ansi/sgr-background",
+      "cols": 20,
+      "rows": 3,
+      "data": "\u001b[44mblue bg\u001b[49m off"
+    },
+    {
+      "id": "ansi/sgr-combined",
+      "cols": 20,
+      "rows": 3,
+      "data": "\u001b[1;4;32mmix\u001b[22mnobold\u001b[0m"
+    },
+    {
+      "id": "ansi/autowrap",
+      "cols": 8,
+      "rows": 4,
+      "data": "abcdefghijklmno"
+    },
+    {
+      "id": "ansi/scroll-on-overflow",
+      "cols": 10,
+      "rows": 3,
+      "data": "l1\r\nl2\r\nl3\r\nl4\r\nl5"
+    },
+    {
+      "id": "ansi/wide-chars",
+      "cols": 12,
+      "rows": 3,
+      "data": "你好世界ok"
+    },
+    {
+      "id": "ansi/wide-char-wrap-boundary",
+      "cols": 5,
+      "rows": 3,
+      "data": "ab你好"
+    },
+    {
+      "id": "ansi/box-drawing",
+      "cols": 12,
+      "rows": 4,
+      "data": "┌──┐\r\n│ab│\r\n└──┘"
+    },
+    {
+      "id": "ansi/cursor-hide-show",
+      "cols": 10,
+      "rows": 3,
+      "data": "\u001b[?25lhidden\u001b[?25h"
+    },
+    {
+      "id": "ansi/synchronized-output-wrapper",
+      "cols": 16,
+      "rows": 3,
+      "data": "\u001b[?2026habc\r\ndef\u001b[?2026l"
+    },
+    {
+      "id": "ansi/erase-then-write-shorter",
+      "cols": 16,
+      "rows": 3,
+      "data": "longer line\r\u001b[2Kshort"
+    },
+    {
+      "id": "ansi/erase-at-pending-wrap",
+      "cols": 8,
+      "rows": 3,
+      "data": "abcdefgh\u001b[K"
+    },
+    {
+      "id": "ansi/write-full-width-then-newline",
+      "cols": 8,
+      "rows": 3,
+      "data": "abcdefgh\r\nxy"
+    },
+    {
+      "id": "ansi/cursor-home-after-full-width",
+      "cols": 8,
+      "rows": 3,
+      "data": "abcdefgh\u001b[1;1HZ"
+    },
+    {
+      "id": "ansi/erase-line-then-shorter-write",
+      "cols": 8,
+      "rows": 3,
+      "data": "abcdefgh\r\u001b[Kxy"
+    },
+    {
+      "id": "ansi/absolute-move-then-line",
+      "cols": 12,
+      "rows": 4,
+      "data": "\u001b[1;1Hrow one\u001b[K\u001b[2;1Hrow two\u001b[K"
+    }
+  ],
+  "components": [
+    {
+      "id": "component/text-basic",
+      "component": "Text",
+      "args": {
+        "text": "hello",
+        "paddingX": 1,
+        "paddingY": 1
+      },
+      "width": 20
+    },
+    {
+      "id": "component/text-no-padding",
+      "component": "Text",
+      "args": {
+        "text": "hello",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 20
+    },
+    {
+      "id": "component/text-empty",
+      "component": "Text",
+      "args": {
+        "text": "",
+        "paddingX": 1,
+        "paddingY": 1
+      },
+      "width": 20
+    },
+    {
+      "id": "component/text-whitespace-only",
+      "component": "Text",
+      "args": {
+        "text": "   ",
+        "paddingX": 1,
+        "paddingY": 1
+      },
+      "width": 20
+    },
+    {
+      "id": "component/text-wrap-words",
+      "component": "Text",
+      "args": {
+        "text": "the quick brown fox jumps over the lazy dog",
+        "paddingX": 1,
+        "paddingY": 0
+      },
+      "width": 20
+    },
+    {
+      "id": "component/text-wrap-long-word",
+      "component": "Text",
+      "args": {
+        "text": "supercalifragilisticexpialidocious",
+        "paddingX": 1,
+        "paddingY": 0
+      },
+      "width": 14
+    },
+    {
+      "id": "component/text-explicit-newlines",
+      "component": "Text",
+      "args": {
+        "text": "first\nsecond\nthird",
+        "paddingX": 1,
+        "paddingY": 0
+      },
+      "width": 20
+    },
+    {
+      "id": "component/text-tabs",
+      "component": "Text",
+      "args": {
+        "text": "a\tb\tc",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 20
+    },
+    {
+      "id": "component/text-ansi-colors",
+      "component": "Text",
+      "args": {
+        "text": "\u001b[31mred\u001b[39m and \u001b[1mbold\u001b[22m",
+        "paddingX": 1,
+        "paddingY": 0
+      },
+      "width": 24
+    },
+    {
+      "id": "component/text-ansi-wrapped",
+      "component": "Text",
+      "args": {
+        "text": "\u001b[32mgreen text that must wrap across lines\u001b[39m",
+        "paddingX": 1,
+        "paddingY": 0
+      },
+      "width": 18
+    },
+    {
+      "id": "component/text-wide-chars",
+      "component": "Text",
+      "args": {
+        "text": "你好世界 hello",
+        "paddingX": 1,
+        "paddingY": 0
+      },
+      "width": 16
+    },
+    {
+      "id": "component/text-wide-chars-wrap",
+      "component": "Text",
+      "args": {
+        "text": "今日は世界こんにちはみなさん",
+        "paddingX": 1,
+        "paddingY": 0
+      },
+      "width": 12
+    },
+    {
+      "id": "component/text-with-bg",
+      "component": "Text",
+      "args": {
+        "text": "on blue",
+        "paddingX": 1,
+        "paddingY": 1
+      },
+      "bgFn": {
+        "open": "\u001b[44m",
+        "close": "\u001b[49m"
+      },
+      "width": 18
+    },
+    {
+      "id": "component/truncated-fits",
+      "component": "TruncatedText",
+      "args": {
+        "text": "short",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 20
+    },
+    {
+      "id": "component/truncated-cuts",
+      "component": "TruncatedText",
+      "args": {
+        "text": "a line that is far too long to fit",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 16
+    },
+    {
+      "id": "component/truncated-padding",
+      "component": "TruncatedText",
+      "args": {
+        "text": "padded",
+        "paddingX": 2,
+        "paddingY": 1
+      },
+      "width": 16
+    },
+    {
+      "id": "component/truncated-stops-at-newline",
+      "component": "TruncatedText",
+      "args": {
+        "text": "first line\nsecond line",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 20
+    },
+    {
+      "id": "component/truncated-ansi",
+      "component": "TruncatedText",
+      "args": {
+        "text": "\u001b[36mcyan text that overflows the width\u001b[39m",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 16
+    },
+    {
+      "id": "component/truncated-wide-chars",
+      "component": "TruncatedText",
+      "args": {
+        "text": "你好世界你好世界",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 9
+    },
+    {
+      "id": "component/spacer-default",
+      "component": "Spacer",
+      "args": {},
+      "width": 10
+    },
+    {
+      "id": "component/spacer-three",
+      "component": "Spacer",
+      "args": {
+        "lines": 3
+      },
+      "width": 10
+    },
+    {
+      "id": "component/box-empty",
+      "component": "Box",
+      "args": {
+        "paddingX": 1,
+        "paddingY": 1
+      },
+      "children": [],
+      "width": 20
+    },
+    {
+      "id": "component/box-with-text",
+      "component": "Box",
+      "args": {
+        "paddingX": 2,
+        "paddingY": 1
+      },
+      "children": [
+        {
+          "component": "Text",
+          "args": {
+            "text": "inside",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        }
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/box-nested-padding",
+      "component": "Box",
+      "args": {
+        "paddingX": 1,
+        "paddingY": 0
+      },
+      "children": [
+        {
+          "component": "Text",
+          "args": {
+            "text": "wrapped content here",
+            "paddingX": 1,
+            "paddingY": 0
+          }
+        },
+        {
+          "component": "Spacer",
+          "args": {
+            "lines": 1
+          }
+        },
+        {
+          "component": "TruncatedText",
+          "args": {
+            "text": "tail",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        }
+      ],
+      "width": 18
+    },
+    {
+      "id": "component/box-with-bg",
+      "component": "Box",
+      "args": {
+        "paddingX": 1,
+        "paddingY": 1
+      },
+      "bgFn": {
+        "open": "\u001b[41m",
+        "close": "\u001b[49m"
+      },
+      "children": [
+        {
+          "component": "Text",
+          "args": {
+            "text": "warn",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        }
+      ],
+      "width": 16
+    },
+    {
+      "id": "component/loader-default",
+      "component": "Loader",
+      "args": {
+        "message": "Loading...",
+        "spinnerColor": {
+          "open": "\u001b[36m",
+          "close": "\u001b[39m"
+        },
+        "messageColor": {
+          "open": "\u001b[2m",
+          "close": "\u001b[22m"
+        }
+      },
+      "width": 24
+    },
+    {
+      "id": "component/loader-plain-colour-fns",
+      "component": "Loader",
+      "args": {
+        "message": "Working"
+      },
+      "width": 20
+    },
+    {
+      "id": "component/loader-custom-message",
+      "component": "Loader",
+      "args": {
+        "message": "Thinking about it",
+        "spinnerColor": {
+          "open": "\u001b[36m",
+          "close": "\u001b[39m"
+        },
+        "messageColor": {
+          "open": "\u001b[2m",
+          "close": "\u001b[22m"
+        }
+      },
+      "width": 30
+    },
+    {
+      "id": "component/loader-message-wraps",
+      "component": "Loader",
+      "args": {
+        "message": "a rather long status message that will not fit on one line"
+      },
+      "width": 20
+    },
+    {
+      "id": "component/loader-custom-indicator",
+      "component": "Loader",
+      "args": {
+        "message": "Custom",
+        "spinnerColor": {
+          "open": "\u001b[36m",
+          "close": "\u001b[39m"
+        },
+        "messageColor": {
+          "open": "\u001b[2m",
+          "close": "\u001b[22m"
+        },
+        "indicator": {
+          "frames": [
+            "*"
+          ],
+          "intervalMs": 100
+        }
+      },
+      "width": 20
+    },
+    {
+      "id": "component/loader-no-indicator",
+      "component": "Loader",
+      "args": {
+        "message": "Silent",
+        "spinnerColor": {
+          "open": "\u001b[36m",
+          "close": "\u001b[39m"
+        },
+        "messageColor": {
+          "open": "\u001b[2m",
+          "close": "\u001b[22m"
+        },
+        "indicator": {
+          "frames": []
+        }
+      },
+      "width": 20
+    },
+    {
+      "id": "component/loader-multi-frame-indicator",
+      "component": "Loader",
+      "args": {
+        "message": "Spin",
+        "indicator": {
+          "frames": [
+            "-",
+            "\\",
+            "|",
+            "/"
+          ],
+          "intervalMs": 80
+        }
+      },
+      "width": 20
+    },
+    {
+      "id": "component/loader-wide-char-message",
+      "component": "Loader",
+      "args": {
+        "message": "読み込み中",
+        "spinnerColor": {
+          "open": "\u001b[36m",
+          "close": "\u001b[39m"
+        },
+        "messageColor": {
+          "open": "\u001b[2m",
+          "close": "\u001b[22m"
+        }
+      },
+      "width": 20
+    },
+    {
+      "id": "component/cancellable-loader-default",
+      "component": "CancellableLoader",
+      "args": {
+        "message": "Cancellable",
+        "spinnerColor": {
+          "open": "\u001b[36m",
+          "close": "\u001b[39m"
+        },
+        "messageColor": {
+          "open": "\u001b[2m",
+          "close": "\u001b[22m"
+        }
+      },
+      "width": 24
+    },
+    {
+      "id": "component/input-empty",
+      "component": "Input",
+      "args": {},
+      "width": 20
+    },
+    {
+      "id": "component/input-empty-focused",
+      "component": "Input",
+      "args": {},
+      "focused": true,
+      "width": 20
+    },
+    {
+      "id": "component/input-typed",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-set-value",
+      "component": "Input",
+      "args": {
+        "value": "preset"
+      },
+      "width": 20
+    },
+    {
+      "id": "component/input-cursor-mid",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o",
+        "\u001b[D",
+        "\u001b[D"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-cursor-home",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o",
+        "\u0001"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-backspace",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o",
+        "",
+        ""
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-forward-delete",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o",
+        "\u0001",
+        "\u0004"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-delete-to-line-end",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o",
+        " ",
+        "w",
+        "o",
+        "r",
+        "l",
+        "d",
+        "\u0001",
+        "\u000b"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-delete-to-line-start",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o",
+        " ",
+        "w",
+        "o",
+        "r",
+        "l",
+        "d",
+        "\u0015"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-kill-and-yank",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o",
+        " ",
+        "w",
+        "o",
+        "r",
+        "l",
+        "d",
+        "\u0001",
+        "\u000b",
+        "\u0019"
+      ],
+      "width": 24
+    },
+    {
+      "id": "component/input-delete-word-backward",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "a",
+        "l",
+        "p",
+        "h",
+        "a",
+        " ",
+        "b",
+        "e",
+        "t",
+        "a",
+        " ",
+        "g",
+        "a",
+        "m",
+        "m",
+        "a",
+        "\u0017"
+      ],
+      "width": 24
+    },
+    {
+      "id": "component/input-word-motion",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "a",
+        "l",
+        "p",
+        "h",
+        "a",
+        " ",
+        "b",
+        "e",
+        "t",
+        "a",
+        " ",
+        "g",
+        "a",
+        "m",
+        "m",
+        "a",
+        "\u001bb",
+        "\u001bb"
+      ],
+      "width": 24
+    },
+    {
+      "id": "component/input-undo",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o",
+        " ",
+        "w",
+        "o",
+        "r",
+        "l",
+        "d",
+        "\u001f"
+      ],
+      "width": 24
+    },
+    {
+      "id": "component/input-scroll-at-end",
+      "component": "Input",
+      "args": {
+        "value": "the quick brown fox jumps over the lazy dog"
+      },
+      "keys": [
+        "\u0005"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-scroll-at-start",
+      "component": "Input",
+      "args": {
+        "value": "the quick brown fox jumps over the lazy dog"
+      },
+      "keys": [
+        "\u0001"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-scroll-middle",
+      "component": "Input",
+      "args": {
+        "value": "the quick brown fox jumps over the lazy dog"
+      },
+      "keys": [
+        "\u0001",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-exact-fit",
+      "component": "Input",
+      "args": {
+        "value": "1234567890123456"
+      },
+      "width": 20
+    },
+    {
+      "id": "component/input-wide-chars",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "你",
+        "好",
+        "世",
+        "界"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-wide-chars-cursor-mid",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "你",
+        "好",
+        "世",
+        "界",
+        "\u001b[D"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-focused-marker",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "a",
+        "b",
+        "c"
+      ],
+      "focused": true,
+      "width": 20
+    },
+    {
+      "id": "component/input-paste",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "\u001b[200~pasted\tline\nmore\u001b[201~"
+      ],
+      "width": 30
+    },
+    {
+      "id": "component/input-control-chars-rejected",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "a",
+        "b",
+        "\u0000\u001e",
+        "c"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-narrow-width",
+      "component": "Input",
+      "args": {
+        "value": "hello"
+      },
+      "width": 2
+    },
+    {
+      "id": "component/select-empty",
+      "component": "SelectList",
+      "args": {
+        "items": [],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-filter-no-match",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "filter": "zzz"
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-basic",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-no-descriptions",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-narrow-single-column",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 36
+    },
+    {
+      "id": "component/select-exactly-40",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 40
+    },
+    {
+      "id": "component/select-41-two-column",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 41
+    },
+    {
+      "id": "component/select-scrolled-middle",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          },
+          {
+            "value": "delta",
+            "label": "Delta",
+            "description": "Description for delta"
+          },
+          {
+            "value": "epsilon",
+            "label": "Epsilon",
+            "description": "Description for epsilon"
+          },
+          {
+            "value": "zeta",
+            "label": "Zeta",
+            "description": "Description for zeta"
+          },
+          {
+            "value": "eta",
+            "label": "Eta",
+            "description": "Description for eta"
+          },
+          {
+            "value": "theta",
+            "label": "Theta",
+            "description": "Description for theta"
+          }
+        ],
+        "maxVisible": 3,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "selectedIndex": 4
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-scrolled-end",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          },
+          {
+            "value": "delta",
+            "label": "Delta",
+            "description": "Description for delta"
+          },
+          {
+            "value": "epsilon",
+            "label": "Epsilon",
+            "description": "Description for epsilon"
+          },
+          {
+            "value": "zeta",
+            "label": "Zeta",
+            "description": "Description for zeta"
+          },
+          {
+            "value": "eta",
+            "label": "Eta",
+            "description": "Description for eta"
+          },
+          {
+            "value": "theta",
+            "label": "Theta",
+            "description": "Description for theta"
+          }
+        ],
+        "maxVisible": 3,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "selectedIndex": 7
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-wraps-up-from-top",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          },
+          {
+            "value": "delta",
+            "label": "Delta",
+            "description": "Description for delta"
+          }
+        ],
+        "maxVisible": 4,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "keys": [
+        "\u001b[A"
+      ],
+      "width": 60
+    },
+    {
+      "id": "component/select-wraps-down-from-bottom",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          }
+        ],
+        "maxVisible": 3,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "selectedIndex": 2
+      },
+      "keys": [
+        "\u001b[B"
+      ],
+      "width": 60
+    },
+    {
+      "id": "component/select-arrow-navigation",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          },
+          {
+            "value": "delta",
+            "label": "Delta",
+            "description": "Description for delta"
+          },
+          {
+            "value": "epsilon",
+            "label": "Epsilon",
+            "description": "Description for epsilon"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "keys": [
+        "\u001b[B",
+        "\u001b[B"
+      ],
+      "width": 60
+    },
+    {
+      "id": "component/select-filter-prefix",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          },
+          {
+            "value": "delta",
+            "label": "Delta",
+            "description": "Description for delta"
+          },
+          {
+            "value": "epsilon",
+            "label": "Epsilon",
+            "description": "Description for epsilon"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "filter": "e"
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-long-labels-truncate",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "x",
+            "label": "a very long label that will not fit in the primary column",
+            "description": "and a description that is also quite long indeed"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-multiline-description-normalized",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "x",
+            "label": "Item",
+            "description": "  line one\nline two\r\nline three  "
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 70
+    },
+    {
+      "id": "component/select-column-bounds",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "layout": {
+          "minPrimaryColumnWidth": 10,
+          "maxPrimaryColumnWidth": 14
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-column-min-only",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "layout": {
+          "minPrimaryColumnWidth": 20
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-value-used-when-no-label",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "raw-value",
+            "label": ""
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-wide-chars",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "cjk",
+            "label": "日本語のラベル",
+            "description": "説明文です"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/settings-empty",
+      "component": "SettingsList",
+      "args": {
+        "items": [],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/settings-basic",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "currentValue": "dark",
+            "values": [
+              "dark",
+              "light"
+            ]
+          },
+          {
+            "id": "model",
+            "label": "Model",
+            "currentValue": "opus"
+          },
+          {
+            "id": "verbose",
+            "label": "Verbose logging",
+            "currentValue": "off",
+            "values": [
+              "off",
+              "on"
+            ]
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/settings-with-description",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "currentValue": "dark",
+            "values": [
+              "dark",
+              "light"
+            ],
+            "description": "Colour scheme used across the whole interface"
+          },
+          {
+            "id": "model",
+            "label": "Model",
+            "currentValue": "opus"
+          },
+          {
+            "id": "verbose",
+            "label": "Verbose logging",
+            "currentValue": "off",
+            "values": [
+              "off",
+              "on"
+            ]
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/settings-scrolled",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "currentValue": "dark",
+            "values": [
+              "dark",
+              "light"
+            ]
+          },
+          {
+            "id": "model",
+            "label": "Model",
+            "currentValue": "opus"
+          },
+          {
+            "id": "verbose",
+            "label": "Verbose logging",
+            "currentValue": "off",
+            "values": [
+              "off",
+              "on"
+            ]
+          },
+          {
+            "id": "editor",
+            "label": "External editor",
+            "currentValue": "vim"
+          },
+          {
+            "id": "wrap",
+            "label": "Wrap",
+            "currentValue": "on"
+          }
+        ],
+        "maxVisible": 2,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "keys": [
+        "\u001b[B",
+        "\u001b[B",
+        "\u001b[B"
+      ],
+      "width": 60
+    },
+    {
+      "id": "component/settings-cycle-value",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "currentValue": "dark",
+            "values": [
+              "dark",
+              "light"
+            ]
+          },
+          {
+            "id": "model",
+            "label": "Model",
+            "currentValue": "opus"
+          },
+          {
+            "id": "verbose",
+            "label": "Verbose logging",
+            "currentValue": "off",
+            "values": [
+              "off",
+              "on"
+            ]
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "keys": [
+        "\r"
+      ],
+      "width": 60
+    },
+    {
+      "id": "component/settings-cycle-with-space",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "currentValue": "dark",
+            "values": [
+              "dark",
+              "light"
+            ]
+          },
+          {
+            "id": "model",
+            "label": "Model",
+            "currentValue": "opus"
+          },
+          {
+            "id": "verbose",
+            "label": "Verbose logging",
+            "currentValue": "off",
+            "values": [
+              "off",
+              "on"
+            ]
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "keys": [
+        " ",
+        " "
+      ],
+      "width": 60
+    },
+    {
+      "id": "component/settings-search-enabled",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "currentValue": "dark",
+            "values": [
+              "dark",
+              "light"
+            ]
+          },
+          {
+            "id": "model",
+            "label": "Model",
+            "currentValue": "opus"
+          },
+          {
+            "id": "verbose",
+            "label": "Verbose logging",
+            "currentValue": "off",
+            "values": [
+              "off",
+              "on"
+            ]
+          },
+          {
+            "id": "editor",
+            "label": "External editor",
+            "currentValue": "vim"
+          },
+          {
+            "id": "wrap",
+            "label": "Wrap",
+            "currentValue": "on"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "options": {
+          "enableSearch": true
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/settings-search-typed",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "currentValue": "dark",
+            "values": [
+              "dark",
+              "light"
+            ]
+          },
+          {
+            "id": "model",
+            "label": "Model",
+            "currentValue": "opus"
+          },
+          {
+            "id": "verbose",
+            "label": "Verbose logging",
+            "currentValue": "off",
+            "values": [
+              "off",
+              "on"
+            ]
+          },
+          {
+            "id": "editor",
+            "label": "External editor",
+            "currentValue": "vim"
+          },
+          {
+            "id": "wrap",
+            "label": "Wrap",
+            "currentValue": "on"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "options": {
+          "enableSearch": true
+        }
+      },
+      "keys": [
+        "m",
+        "o",
+        "d"
+      ],
+      "width": 60
+    },
+    {
+      "id": "component/settings-search-no-match",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "currentValue": "dark",
+            "values": [
+              "dark",
+              "light"
+            ]
+          },
+          {
+            "id": "model",
+            "label": "Model",
+            "currentValue": "opus"
+          },
+          {
+            "id": "verbose",
+            "label": "Verbose logging",
+            "currentValue": "off",
+            "values": [
+              "off",
+              "on"
+            ]
+          },
+          {
+            "id": "editor",
+            "label": "External editor",
+            "currentValue": "vim"
+          },
+          {
+            "id": "wrap",
+            "label": "Wrap",
+            "currentValue": "on"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "options": {
+          "enableSearch": true
+        }
+      },
+      "keys": [
+        "z",
+        "z",
+        "z",
+        "z"
+      ],
+      "width": 60
+    },
+    {
+      "id": "component/settings-narrow",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "currentValue": "dark",
+            "values": [
+              "dark",
+              "light"
+            ]
+          },
+          {
+            "id": "model",
+            "label": "Model",
+            "currentValue": "opus"
+          },
+          {
+            "id": "verbose",
+            "label": "Verbose logging",
+            "currentValue": "off",
+            "values": [
+              "off",
+              "on"
+            ]
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 28
+    },
+    {
+      "id": "component/settings-long-label-capped-at-30",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "a",
+            "label": "an extremely long setting label well past thirty columns",
+            "currentValue": "value"
+          },
+          {
+            "id": "b",
+            "label": "Short",
+            "currentValue": "x"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 70
+    },
+    {
+      "id": "component/select-40-short-column",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "a",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "layout": {
+          "minPrimaryColumnWidth": 8,
+          "maxPrimaryColumnWidth": 8
+        }
+      },
+      "width": 40
+    },
+    {
+      "id": "component/select-41-short-column",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "a",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "layout": {
+          "minPrimaryColumnWidth": 8,
+          "maxPrimaryColumnWidth": 8
+        }
+      },
+      "width": 41
+    },
+    {
+      "id": "component/select-column-width-from-widest",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "a",
+            "label": "Al",
+            "description": "desc a"
+          },
+          {
+            "value": "b",
+            "label": "Bertram",
+            "description": "desc b"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "layout": {
+          "minPrimaryColumnWidth": 1,
+          "maxPrimaryColumnWidth": 40
+        }
+      },
+      "width": 60
+    }
+  ],
+  "renderer": [
+    {
+      "id": "renderer/first-render",
+      "cols": 20,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "hello",
+            "paddingX": 1,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/append-line",
+      "cols": 20,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "one",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "two",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/change-in-place",
+      "cols": 20,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "before",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setText",
+          "target": 0,
+          "text": "after"
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/shrink-content",
+      "cols": 20,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "line one\nline two\nline three",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setText",
+          "target": 0,
+          "text": "only one"
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/grow-past-viewport",
+      "cols": 20,
+      "rows": 4,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "a\nb\nc",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setText",
+          "target": 0,
+          "text": "a\nb\nc\nd\ne\nf"
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/width-change",
+      "cols": 24,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "wrap me across the width",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "resize",
+          "cols": 12,
+          "rows": 6
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/multiple-children",
+      "cols": 20,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "head",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "add",
+          "component": "Spacer",
+          "args": {
+            "lines": 1
+          }
+        },
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "body",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setText",
+          "target": 2,
+          "text": "body!"
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-centered",
+      "cols": 24,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "background content here",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlay",
+          "component": "Box",
+          "args": {
+            "paddingX": 1,
+            "paddingY": 0
+          },
+          "children": [
+            {
+              "component": "Text",
+              "args": {
+                "text": "modal",
+                "paddingX": 0,
+                "paddingY": 0
+              }
+            }
+          ],
+          "options": {
+            "width": 10
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-anchored-top-right",
+      "cols": 24,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "base",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlay",
+          "component": "TruncatedText",
+          "args": {
+            "text": "tip",
+            "paddingX": 0,
+            "paddingY": 0
+          },
+          "options": {
+            "width": 6,
+            "anchor": "top-right"
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-hidden-then-shown",
+      "cols": 24,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "base",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlay",
+          "component": "TruncatedText",
+          "args": {
+            "text": "over",
+            "paddingX": 0,
+            "paddingY": 0
+          },
+          "options": {
+            "width": 6
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "hideOverlay"
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/no-change-is-silent",
+      "cols": 20,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "same",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/cursor-marker",
+      "cols": 20,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "prompt> abc",
+              "second line"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 0,
+          "lines": [
+            "prompt> ab\u001b_pi:c\u0007c",
+            "second line"
+          ]
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/cursor-marker-moves",
+      "cols": 20,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "\u001b_pi:c\u0007abc"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 0,
+          "lines": [
+            "abc\u001b_pi:c\u0007"
+          ]
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/cursor-marker-below-changed-child",
+      "cols": 20,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "header"
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "input\u001b_pi:c\u0007"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 0,
+          "lines": [
+            "header",
+            "extra",
+            "more"
+          ]
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/patch-single-child-of-three",
+      "cols": 20,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "a1",
+              "a2"
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "b1",
+              "b2"
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "c1",
+              "c2"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 1,
+          "lines": [
+            "b1",
+            "CHANGED"
+          ]
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/patch-child-grows",
+      "cols": 20,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "a1"
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "b1"
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "c1"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 1,
+          "lines": [
+            "b1",
+            "b2",
+            "b3"
+          ]
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/patch-child-shrinks",
+      "cols": 20,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "a1"
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "b1",
+              "b2",
+              "b3"
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "c1"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 1,
+          "lines": [
+            "b1"
+          ]
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/remove-child",
+      "cols": 20,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "keep"
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "drop me"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "removeChild",
+          "target": 1
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/clear-on-shrink-enabled",
+      "cols": 20,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "clearOnShrink",
+          "enabled": true
+        },
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "l1",
+              "l2",
+              "l3",
+              "l4"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 0,
+          "lines": [
+            "l1"
+          ]
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/shrink-to-empty",
+      "cols": 20,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "one",
+              "two",
+              "three"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 0,
+          "lines": []
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/scroll-repeated-growth",
+      "cols": 16,
+      "rows": 4,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "r1",
+              "r2"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 0,
+          "lines": [
+            "r1",
+            "r2",
+            "r3",
+            "r4"
+          ]
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 0,
+          "lines": [
+            "r1",
+            "r2",
+            "r3",
+            "r4",
+            "r5",
+            "r6"
+          ]
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 0,
+          "lines": [
+            "r1",
+            "r2",
+            "r3",
+            "r4",
+            "r5",
+            "r6",
+            "r7",
+            "r8"
+          ]
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/height-change",
+      "cols": 20,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "h1",
+              "h2",
+              "h3",
+              "h4",
+              "h5"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "resize",
+          "cols": 20,
+          "rows": 4
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/ansi-styles-preserved",
+      "cols": 24,
+      "rows": 5,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "\u001b[1;31mred bold\u001b[0m plain",
+              "\u001b[44mon blue\u001b[49m"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 0,
+          "lines": [
+            "\u001b[1;32mgreen bold\u001b[0m plain",
+            "\u001b[44mon blue\u001b[49m"
+          ]
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/wide-chars-exact-width",
+      "cols": 12,
+      "rows": 4,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "你好世界你好",
+              "ascii"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 0,
+          "lines": [
+            "こんにちは世",
+            "ascii"
+          ]
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/hyperlink-osc8",
+      "cols": 24,
+      "rows": 4,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "\u001b]8;;https://example.com\u0007link\u001b]8;;\u0007 tail"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-max-height",
+      "cols": 24,
+      "rows": 10,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "base"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlay",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "o1",
+              "o2",
+              "o3",
+              "o4",
+              "o5"
+            ]
+          },
+          "options": {
+            "width": 8,
+            "maxHeight": 2
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-percentage-size-and-position",
+      "cols": 24,
+      "rows": 10,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "base"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlay",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "pct"
+            ]
+          },
+          "options": {
+            "width": "50%",
+            "row": "0%",
+            "col": "100%"
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-margin-bottom-right",
+      "cols": 24,
+      "rows": 10,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "base"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlay",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "corner"
+            ]
+          },
+          "options": {
+            "width": 8,
+            "anchor": "bottom-right",
+            "margin": 2
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-offsets",
+      "cols": 24,
+      "rows": 10,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "base"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlay",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "off"
+            ]
+          },
+          "options": {
+            "width": 6,
+            "anchor": "top-left",
+            "offsetX": 3,
+            "offsetY": 2
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-min-width",
+      "cols": 24,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "base"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlay",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "wide enough"
+            ]
+          },
+          "options": {
+            "width": 4,
+            "minWidth": 14
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-truncates-overlong-line",
+      "cols": 24,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "base"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlay",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+            ]
+          },
+          "options": {
+            "width": 10
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-over-styled-base",
+      "cols": 24,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "\u001b[42mbbbbbbbbbbbbbbbbbbbbbbbb\u001b[49m",
+              "\u001b[42mcccccccccccccccccccccccc\u001b[49m"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlay",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "OVER"
+            ]
+          },
+          "options": {
+            "width": 6
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-stacked-two",
+      "cols": 24,
+      "rows": 10,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "base"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlay",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "lower",
+              "lower2"
+            ]
+          },
+          "options": {
+            "width": 12
+          }
+        },
+        {
+          "op": "overlay",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "UP"
+            ]
+          },
+          "options": {
+            "width": 4
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-non-capturing",
+      "cols": 24,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "base"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlay",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "hint"
+            ]
+          },
+          "options": {
+            "width": 8,
+            "nonCapturing": true
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-set-hidden-and-back",
+      "cols": 24,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "base"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlay",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "panel"
+            ]
+          },
+          "options": {
+            "width": 8
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlayHandle",
+          "target": 0,
+          "action": "setHidden",
+          "hidden": true
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlayHandle",
+          "target": 0,
+          "action": "setHidden",
+          "hidden": false
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-then-content-changes",
+      "cols": 24,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "base one",
+              "base two"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlay",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "panel"
+            ]
+          },
+          "options": {
+            "width": 8
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 0,
+          "lines": [
+            "base one",
+            "base CHANGED",
+            "base three"
+          ]
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-taller-than-base",
+      "cols": 20,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "x"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlay",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "p1",
+              "p2",
+              "p3",
+              "p4",
+              "p5",
+              "p6",
+              "p7",
+              "p8"
+            ]
+          },
+          "options": {
+            "width": 6
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/line-shrinks-in-place",
+      "cols": 24,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "a much longer line here",
+              "tail"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 0,
+          "lines": [
+            "short",
+            "tail"
+          ]
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/multiple-lines-shrink-in-place",
+      "cols": 24,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "xxxxxxxxxxxxxxxxxxxx",
+              "yyyyyyyyyyyyyyyyyyyy",
+              "zzzz"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 0,
+          "lines": [
+            "x",
+            "y",
+            "zzzz"
+          ]
+        },
+        {
+          "op": "render"
+        }
+      ]
+    }
+  ]
+}

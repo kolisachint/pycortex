@@ -14,7 +14,13 @@ from functools import lru_cache
 _EAW_WIDTH = {
     "F": 2,  # Fullwidth
     "W": 2,  # Wide
-    "A": 2,  # Ambiguous (treated as wide in terminal contexts)
+    # Ambiguous is NARROW. `get-east-asian-width` defaults `ambiguousAsWide` to
+    # false and utils.ts never overrides it, so the TS measures `┌ ─ │ ± ° → █`
+    # as one column — and so does every terminal we render into (verified
+    # against @xterm/headless in packages/tui/testkit). Treating these as wide
+    # made every box border and spinner measure double, which over-truncates
+    # lines and, in tui.ts, trips the "exceeds terminal width" crash guard.
+    "A": 1,
     "N": 1,  # Neutral
     "Na": 1,  # Narrow
     "H": 1,  # Halfwidth
@@ -913,13 +919,26 @@ def extract_segments(
     return before, before_width, after, after_width
 
 
-def get_segmenter() -> None:
-    """Hoocode exposes a shared Intl.Segmenter; Python has no direct equivalent.
+def grapheme_segments(text: str) -> list[str]:
+    """Split text into grapheme clusters.
 
-    This function is a stub for API compatibility. Internal code uses
-    `_grapheme_segments`.
+    The public form of what TS callers get from ``getSegmenter()``. Components
+    walk text a cluster at a time — cursor movement, backspace and word motion
+    must never land inside a combining sequence — so this is API, not an
+    internal detail.
     """
-    return None
+    return list(_grapheme_segments(text))
+
+
+def get_segmenter() -> Callable[[str], list[str]]:
+    """The shared segmenter, as ``getSegmenter()`` in the TS.
+
+    Python has no ``Intl.Segmenter``; the equivalent is the module-level
+    :func:`grapheme_segments`, returned here so the TS call shape still reads
+    across. Previously this returned ``None`` as a stub, which made every caller
+    reach for the private helper instead.
+    """
+    return grapheme_segments
 
 
 def is_image_line(line: str) -> bool:

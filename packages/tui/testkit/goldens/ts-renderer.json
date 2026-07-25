@@ -1,0 +1,1104 @@
+{
+  "source": "hoocode TS",
+  "scenarios": [
+    {
+      "id": "renderer/first-render",
+      "cols": 20,
+      "rows": 6,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026h hello              \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            " hello              "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/append-line",
+      "cols": 20,
+      "rows": 6,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026hone                 \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "one                 "
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026h\r\n\u001b[2Ktwo                 \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "one                 ",
+            "two                 "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/change-in-place",
+      "cols": 20,
+      "rows": 6,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026hbefore              \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "after               "
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026h\r\u001b[2Kafter               \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "after               "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/shrink-content",
+      "cols": 20,
+      "rows": 6,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026hline one            \u001b[0m\u001b]8;;\u0007\r\nline two            \u001b[0m\u001b]8;;\u0007\r\nline three          \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "line one            ",
+            "line two            ",
+            "line three          "
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026h\u001b[2A\r\u001b[2Konly one            \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\r\n\u001b[2K\u001b[2A\u001b[?2026l",
+          "lines": [
+            "only one            "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/grow-past-viewport",
+      "cols": 20,
+      "rows": 4,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 4,
+          "stream": "\u001b[?2026ha                   \u001b[0m\u001b]8;;\u0007\r\nb                   \u001b[0m\u001b]8;;\u0007\r\nc                   \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "a                   ",
+            "b                   ",
+            "c                   "
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 4,
+          "stream": "\u001b[?2026h\r\n\u001b[2Kd                   \u001b[0m\u001b]8;;\u0007\r\n\u001b[2Ke                   \u001b[0m\u001b]8;;\u0007\r\n\u001b[2Kf                   \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "a                   ",
+            "b                   ",
+            "c                   ",
+            "d                   ",
+            "e                   ",
+            "f                   "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/width-change",
+      "cols": 24,
+      "rows": 6,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 6,
+          "stream": "\u001b[?2026hwrap me across the width\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "wrap me across the width"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 12,
+          "rows": 6,
+          "stream": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3Jwrap me     \u001b[0m\u001b]8;;\u0007\r\nacross the  \u001b[0m\u001b]8;;\u0007\r\nwidth       \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "wrap me     ",
+            "across the  ",
+            "width       "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/multiple-children",
+      "cols": 20,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 8,
+          "stream": "\u001b[?2026hhead                \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\nbody                \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "head                ",
+            "",
+            "body!               "
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 8,
+          "stream": "\u001b[?2026h\r\u001b[2Kbody!               \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "head                ",
+            "",
+            "body!               "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-centered",
+      "cols": 24,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026hbackground content here \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "background content here "
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[3B\r\u001b[2K       \u001b[0m\u001b]8;;\u0007 modal    \u001b[0m\u001b]8;;\u0007       \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "background content here "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-anchored-top-right",
+      "cols": 24,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026hbase                    \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base                    "
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026h\r\u001b[2Kbase              \u001b[0m\u001b]8;;\u0007tip   \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base                    "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-hidden-then-shown",
+      "cols": 24,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026hbase                    \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base                    "
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[3B\r\u001b[2K         \u001b[0m\u001b]8;;\u0007over  \u001b[0m\u001b]8;;\u0007         \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base                    "
+          ]
+        },
+        {
+          "index": 2,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[7A\r\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[7A\u001b[?2026l",
+          "lines": [
+            "base                    "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/no-change-is-silent",
+      "cols": 20,
+      "rows": 6,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026hsame                \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "same                "
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 6,
+          "stream": "",
+          "lines": [
+            "same                "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/cursor-marker",
+      "cols": 20,
+      "rows": 6,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026hprompt> abc\u001b[0m\u001b]8;;\u0007\r\nsecond line\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "prompt> abc",
+            "second line"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026h\u001b[1A\r\u001b[2Kprompt> abc\u001b[0m\u001b]8;;\u0007\u001b[?2026l\u001b[11G",
+          "lines": [
+            "prompt> abc",
+            "second line"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/cursor-marker-moves",
+      "cols": 20,
+      "rows": 6,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026habc\u001b[0m\u001b]8;;\u0007\u001b[?2026l\u001b[1G",
+          "lines": [
+            "abc"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026h\r\u001b[2Kabc\u001b[0m\u001b]8;;\u0007\u001b[?2026l\u001b[4G",
+          "lines": [
+            "abc"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/cursor-marker-below-changed-child",
+      "cols": 20,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 8,
+          "stream": "\u001b[?2026hheader\u001b[0m\u001b]8;;\u0007\r\ninput\u001b[0m\u001b]8;;\u0007\u001b[?2026l\u001b[6G",
+          "lines": [
+            "header",
+            "input"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 8,
+          "stream": "\u001b[?2026h\r\u001b[2Kextra\u001b[0m\u001b]8;;\u0007\r\n\u001b[2Kmore\u001b[0m\u001b]8;;\u0007\r\n\u001b[2Kinput\u001b[0m\u001b]8;;\u0007\u001b[?2026l\u001b[6G",
+          "lines": [
+            "header",
+            "extra",
+            "more",
+            "input"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/patch-single-child-of-three",
+      "cols": 20,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 8,
+          "stream": "\u001b[?2026ha1\u001b[0m\u001b]8;;\u0007\r\na2\u001b[0m\u001b]8;;\u0007\r\nb1\u001b[0m\u001b]8;;\u0007\r\nb2\u001b[0m\u001b]8;;\u0007\r\nc1\u001b[0m\u001b]8;;\u0007\r\nc2\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "a1",
+            "a2",
+            "b1",
+            "CHANGED",
+            "c1",
+            "c2"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[2A\r\u001b[2KCHANGED\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "a1",
+            "a2",
+            "b1",
+            "CHANGED",
+            "c1",
+            "c2"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/patch-child-grows",
+      "cols": 20,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 8,
+          "stream": "\u001b[?2026ha1\u001b[0m\u001b]8;;\u0007\r\nb1\u001b[0m\u001b]8;;\u0007\r\nc1\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "a1",
+            "b1",
+            "c1"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 8,
+          "stream": "\u001b[?2026h\r\u001b[2Kb2\u001b[0m\u001b]8;;\u0007\r\n\u001b[2Kb3\u001b[0m\u001b]8;;\u0007\r\n\u001b[2Kc1\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "a1",
+            "b1",
+            "b2",
+            "b3",
+            "c1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/patch-child-shrinks",
+      "cols": 20,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 8,
+          "stream": "\u001b[?2026ha1\u001b[0m\u001b]8;;\u0007\r\nb1\u001b[0m\u001b]8;;\u0007\r\nb2\u001b[0m\u001b]8;;\u0007\r\nb3\u001b[0m\u001b]8;;\u0007\r\nc1\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "a1",
+            "b1",
+            "b2",
+            "b3",
+            "c1"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[2A\r\u001b[2Kc1\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\r\n\u001b[2K\u001b[2A\u001b[?2026l",
+          "lines": [
+            "a1",
+            "b1",
+            "c1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/remove-child",
+      "cols": 20,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 8,
+          "stream": "\u001b[?2026hkeep\u001b[0m\u001b]8;;\u0007\r\ndrop me\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "keep",
+            "drop me"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[1A\r\u001b[1B\r\u001b[2K\u001b[1A\u001b[?2026l",
+          "lines": [
+            "keep"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/clear-on-shrink-enabled",
+      "cols": 20,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 8,
+          "stream": "\u001b[?2026hl1\u001b[0m\u001b]8;;\u0007\r\nl2\u001b[0m\u001b]8;;\u0007\r\nl3\u001b[0m\u001b]8;;\u0007\r\nl4\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "l1",
+            "l2",
+            "l3",
+            "l4"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3Jl1\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "l1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/shrink-to-empty",
+      "cols": 20,
+      "rows": 6,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026hone\u001b[0m\u001b]8;;\u0007\r\ntwo\u001b[0m\u001b]8;;\u0007\r\nthree\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "one",
+            "two",
+            "three"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026h\u001b[2A\r\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[3A\u001b[?2026l",
+          "lines": []
+        }
+      ]
+    },
+    {
+      "id": "renderer/scroll-repeated-growth",
+      "cols": 16,
+      "rows": 4,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 16,
+          "rows": 4,
+          "stream": "\u001b[?2026hr1\u001b[0m\u001b]8;;\u0007\r\nr2\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "r1",
+            "r2"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 16,
+          "rows": 4,
+          "stream": "\u001b[?2026h\r\n\u001b[2Kr3\u001b[0m\u001b]8;;\u0007\r\n\u001b[2Kr4\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "r1",
+            "r2",
+            "r3",
+            "r4"
+          ]
+        },
+        {
+          "index": 2,
+          "cols": 16,
+          "rows": 4,
+          "stream": "\u001b[?2026h\r\n\u001b[2Kr5\u001b[0m\u001b]8;;\u0007\r\n\u001b[2Kr6\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "r1",
+            "r2",
+            "r3",
+            "r4",
+            "r5",
+            "r6"
+          ]
+        },
+        {
+          "index": 3,
+          "cols": 16,
+          "rows": 4,
+          "stream": "\u001b[?2026h\r\n\u001b[2Kr7\u001b[0m\u001b]8;;\u0007\r\n\u001b[2Kr8\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "r1",
+            "r2",
+            "r3",
+            "r4",
+            "r5",
+            "r6",
+            "r7",
+            "r8"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/height-change",
+      "cols": 20,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 8,
+          "stream": "\u001b[?2026hh1\u001b[0m\u001b]8;;\u0007\r\nh2\u001b[0m\u001b]8;;\u0007\r\nh3\u001b[0m\u001b]8;;\u0007\r\nh4\u001b[0m\u001b]8;;\u0007\r\nh5\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 4,
+          "stream": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3Jh1\u001b[0m\u001b]8;;\u0007\r\nh2\u001b[0m\u001b]8;;\u0007\r\nh3\u001b[0m\u001b]8;;\u0007\r\nh4\u001b[0m\u001b]8;;\u0007\r\nh5\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/ansi-styles-preserved",
+      "cols": 24,
+      "rows": 5,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 5,
+          "stream": "\u001b[?2026h\u001b[1;31mred bold\u001b[0m plain\u001b[0m\u001b]8;;\u0007\r\n\u001b[44mon blue\u001b[49m\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "\u001b[1;32mgreen bold\u001b[0m plain",
+            "\u001b[44mon blue\u001b[49m"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 5,
+          "stream": "\u001b[?2026h\u001b[1A\r\u001b[2K\u001b[1;32mgreen bold\u001b[0m plain\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "\u001b[1;32mgreen bold\u001b[0m plain",
+            "\u001b[44mon blue\u001b[49m"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/wide-chars-exact-width",
+      "cols": 12,
+      "rows": 4,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 12,
+          "rows": 4,
+          "stream": "\u001b[?2026h你好世界你好\u001b[0m\u001b]8;;\u0007\r\nascii\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "こんにちは世",
+            "ascii"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 12,
+          "rows": 4,
+          "stream": "\u001b[?2026h\u001b[1A\r\u001b[2Kこんにちは世\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "こんにちは世",
+            "ascii"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/hyperlink-osc8",
+      "cols": 24,
+      "rows": 4,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 4,
+          "stream": "\u001b[?2026h\u001b]8;;https://example.com\u0007link\u001b]8;;\u0007 tail\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "\u001b]8;;https://example.com\u0007link\u001b]8;;\u0007 tail"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-max-height",
+      "cols": 24,
+      "rows": 10,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 10,
+          "stream": "\u001b[?2026hbase\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 10,
+          "stream": "\u001b[?2026h\u001b[4B\r\u001b[2K        \u001b[0m\u001b]8;;\u0007o1      \u001b[0m\u001b]8;;\u0007        \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K        \u001b[0m\u001b]8;;\u0007o2      \u001b[0m\u001b]8;;\u0007        \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-percentage-size-and-position",
+      "cols": 24,
+      "rows": 10,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 10,
+          "stream": "\u001b[?2026hbase\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 10,
+          "stream": "\u001b[?2026h\r\u001b[2Kbase        \u001b[0m\u001b]8;;\u0007pct         \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-margin-bottom-right",
+      "cols": 24,
+      "rows": 10,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 10,
+          "stream": "\u001b[?2026hbase\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 10,
+          "stream": "\u001b[?2026h\u001b[7B\r\u001b[2K              \u001b[0m\u001b]8;;\u0007corner  \u001b[0m\u001b]8;;\u0007  \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-offsets",
+      "cols": 24,
+      "rows": 10,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 10,
+          "stream": "\u001b[?2026hbase\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 10,
+          "stream": "\u001b[?2026h\u001b[2B\r\u001b[2K   \u001b[0m\u001b]8;;\u0007off   \u001b[0m\u001b]8;;\u0007               \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-min-width",
+      "cols": 24,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026hbase\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[3B\r\u001b[2K     \u001b[0m\u001b]8;;\u0007wide enough   \u001b[0m\u001b]8;;\u0007     \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-truncates-overlong-line",
+      "cols": 24,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026hbase\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[3B\r\u001b[2K       \u001b[0m\u001b]8;;\u0007XXXXXXXXXX\u001b[0m\u001b]8;;\u0007       \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-over-styled-base",
+      "cols": 24,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[42mbbbbbbbbbbbbbbbbbbbbbbbb\u001b[49m\u001b[0m\u001b]8;;\u0007\r\n\u001b[42mcccccccccccccccccccccccc\u001b[49m\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "\u001b[42mbbbbbbbbbbbbbbbbbbbbbbbb\u001b[49m",
+            "\u001b[42mcccccccccccccccccccccccc\u001b[49m"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[2B\r\u001b[2K         \u001b[0m\u001b]8;;\u0007OVER  \u001b[0m\u001b]8;;\u0007         \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "\u001b[42mbbbbbbbbbbbbbbbbbbbbbbbb\u001b[49m",
+            "\u001b[42mcccccccccccccccccccccccc\u001b[49m"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-stacked-two",
+      "cols": 24,
+      "rows": 10,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 10,
+          "stream": "\u001b[?2026hbase\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 10,
+          "stream": "\u001b[?2026h\u001b[4B\r\u001b[2K      \u001b[0m\u001b]8;;\u0007lowe\u001b[0m\u001b]8;;\u0007UP  \u001b[0m\u001b]8;;\u0007    \u001b[0m\u001b]8;;\u0007      \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K      \u001b[0m\u001b]8;;\u0007lower2      \u001b[0m\u001b]8;;\u0007      \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-non-capturing",
+      "cols": 24,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026hbase\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[3B\r\u001b[2K        \u001b[0m\u001b]8;;\u0007hint    \u001b[0m\u001b]8;;\u0007        \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-set-hidden-and-back",
+      "cols": 24,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026hbase\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[3B\r\u001b[2K        \u001b[0m\u001b]8;;\u0007panel   \u001b[0m\u001b]8;;\u0007        \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        },
+        {
+          "index": 2,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[4A\r\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        },
+        {
+          "index": 3,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026h\r\u001b[2K        \u001b[0m\u001b]8;;\u0007panel   \u001b[0m\u001b]8;;\u0007        \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-then-content-changes",
+      "cols": 24,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026hbase one\u001b[0m\u001b]8;;\u0007\r\nbase two\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base one",
+            "base two"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[2B\r\u001b[2K        \u001b[0m\u001b]8;;\u0007panel   \u001b[0m\u001b]8;;\u0007        \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base one",
+            "base two"
+          ]
+        },
+        {
+          "index": 2,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[6A\r\u001b[2Kbase CHANGED\u001b[0m\u001b]8;;\u0007\r\n\u001b[2Kbase three\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base one",
+            "base CHANGED",
+            "base three"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-taller-than-base",
+      "cols": 20,
+      "rows": 6,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026hx\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "x"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026h\u001b[2B\r\u001b[2K       \u001b[0m\u001b]8;;\u0007p1    \u001b[0m\u001b]8;;\u0007       \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K       \u001b[0m\u001b]8;;\u0007p2    \u001b[0m\u001b]8;;\u0007       \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K       \u001b[0m\u001b]8;;\u0007p3    \u001b[0m\u001b]8;;\u0007       \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K       \u001b[0m\u001b]8;;\u0007p4    \u001b[0m\u001b]8;;\u0007       \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K       \u001b[0m\u001b]8;;\u0007p5    \u001b[0m\u001b]8;;\u0007       \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K       \u001b[0m\u001b]8;;\u0007p6    \u001b[0m\u001b]8;;\u0007       \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "x"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/line-shrinks-in-place",
+      "cols": 24,
+      "rows": 6,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 6,
+          "stream": "\u001b[?2026ha much longer line here\u001b[0m\u001b]8;;\u0007\r\ntail\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "short",
+            "tail"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 6,
+          "stream": "\u001b[?2026h\u001b[1A\r\u001b[2Kshort\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "short",
+            "tail"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/multiple-lines-shrink-in-place",
+      "cols": 24,
+      "rows": 6,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 6,
+          "stream": "\u001b[?2026hxxxxxxxxxxxxxxxxxxxx\u001b[0m\u001b]8;;\u0007\r\nyyyyyyyyyyyyyyyyyyyy\u001b[0m\u001b]8;;\u0007\r\nzzzz\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "x",
+            "y",
+            "zzzz"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 6,
+          "stream": "\u001b[?2026h\u001b[2A\r\u001b[2Kx\u001b[0m\u001b]8;;\u0007\r\n\u001b[2Ky\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "x",
+            "y",
+            "zzzz"
+          ]
+        }
+      ]
+    }
+  ]
+}

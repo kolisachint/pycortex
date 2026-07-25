@@ -1,0 +1,133 @@
+{
+  "$comment": "Shared Markdown corpus. reference/markdown_ast_dump.ts lexes these with the real marked; test_markdown_ast.py asserts the mistune adapter reproduces the same trees.",
+  "samples": [
+    {
+      "id": "heading-h1",
+      "source": "# Heading one"
+    },
+    {
+      "id": "heading-levels",
+      "source": "# H1\n## H2\n### H3\n#### H4"
+    },
+    {
+      "id": "heading-inline",
+      "source": "## Head with **bold** and `code`"
+    },
+    {
+      "id": "paragraph",
+      "source": "A simple paragraph."
+    },
+    {
+      "id": "paragraph-multi",
+      "source": "Para one\n\nPara two\n\nPara three"
+    },
+    {
+      "id": "paragraph-softbreak",
+      "source": "A paragraph\nthat continues."
+    },
+    {
+      "id": "hard-break",
+      "source": "text with  \nhard break"
+    },
+    {
+      "id": "inline-all",
+      "source": "text **b** *i* `c` ~~s~~ [l](http://u.com)"
+    },
+    {
+      "id": "inline-nested",
+      "source": "**bold with *italic* inside**"
+    },
+    {
+      "id": "strike-strict-rejects-spaces",
+      "source": "~~ not struck ~~ but ~~this is~~"
+    },
+    {
+      "id": "link-bare",
+      "source": "see [docs](https://example.com/a/b) here"
+    },
+    {
+      "id": "code-fenced-lang",
+      "source": "```python\nprint('hi')\nx = 1\n```"
+    },
+    {
+      "id": "code-fenced-nolang",
+      "source": "```\nplain code\n```"
+    },
+    {
+      "id": "code-indented",
+      "source": "    indented code"
+    },
+    {
+      "id": "list-bullet",
+      "source": "- one\n- two\n- three"
+    },
+    {
+      "id": "list-ordered",
+      "source": "1. first\n2. second"
+    },
+    {
+      "id": "list-ordered-start",
+      "source": "5. five\n6. six"
+    },
+    {
+      "id": "list-task",
+      "source": "- [ ] todo\n- [x] done"
+    },
+    {
+      "id": "list-nested",
+      "source": "- outer\n  - inner\n    - deepest"
+    },
+    {
+      "id": "list-then-text",
+      "source": "- a list\n\nthen more text."
+    },
+    {
+      "id": "blockquote",
+      "source": "> quoted text\n> more quote"
+    },
+    {
+      "id": "blockquote-rich",
+      "source": "> quote with **bold**\n>\n> second para"
+    },
+    {
+      "id": "blockquote-list",
+      "source": "> - a\n> - b"
+    },
+    {
+      "id": "hr",
+      "source": "---"
+    },
+    {
+      "id": "table-simple",
+      "source": "| a | b |\n|---|---|\n| 1 | 2 |"
+    },
+    {
+      "id": "table-aligned",
+      "source": "| left | center | right |\n|:--|:-:|--:|\n| 1 | 2 | 3 |"
+    },
+    {
+      "id": "table-inline",
+      "source": "| x |\n|---|\n| **b** |"
+    },
+    {
+      "id": "html-block",
+      "source": "<div>raw html</div>"
+    },
+    {
+      "id": "mixed-document",
+      "source": "# Title\n\nIntro paragraph.\n\n- point one\n- point two\n\n```sh\nls -la\n```\n\n> A note.\n\n---\n\nDone."
+    },
+    {
+      "id": "tabs-normalized",
+      "source": "para\twith\ttabs"
+    },
+    {
+      "id": "empty",
+      "source": ""
+    },
+    {
+      "id": "whitespace-only",
+      "source": "   \n  \n"
+    }
+  ]
+}
