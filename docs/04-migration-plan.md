@@ -94,7 +94,7 @@ Parallelizable across these leaves; dependencies flow upward from util.
       → `packages/tui/components/src/cortex/tui/components/`, all six clearing the 1.9
       surface goldens. Gate: `pytest packages/tui/components` + zero unported
       `component/*` scenarios in the parity report.
-- [ ] **1.16 keybindings + grapheme segmentation** *(prerequisite for 1.10; out of
+- [x] **1.16 keybindings + grapheme segmentation** *(prerequisite for 1.10; out of
       numeric order on purpose)* — step 1.3 was explicitly a "minimal" port and left
       `TUI_KEYBINDINGS` **16 of 31 ids short**, invented three names not in the TS
       (`tui.editor.{backspace,deleteChar,deleteWord}`), and truncated the default key

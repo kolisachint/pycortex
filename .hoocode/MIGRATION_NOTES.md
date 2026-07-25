@@ -159,6 +159,21 @@ TS `packages/ai/src/` is split across MULTIPLE python packages:
   their own leaf.
 
 ## Step log
+- 1.16 keybindings + grapheme segmentation — DONE (prerequisite for 1.10).
+  1. `TUI_KEYBINDINGS` was 15 of 31 ids, with truncated default key lists. Ported the
+     TS table in full, in TS order. The missing Emacs alternates (ctrl+b/f/a/e,
+     alt+b/f/d/y, ctrl+w/u/k/y) are how the editor components are actually driven —
+     without them `input.ts` cannot be ported at all.
+  2. REMOVED three invented ids that were never in the TS:
+     `tui.editor.{backspace,deleteChar,deleteWord}` → the real ones carry a direction
+     (`deleteCharBackward`/`deleteCharForward`/`deleteWordBackward`/`deleteWordForward`).
+     Checked for consumers first; there were none.
+  3. `get_segmenter()` returned `None` as a "stub for API compatibility", which is
+     worse than absent — every caller reached for the private `_grapheme_segments`.
+     Now returns the segmenting callable, and `grapheme_segments()` is exported.
+  LESSON: a step titled "minimal <x> port" is a deferred obligation, not a completed
+  step. 1.3's own commit message said "minimal" and the box was ticked anyway.
+
 - 1.7 components (simple) — DONE. Added the two missing leaves: `loader.ts` →
   `components/loader.py` and `cancellable-loader.ts` → `components/cancellable_loader.py`.
   text/truncated-text/box/spacer were already correct and now have goldens proving it.

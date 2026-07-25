@@ -450,18 +450,77 @@ def get_keybindings() -> KeybindingsManager:
     return _global_keybindings
 
 
+# Full port of `TUI_KEYBINDINGS` in keybindings.ts — id, default keys and
+# description, in TS order. Step 1.3 shipped a 15-id subset with truncated key
+# lists; the missing Emacs alternates (ctrl+b/f/a/e, alt+b/f/d/y) are not
+# decoration, they are how the editor components are driven.
 TUI_KEYBINDINGS: KeybindingDefinitions = {
     "tui.editor.cursorUp": {"defaultKeys": "up", "description": "Move cursor up"},
     "tui.editor.cursorDown": {"defaultKeys": "down", "description": "Move cursor down"},
-    "tui.editor.cursorLeft": {"defaultKeys": "left", "description": "Move cursor left"},
-    "tui.editor.cursorRight": {"defaultKeys": "right", "description": "Move cursor right"},
-    "tui.editor.cursorWordLeft": {"defaultKeys": "alt+left", "description": "Word left"},
-    "tui.editor.cursorWordRight": {"defaultKeys": "alt+right", "description": "Word right"},
-    "tui.editor.cursorLineStart": {"defaultKeys": "home", "description": "Line start"},
-    "tui.editor.cursorLineEnd": {"defaultKeys": "end", "description": "Line end"},
-    "tui.editor.deleteChar": {"defaultKeys": "delete", "description": "Delete character"},
-    "tui.editor.backspace": {"defaultKeys": "backspace", "description": "Backspace"},
-    "tui.editor.deleteWord": {"defaultKeys": "alt+backspace", "description": "Delete word"},
+    "tui.editor.cursorLeft": {
+        "defaultKeys": ["left", "ctrl+b"],
+        "description": "Move cursor left",
+    },
+    "tui.editor.cursorRight": {
+        "defaultKeys": ["right", "ctrl+f"],
+        "description": "Move cursor right",
+    },
+    "tui.editor.cursorWordLeft": {
+        "defaultKeys": ["alt+left", "ctrl+left", "alt+b"],
+        "description": "Move cursor word left",
+    },
+    "tui.editor.cursorWordRight": {
+        "defaultKeys": ["alt+right", "ctrl+right", "alt+f"],
+        "description": "Move cursor word right",
+    },
+    "tui.editor.cursorLineStart": {
+        "defaultKeys": ["home", "ctrl+a"],
+        "description": "Move to line start",
+    },
+    "tui.editor.cursorLineEnd": {
+        "defaultKeys": ["end", "ctrl+e"],
+        "description": "Move to line end",
+    },
+    "tui.editor.jumpForward": {
+        "defaultKeys": "ctrl+]",
+        "description": "Jump forward to character",
+    },
+    "tui.editor.jumpBackward": {
+        "defaultKeys": "ctrl+alt+]",
+        "description": "Jump backward to character",
+    },
+    "tui.editor.pageUp": {"defaultKeys": "pageUp", "description": "Page up"},
+    "tui.editor.pageDown": {"defaultKeys": "pageDown", "description": "Page down"},
+    "tui.editor.deleteCharBackward": {
+        "defaultKeys": "backspace",
+        "description": "Delete character backward",
+    },
+    "tui.editor.deleteCharForward": {
+        "defaultKeys": ["delete", "ctrl+d"],
+        "description": "Delete character forward",
+    },
+    "tui.editor.deleteWordBackward": {
+        "defaultKeys": ["ctrl+w", "alt+backspace"],
+        "description": "Delete word backward",
+    },
+    "tui.editor.deleteWordForward": {
+        "defaultKeys": ["alt+d", "alt+delete"],
+        "description": "Delete word forward",
+    },
+    "tui.editor.deleteToLineStart": {
+        "defaultKeys": "ctrl+u",
+        "description": "Delete to line start",
+    },
+    "tui.editor.deleteToLineEnd": {
+        "defaultKeys": "ctrl+k",
+        "description": "Delete to line end",
+    },
+    "tui.editor.yank": {"defaultKeys": "ctrl+y", "description": "Yank"},
+    "tui.editor.yankPop": {"defaultKeys": "alt+y", "description": "Yank pop"},
+    "tui.editor.undo": {"defaultKeys": "ctrl+-", "description": "Undo"},
+    "tui.input.newLine": {"defaultKeys": "shift+enter", "description": "Insert newline"},
+    "tui.input.submit": {"defaultKeys": "enter", "description": "Submit input"},
+    "tui.input.tab": {"defaultKeys": "tab", "description": "Tab / autocomplete"},
     "tui.input.copy": {"defaultKeys": "ctrl+c", "description": "Copy selection"},
     "tui.select.up": {"defaultKeys": "up", "description": "Move selection up"},
     "tui.select.down": {"defaultKeys": "down", "description": "Move selection down"},

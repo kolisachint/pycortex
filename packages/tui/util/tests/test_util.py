@@ -5,6 +5,8 @@ from __future__ import annotations
 from cortex.tui.util import (
     extract_ansi_code,
     extract_segments,
+    get_segmenter,
+    grapheme_segments,
     is_punctuation_char,
     is_whitespace_char,
     normalize_terminal_output,
@@ -104,3 +106,27 @@ def test_extract_segments() -> None:
     assert bw == 5
     assert after == "world"
     assert aw == 5
+
+
+class TestGraphemeSegments:
+    """`getSegmenter()` in the TS; step 1.16 made it real rather than a stub."""
+
+    def test_splits_ascii_into_characters(self) -> None:
+        assert grapheme_segments("abc") == ["a", "b", "c"]
+
+    def test_keeps_a_combining_mark_with_its_base(self) -> None:
+        # Cursor movement must never land between a base and its mark.
+        assert grapheme_segments("áb") == ["á", "b"]
+
+    def test_wide_characters_are_single_clusters(self) -> None:
+        assert grapheme_segments("你好") == ["你", "好"]
+
+    def test_empty_text_yields_nothing(self) -> None:
+        assert grapheme_segments("") == []
+
+    def test_get_segmenter_returns_the_segmenting_callable(self) -> None:
+        # Previously a stub returning None, which pushed callers to the private
+        # helper; the TS shape is `getSegmenter()` then segment with it.
+        segmenter = get_segmenter()
+        assert segmenter is not None
+        assert segmenter("ab") == ["a", "b"]

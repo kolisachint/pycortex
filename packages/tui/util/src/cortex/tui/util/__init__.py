@@ -5,6 +5,7 @@ from cortex.tui.util._util import (
     extract_ansi_code,
     extract_segments,
     get_segmenter,
+    grapheme_segments,
     is_image_line,
     is_punctuation_char,
     is_whitespace_char,
@@ -30,4 +31,5 @@ __all__ = [
     "visible_width",
     "wrap_text_with_ansi",
     "get_segmenter",
+    "grapheme_segments",
 ]
