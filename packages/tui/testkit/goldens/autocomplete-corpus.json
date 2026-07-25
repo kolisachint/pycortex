@@ -1,0 +1,878 @@
+{
+  "note": "Scenarios for the autocomplete provider, captured from the real hoocode `autocomplete.ts` by reference/autocomplete_dump.ts into ts-autocomplete.json and replayed against the Python port by packages/tui/components/tests/test_autocomplete_parity.py. Each scenario builds its own tree under <tmp>/<id>/{cwd,outside,home}; the provider's basePath is `cwd` and HOME is `home`. `{root}`, `{cwd}` and `{home}` in `line` are substituted with those absolute paths before the call and back out of every captured string, so absolute-path scenarios stay machine-independent.",
+  "scenarios": [
+    {
+      "id": "slash/all-commands",
+      "line": "/",
+      "commands": [
+        {
+          "name": "delete",
+          "description": "Delete the last message"
+        },
+        {
+          "name": "clear",
+          "description": "Clear all messages"
+        }
+      ]
+    },
+    {
+      "id": "slash/fuzzy-prefix",
+      "line": "/mo",
+      "commands": [
+        {
+          "name": "model",
+          "description": "Switch model"
+        },
+        {
+          "name": "mode",
+          "description": "Switch mode"
+        },
+        {
+          "name": "clear",
+          "description": "Clear all messages"
+        }
+      ]
+    },
+    {
+      "id": "slash/no-match",
+      "line": "/zzz",
+      "commands": [
+        {
+          "name": "model",
+          "description": "Switch model"
+        }
+      ]
+    },
+    {
+      "id": "slash/hint-and-description",
+      "line": "/mo",
+      "commands": [
+        {
+          "name": "model",
+          "description": "Switch model",
+          "argumentHint": "<model-id>"
+        },
+        {
+          "name": "mode",
+          "argumentHint": "<name>"
+        },
+        {
+          "name": "modal"
+        }
+      ]
+    },
+    {
+      "id": "slash/item-shaped-commands",
+      "line": "/cl",
+      "commands": [
+        {
+          "value": "clear",
+          "label": "clear",
+          "description": "Clear all messages"
+        },
+        {
+          "value": "close",
+          "label": "close"
+        }
+      ]
+    },
+    {
+      "id": "slash/no-commands",
+      "line": "/",
+      "commands": []
+    },
+    {
+      "id": "slash/forced-falls-through-to-paths",
+      "tree": {
+        "files": {
+          "model.txt": "x"
+        }
+      },
+      "line": "/mo",
+      "force": true,
+      "commands": [
+        {
+          "name": "model",
+          "description": "Switch model"
+        }
+      ]
+    },
+    {
+      "id": "slash/apply-mid-line",
+      "line": "/mo tail",
+      "cursorFromEnd": 5,
+      "commands": [
+        {
+          "name": "model",
+          "description": "Switch model"
+        }
+      ]
+    },
+    {
+      "id": "argument/async",
+      "line": "/load-skills s",
+      "commands": [
+        {
+          "name": "load-skills",
+          "description": "Load skills",
+          "argumentCompletions": {
+            "kind": "async",
+            "items": [
+              {
+                "value": "skill-a",
+                "label": "skill-a"
+              },
+              {
+                "value": "skill-b",
+                "label": "skill-b",
+                "description": "second"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "argument/sync",
+      "line": "/model gpt",
+      "commands": [
+        {
+          "name": "model",
+          "argumentCompletions": {
+            "kind": "sync",
+            "items": [
+              {
+                "value": "gpt-4o",
+                "label": "gpt-4o"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "argument/invalid-result",
+      "line": "/load-skills s",
+      "commands": [
+        {
+          "name": "load-skills",
+          "argumentCompletions": {
+            "kind": "invalid"
+          }
+        }
+      ]
+    },
+    {
+      "id": "argument/null-result",
+      "line": "/load-skills s",
+      "commands": [
+        {
+          "name": "load-skills",
+          "argumentCompletions": {
+            "kind": "null"
+          }
+        }
+      ]
+    },
+    {
+      "id": "argument/empty-result",
+      "line": "/load-skills s",
+      "commands": [
+        {
+          "name": "load-skills",
+          "argumentCompletions": {
+            "kind": "async",
+            "items": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "argument/command-without-completer",
+      "line": "/help topic",
+      "commands": [
+        {
+          "name": "help",
+          "description": "Show help"
+        }
+      ]
+    },
+    {
+      "id": "argument/unknown-command",
+      "line": "/nope arg",
+      "commands": [
+        {
+          "name": "help",
+          "argumentCompletions": {
+            "kind": "sync",
+            "items": [
+              {
+                "value": "a",
+                "label": "a"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "argument/empty-argument-text",
+      "line": "/load-skills ",
+      "commands": [
+        {
+          "name": "load-skills",
+          "argumentCompletions": {
+            "kind": "async",
+            "items": [
+              {
+                "value": "skill-a",
+                "label": "skill-a"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "path/forced-empty-text",
+      "tree": {
+        "dirs": [
+          "src"
+        ],
+        "files": {
+          "README.md": "readme"
+        }
+      },
+      "line": "",
+      "force": true
+    },
+    {
+      "id": "path/natural-empty-text",
+      "tree": {
+        "files": {
+          "README.md": "readme"
+        }
+      },
+      "line": ""
+    },
+    {
+      "id": "path/natural-after-space",
+      "tree": {
+        "dirs": [
+          "src"
+        ],
+        "files": {
+          "README.md": "readme"
+        }
+      },
+      "line": "cat "
+    },
+    {
+      "id": "path/natural-bare-word",
+      "tree": {
+        "files": {
+          "README.md": "readme"
+        }
+      },
+      "line": "RE"
+    },
+    {
+      "id": "path/forced-bare-word-case-insensitive",
+      "tree": {
+        "files": {
+          "README.md": "readme",
+          "readline.txt": "x"
+        }
+      },
+      "line": "RE",
+      "force": true
+    },
+    {
+      "id": "path/dot-slash-file",
+      "tree": {
+        "files": {
+          "update.sh": "#!/bin/bash",
+          "utils.ts": "export {};"
+        }
+      },
+      "line": "./up",
+      "force": true
+    },
+    {
+      "id": "path/dot-slash-directory",
+      "tree": {
+        "dirs": [
+          "src"
+        ],
+        "files": {
+          "src/index.ts": "export {};"
+        }
+      },
+      "line": "./sr",
+      "force": true
+    },
+    {
+      "id": "path/dot-slash-root",
+      "tree": {
+        "dirs": [
+          "src"
+        ],
+        "files": {
+          "a.txt": "a"
+        }
+      },
+      "line": "./",
+      "force": true
+    },
+    {
+      "id": "path/nested-directory-listing",
+      "tree": {
+        "files": {
+          "src/index.ts": "export {};",
+          "src/main.ts": "export {};"
+        }
+      },
+      "line": "src/"
+    },
+    {
+      "id": "path/nested-partial",
+      "tree": {
+        "files": {
+          "src/index.ts": "export {};",
+          "src/main.ts": "export {};"
+        }
+      },
+      "line": "src/in"
+    },
+    {
+      "id": "path/parent-directory",
+      "tree": {
+        "files": {
+          "a.txt": "a"
+        }
+      },
+      "outsideTree": {
+        "files": {
+          "sibling.txt": "x"
+        }
+      },
+      "line": "../",
+      "force": true
+    },
+    {
+      "id": "path/sorting-dirs-first-then-locale",
+      "tree": {
+        "dirs": [
+          "Zed",
+          "alpha"
+        ],
+        "files": {
+          "Beta.txt": "b",
+          "beta.txt": "b",
+          "aardvark.txt": "a",
+          "_under.txt": "u"
+        }
+      },
+      "line": "",
+      "force": true
+    },
+    {
+      "id": "path/space-needs-quotes",
+      "tree": {
+        "dirs": [
+          "my folder"
+        ],
+        "files": {
+          "my folder/test.txt": "content"
+        }
+      },
+      "line": "my",
+      "force": true
+    },
+    {
+      "id": "path/quoted-directory-contents",
+      "tree": {
+        "files": {
+          "my folder/test.txt": "content",
+          "my folder/other.txt": "content"
+        }
+      },
+      "line": "\"my folder/\"",
+      "cursorFromEnd": 1,
+      "force": true
+    },
+    {
+      "id": "path/quoted-partial",
+      "tree": {
+        "files": {
+          "my folder/test.txt": "content"
+        }
+      },
+      "line": "\"my folder/te\"",
+      "cursorFromEnd": 1,
+      "force": true
+    },
+    {
+      "id": "path/quoted-sorts-directories-with-files",
+      "tree": {
+        "dirs": [
+          "my folder/inner"
+        ],
+        "files": {
+          "my folder/a.txt": "a"
+        }
+      },
+      "line": "\"my folder/\"",
+      "cursorFromEnd": 1,
+      "force": true
+    },
+    {
+      "id": "path/quoted-mid-line-with-trailing-text",
+      "tree": {
+        "files": {
+          "my folder/test.txt": "content"
+        }
+      },
+      "line": "cat \"my folder/te\" > out",
+      "cursorFromEnd": 7,
+      "force": true
+    },
+    {
+      "id": "path/tilde-root",
+      "homeTree": {
+        "dirs": [
+          "notes"
+        ],
+        "files": {
+          "profile.txt": "p"
+        }
+      },
+      "line": "~/",
+      "force": true
+    },
+    {
+      "id": "path/tilde-partial",
+      "homeTree": {
+        "dirs": [
+          "notes"
+        ],
+        "files": {
+          "profile.txt": "p"
+        }
+      },
+      "line": "~/no",
+      "force": true
+    },
+    {
+      "id": "path/tilde-bare",
+      "homeTree": {
+        "files": {
+          "profile.txt": "p"
+        }
+      },
+      "line": "~",
+      "force": true
+    },
+    {
+      "id": "path/tilde-nested-partial",
+      "homeTree": {
+        "files": {
+          "notes/todo.md": "t",
+          "notes/talk.md": "t"
+        }
+      },
+      "line": "~/notes/t",
+      "force": true
+    },
+    {
+      "id": "path/absolute-partial",
+      "tree": {
+        "dirs": [
+          "src"
+        ],
+        "files": {
+          "sample.txt": "s"
+        }
+      },
+      "line": "{cwd}/s",
+      "force": true
+    },
+    {
+      "id": "path/absolute-directory-listing",
+      "tree": {
+        "dirs": [
+          "src"
+        ],
+        "files": {
+          "sample.txt": "s"
+        }
+      },
+      "line": "{cwd}/",
+      "force": true
+    },
+    {
+      "id": "path/symlinked-directory",
+      "tree": {
+        "files": {
+          "dir/real.txt": "r"
+        },
+        "symlinks": {
+          "linked": "../outside"
+        }
+      },
+      "outsideTree": {
+        "files": {
+          "elsewhere.txt": "e"
+        }
+      },
+      "line": "lin",
+      "force": true
+    },
+    {
+      "id": "path/broken-symlink",
+      "tree": {
+        "files": {
+          "kept.txt": "k"
+        },
+        "symlinks": {
+          "dangling": "./nowhere"
+        }
+      },
+      "line": "dan",
+      "force": true
+    },
+    {
+      "id": "path/missing-directory",
+      "tree": {
+        "files": {
+          "a.txt": "a"
+        }
+      },
+      "line": "nope/what",
+      "force": true
+    },
+    {
+      "id": "at/empty-query",
+      "fd": true,
+      "tree": {
+        "dirs": [
+          "src"
+        ],
+        "files": {
+          "README.md": "readme"
+        }
+      },
+      "line": "@"
+    },
+    {
+      "id": "at/extension-in-query",
+      "fd": true,
+      "tree": {
+        "files": {
+          "file.txt": "content"
+        }
+      },
+      "line": "@file.txt"
+    },
+    {
+      "id": "at/case-insensitive",
+      "fd": true,
+      "tree": {
+        "dirs": [
+          "src"
+        ],
+        "files": {
+          "README.md": "readme"
+        }
+      },
+      "line": "@re"
+    },
+    {
+      "id": "at/directories-rank-first",
+      "fd": true,
+      "tree": {
+        "dirs": [
+          "src"
+        ],
+        "files": {
+          "src.txt": "text"
+        }
+      },
+      "line": "@src"
+    },
+    {
+      "id": "at/nested-file",
+      "fd": true,
+      "tree": {
+        "files": {
+          "src/index.ts": "export {};\n"
+        }
+      },
+      "line": "@index"
+    },
+    {
+      "id": "at/deeply-nested-path",
+      "fd": true,
+      "tree": {
+        "files": {
+          "packages/tui/src/autocomplete.ts": "export {};",
+          "packages/ai/src/autocomplete.ts": "export {};"
+        }
+      },
+      "line": "@tui/src/auto"
+    },
+    {
+      "id": "at/directory-in-middle-of-path",
+      "fd": true,
+      "tree": {
+        "files": {
+          "src/components/Button.tsx": "export {};",
+          "src/utils/helpers.ts": "export {};"
+        }
+      },
+      "line": "@components/"
+    },
+    {
+      "id": "at/scoped-relative-directory",
+      "fd": true,
+      "outsideTree": {
+        "files": {
+          "nested/alpha.ts": "export {};",
+          "nested/deeper/also-alpha.ts": "export {};",
+          "nested/deeper/zzz.ts": "export {};"
+        }
+      },
+      "line": "@../outside/a"
+    },
+    {
+      "id": "at/scoped-home-directory",
+      "fd": true,
+      "homeTree": {
+        "files": {
+          "notes/todo.md": "t",
+          "notes/other.md": "o"
+        }
+      },
+      "line": "@~/notes/to"
+    },
+    {
+      "id": "at/space-needs-quotes",
+      "fd": true,
+      "tree": {
+        "dirs": [
+          "my folder"
+        ],
+        "files": {
+          "my folder/test.txt": "content"
+        }
+      },
+      "line": "@my"
+    },
+    {
+      "id": "at/hidden-included-git-excluded",
+      "fd": true,
+      "tree": {
+        "dirs": [
+          ".hoocode",
+          ".github",
+          ".git"
+        ],
+        "files": {
+          ".hoocode/config.json": "{}",
+          ".github/workflows/ci.yml": "name: ci",
+          ".git/config": "[core]"
+        }
+      },
+      "line": "@"
+    },
+    {
+      "id": "at/follows-symlinked-directories",
+      "fd": true,
+      "tree": {
+        "files": {
+          "dir/some_file.txt": "real"
+        },
+        "symlinks": {
+          "symlinked_dir": "../outside"
+        }
+      },
+      "outsideTree": {
+        "files": {
+          "some_file.txt": "symlinked"
+        }
+      },
+      "line": "@some"
+    },
+    {
+      "id": "at/symlinked-directory-by-name",
+      "fd": true,
+      "tree": {
+        "symlinks": {
+          "symlinked_dir": "../outside"
+        }
+      },
+      "outsideTree": {
+        "files": {
+          "nested/file.txt": "symlinked"
+        }
+      },
+      "line": "@symlinked"
+    },
+    {
+      "id": "at/symlinked-file",
+      "fd": true,
+      "tree": {
+        "files": {
+          "original.txt": "content"
+        },
+        "symlinks": {
+          "link.txt": "original.txt"
+        }
+      },
+      "line": "@link"
+    },
+    {
+      "id": "at/quoted-directory-contents",
+      "fd": true,
+      "tree": {
+        "files": {
+          "my folder/test.txt": "content",
+          "my folder/other.txt": "content"
+        }
+      },
+      "line": "@\"my folder/\"",
+      "cursorFromEnd": 1
+    },
+    {
+      "id": "at/quoted-partial",
+      "fd": true,
+      "tree": {
+        "files": {
+          "my folder/test.txt": "content"
+        }
+      },
+      "line": "@\"my folder/te\"",
+      "cursorFromEnd": 1
+    },
+    {
+      "id": "at/token-after-space",
+      "fd": true,
+      "tree": {
+        "files": {
+          "src/index.ts": "export {};"
+        }
+      },
+      "line": "look at @index"
+    },
+    {
+      "id": "at/substring-match-in-filename",
+      "fd": true,
+      "tree": {
+        "files": {
+          "my-alpha.ts": "x",
+          "alpha.ts": "x"
+        }
+      },
+      "line": "@alpha"
+    },
+    {
+      "id": "at/regex-metacharacter-query",
+      "fd": true,
+      "tree": {
+        "dirs": [
+          "src"
+        ],
+        "files": {
+          "s.c.txt": "x",
+          "src/kept.txt": "x"
+        }
+      },
+      "line": "@s.c"
+    },
+    {
+      "id": "path/tilde-with-parent-segment",
+      "homeTree": {
+        "files": {
+          "profile.txt": "p"
+        }
+      },
+      "line": "~/../c",
+      "force": true
+    },
+    {
+      "id": "path/dot-file-natural-trigger",
+      "tree": {
+        "files": {
+          ".env": "x",
+          ".envrc": "y",
+          "kept.txt": "k"
+        }
+      },
+      "line": ".env"
+    },
+    {
+      "id": "at/caps-results-at-twenty",
+      "fd": true,
+      "tree": {
+        "files": {
+          "alpha00.ts": "x",
+          "alpha01.ts": "x",
+          "alpha02.ts": "x",
+          "alpha03.ts": "x",
+          "alpha04.ts": "x",
+          "alpha05.ts": "x",
+          "alpha06.ts": "x",
+          "alpha07.ts": "x",
+          "alpha08.ts": "x",
+          "alpha09.ts": "x",
+          "alpha10.ts": "x",
+          "alpha11.ts": "x",
+          "alpha12.ts": "x",
+          "alpha13.ts": "x",
+          "alpha14.ts": "x",
+          "alpha15.ts": "x",
+          "alpha16.ts": "x",
+          "alpha17.ts": "x",
+          "alpha18.ts": "x",
+          "alpha19.ts": "x",
+          "x-alpha0.ts": "x",
+          "x-alpha1.ts": "x",
+          "x-alpha2.ts": "x",
+          "x-alpha3.ts": "x",
+          "x-alpha4.ts": "x"
+        }
+      },
+      "line": "@alpha"
+    },
+    {
+      "id": "at/no-fd-binary",
+      "tree": {
+        "files": {
+          "README.md": "readme"
+        }
+      },
+      "line": "@re"
+    },
+    {
+      "id": "at/no-matches",
+      "fd": true,
+      "tree": {
+        "files": {
+          "README.md": "readme"
+        }
+      },
+      "line": "@zzzz"
+    },
+    {
+      "id": "at/mid-line-apply-keeps-tail",
+      "fd": true,
+      "tree": {
+        "files": {
+          "src/index.ts": "export {};"
+        }
+      },
+      "line": "@index and more",
+      "cursorFromEnd": 10
+    }
+  ]
+}

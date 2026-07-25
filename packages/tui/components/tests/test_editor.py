@@ -16,17 +16,21 @@ assertion below is on ASCII spans, where the two agree; see `editor.py`.
 from __future__ import annotations
 
 import asyncio
+import os
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from pathlib import Path
+from typing import Any, cast
 
-import pytest
+from cortex.tui.components import AutocompleteItem as ConcreteAutocompleteItem
 from cortex.tui.components import (
+    CombinedAutocompleteProvider,
     Editor,
     EditorOptions,
     EditorTheme,
     SelectListTheme,
+    SlashCommand,
     word_wrap_line,
 )
 from cortex.tui.editing import AbortSignal, AutocompleteItem
@@ -1728,20 +1732,126 @@ class TestAutocomplete:
         assert editor.get_text() == "/model gpt-4o-mini"
 
 
-class TestAutocompleteBlockedOn114:
-    """The four TS tests that drive `CombinedAutocompleteProvider` (step 1.14)."""
+class TestAutocompleteWithTheRealProvider:
+    """The TS tests that drive `CombinedAutocompleteProvider` rather than a mock.
 
-    @pytest.mark.parametrize(
-        "ts_test",
-        [
-            "awaits async slash command argument completions",
-            "ignores invalid slash command argument completion results",
-            "does not show argument completions when command has no argument completer",
-            "auto-applies single force-file suggestion via shouldTriggerFileCompletion",
-        ],
-    )
-    def test_unported(self, ts_test: str) -> None:
-        pytest.skip(f"needs autocomplete.ts (step 1.14): {ts_test}")
+    They were blocked on step 1.14; the provider now exists, so they check the
+    editor against the real thing — including `should_trigger_file_completion`,
+    which no mock in this file implements.
+    """
+
+    async def test_awaits_async_slash_command_argument_completions(self) -> None:
+        editor = make_editor()
+
+        async def load_skills(prefix: str) -> list[ConcreteAutocompleteItem] | None:
+            return (
+                [ConcreteAutocompleteItem(value="skill-a", label="skill-a")]
+                if prefix.startswith("s")
+                else None
+            )
+
+        provider = CombinedAutocompleteProvider(
+            [
+                SlashCommand(
+                    name="load-skills",
+                    description="Load skills",
+                    get_argument_completions=load_skills,
+                )
+            ],
+            os.getcwd(),
+        )
+        editor.set_autocomplete_provider(provider)
+        editor.set_text("/load-skills ")
+
+        editor.handle_input("s")
+        await flush_autocomplete()
+        assert editor.is_showing_autocomplete() is True
+
+        editor.handle_input(TAB)
+        assert editor.get_text() == "/load-skills skill-a"
+        assert editor.is_showing_autocomplete() is False
+
+    async def test_ignores_invalid_slash_command_argument_completion_results(self) -> None:
+        editor = make_editor()
+
+        provider = CombinedAutocompleteProvider(
+            [
+                SlashCommand(
+                    name="load-skills",
+                    description="Load skills",
+                    get_argument_completions=lambda _prefix: cast(Any, "not-an-array"),
+                )
+            ],
+            os.getcwd(),
+        )
+        editor.set_autocomplete_provider(provider)
+        editor.set_text("/load-skills ")
+
+        editor.handle_input("s")
+        await flush_autocomplete()
+        assert editor.is_showing_autocomplete() is False
+        assert editor.get_text() == "/load-skills s"
+
+    async def test_does_not_show_argument_completions_without_a_completer(self) -> None:
+        editor = make_editor()
+
+        provider = CombinedAutocompleteProvider(
+            [
+                SlashCommand(name="help", description="Show help"),
+                SlashCommand(
+                    name="model",
+                    description="Switch model",
+                    get_argument_completions=lambda _prefix: [
+                        ConcreteAutocompleteItem(value="claude-opus", label="claude-opus")
+                    ],
+                ),
+            ],
+            os.getcwd(),
+        )
+        editor.set_autocomplete_provider(provider)
+
+        type_text(editor, "/he")
+        await flush_autocomplete()
+        assert editor.is_showing_autocomplete() is True
+
+        editor.handle_input(TAB)
+        assert editor.get_text() == "/help "
+        assert editor.is_showing_autocomplete() is False
+
+    async def test_tab_does_not_force_file_completion_inside_a_slash_command(
+        self, tmp_path: Path
+    ) -> None:
+        """`should_trigger_file_completion` is the provider's veto on forced
+        completion, and only the real provider implements it."""
+        (tmp_path / "modelling").mkdir()
+        editor = make_editor()
+        provider = CombinedAutocompleteProvider([], str(tmp_path))
+        editor.set_autocomplete_provider(provider)
+
+        type_text(editor, "/model")
+        await flush_autocomplete()
+        assert editor.is_showing_autocomplete() is False
+
+        editor.handle_input(TAB)
+        await flush_autocomplete()
+        # Without the veto the forced path branch would complete "/model" to the
+        # "/modelling/" directory; the file suggestion never gets requested.
+        assert editor.get_text() == "/model"
+        assert editor.is_showing_autocomplete() is False
+
+    async def test_tab_forces_file_completion_once_the_command_has_an_argument(
+        self, tmp_path: Path
+    ) -> None:
+        (tmp_path / "notes").mkdir()
+        editor = make_editor()
+        editor.set_autocomplete_provider(CombinedAutocompleteProvider([], str(tmp_path)))
+
+        type_text(editor, "/edit not")
+        await flush_autocomplete()
+
+        editor.handle_input(TAB)
+        await flush_autocomplete()
+        assert editor.get_text() == "/edit notes/"
 
 
 class TestCharacterJump:
