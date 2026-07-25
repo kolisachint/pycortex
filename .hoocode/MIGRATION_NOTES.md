@@ -159,6 +159,30 @@ TS `packages/ai/src/` is split across MULTIPLE python packages:
   their own leaf.
 
 ## Step log
+- 1.11 components — lists — DONE. `select-list.ts` (229) + `settings-list.ts` (250) →
+  `components/{select_list,settings_list}.py`, 33 parity scenarios, 50 unit tests
+  (the first five ported from `select-list.test.ts`). All 91 component scenarios match.
+  1. `SettingsList` DEPENDS ON `Input` (its search box) and on the fuzzy leaf — hence
+     `cortexcode-tui-fuzzy` added to the components leaf. Ordering 1.10 before 1.11
+     was load-bearing.
+  2. Column-bounds fallback is easy to misread: `min` and `max` each stand in for the
+     OTHER when absent, so setting only `max` pins the column rather than leaving
+     `min` at the 32 default. Inverted bounds are swapped, not rejected.
+  3. `truncate_primary` output is truncated AGAIN by the caller — a custom truncator
+     is not trusted to respect the width it was handed.
+  4. `settings-list` measures `max_label_width` over ALL items, not the filtered ones,
+     so the value column does not jump while you type. It caps the PADDING at 30, it
+     does not truncate a longer label; `component/settings-long-label-capped-at-30`
+     records that.
+  5. `indexOf` returning -1 for an unknown `current_value` means cycling starts at the
+     first value. Python's `.index()` raises, so that needs an explicit `except`.
+  6. MUTATION TESTING FOUND A WEAK CORPUS: my first pass had `select-exactly-40`, but
+     at that width the description does not fit either way, so flipping the `width > 40`
+     two-column threshold changed nothing. Added `select-40-short-column` (narrow
+     column via layout bounds) and `select-column-width-from-widest`; both mutations
+     are now caught. Add the scenario that DISCRIMINATES, not the one that looks
+     like a boundary.
+
 - 1.10 components — input — DONE. `input.ts` (503) → `components/input.py` + 24 parity
   scenarios + 46 unit tests. Needed TWO prerequisite steps (1.16, 1.17) that only
   surfaced when the component was driven for real.

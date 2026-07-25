@@ -87,6 +87,15 @@ def _bg_fn(spec: dict[str, Any] | None) -> Callable[[str], str] | None:
     return lambda text: f"{open_seq}{text}{close_seq}"
 
 
+def _theme_pair_fn(spec: dict[str, Any] | None) -> Callable[[str, bool], str]:
+    """Theme fn taking (text, selected) — the settings-list label/value shape."""
+    if not spec:
+        return lambda text, _selected: text
+    open_seq = spec["open"]
+    close_seq = spec["close"]
+    return lambda text, selected: f"{open_seq}{text}{close_seq}" if selected else text
+
+
 def _wrap_fn(spec: dict[str, Any] | None) -> Callable[[str], str]:
     """Same idea as `_bg_fn` for the loader's colour functions; identity by default."""
     if not spec:
@@ -146,6 +155,76 @@ def build_component(spec: dict[str, Any]) -> Renderable:
 
     if name == "StaticLines":
         return StaticLines(args.get("lines", []))
+    if name == "SelectList":
+        from cortex.tui.components import (
+            SelectItem,
+            SelectList,
+            SelectListLayoutOptions,
+            SelectListTheme,
+        )
+
+        theme_spec = args.get("theme", {})
+        layout_spec = args.get("layout", {})
+        select_list = SelectList(
+            [
+                SelectItem(
+                    value=raw["value"],
+                    label=raw.get("label", ""),
+                    description=raw.get("description"),
+                )
+                for raw in args.get("items", [])
+            ],
+            args.get("maxVisible", 5),
+            SelectListTheme(
+                selected_prefix=_wrap_fn(theme_spec.get("selectedPrefix")),
+                selected_text=_wrap_fn(theme_spec.get("selectedText")),
+                description=_wrap_fn(theme_spec.get("description")),
+                scroll_info=_wrap_fn(theme_spec.get("scrollInfo")),
+                no_match=_wrap_fn(theme_spec.get("noMatch")),
+            ),
+            SelectListLayoutOptions(
+                min_primary_column_width=layout_spec.get("minPrimaryColumnWidth"),
+                max_primary_column_width=layout_spec.get("maxPrimaryColumnWidth"),
+            ),
+        )
+        if args.get("filter") is not None:
+            select_list.set_filter(args["filter"])
+        if args.get("selectedIndex") is not None:
+            select_list.set_selected_index(args["selectedIndex"])
+        return select_list
+    if name == "SettingsList":
+        from cortex.tui.components import (
+            SettingItem,
+            SettingsList,
+            SettingsListOptions,
+            SettingsListTheme,
+        )
+
+        theme_spec = args.get("theme", {})
+        options_spec = args.get("options", {})
+        return SettingsList(
+            [
+                SettingItem(
+                    id=raw["id"],
+                    label=raw["label"],
+                    current_value=raw["currentValue"],
+                    description=raw.get("description"),
+                    values=raw.get("values"),
+                )
+                for raw in args.get("items", [])
+            ],
+            args.get("maxVisible", 5),
+            SettingsListTheme(
+                label=_theme_pair_fn(theme_spec.get("label")),
+                value=_theme_pair_fn(theme_spec.get("value")),
+                description=_wrap_fn(theme_spec.get("description")),
+                cursor=theme_spec.get("cursor", "> "),
+                hint=_wrap_fn(theme_spec.get("hint")),
+            ),
+            lambda _id, _value: None,
+            lambda: None,
+            SettingsListOptions(enable_search=options_spec.get("enableSearch", False)),
+        )
     if name == "Input":
         from cortex.tui.components import Input
 

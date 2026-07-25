@@ -30,6 +30,8 @@ const { TUI } = await import(join(SRC_DIR, "tui.ts"));
 const { Loader } = await import(join(SRC_DIR, "components/loader.ts"));
 const { CancellableLoader } = await import(join(SRC_DIR, "components/cancellable-loader.ts"));
 const { Input } = await import(join(SRC_DIR, "components/input.ts"));
+const { SelectList } = await import(join(SRC_DIR, "components/select-list.ts"));
+const { SettingsList } = await import(join(SRC_DIR, "components/settings-list.ts"));
 
 type Json = Record<string, any>;
 
@@ -45,6 +47,13 @@ function makeBgFn(spec: Json | undefined): ((text: string) => string) | undefine
 function makeWrapFn(spec: Json | undefined): (text: string) => string {
 	if (!spec) return (text: string) => text;
 	return (text: string) => `${spec.open}${text}${spec.close}`;
+}
+
+/** Theme fn taking (text, selected) — the settings-list label/value shape. */
+function makeThemePairFn(spec: Json | undefined): (text: string, selected: boolean) => string {
+	if (!spec) return (text: string) => text;
+	return (text: string, selected: boolean) =>
+		selected ? `${spec.open}${text}${spec.close}` : text;
 }
 
 /**
@@ -75,6 +84,40 @@ function build(spec: Json): any {
 	switch (spec.component) {
 		case "StaticLines":
 			return new StaticLines(args.lines ?? []);
+		case "SelectList": {
+			const list = new SelectList(
+				args.items ?? [],
+				args.maxVisible ?? 5,
+				{
+					selectedPrefix: makeWrapFn(args.theme?.selectedPrefix),
+					selectedText: makeWrapFn(args.theme?.selectedText),
+					description: makeWrapFn(args.theme?.description),
+					scrollInfo: makeWrapFn(args.theme?.scrollInfo),
+					noMatch: makeWrapFn(args.theme?.noMatch),
+				},
+				args.layout ?? {},
+			);
+			if (args.filter !== undefined) list.setFilter(args.filter);
+			if (args.selectedIndex !== undefined) list.setSelectedIndex(args.selectedIndex);
+			return list;
+		}
+		case "SettingsList": {
+			const list = new SettingsList(
+				args.items ?? [],
+				args.maxVisible ?? 5,
+				{
+					label: makeThemePairFn(args.theme?.label),
+					value: makeThemePairFn(args.theme?.value),
+					description: makeWrapFn(args.theme?.description),
+					cursor: args.theme?.cursor ?? "> ",
+					hint: makeWrapFn(args.theme?.hint),
+				},
+				() => {},
+				() => {},
+				args.options ?? {},
+			);
+			return list;
+		}
 		case "Input": {
 			const input = new Input();
 			if (args.value !== undefined) input.setValue(args.value);

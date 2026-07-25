@@ -949,6 +949,1584 @@
         "value": "hello"
       },
       "width": 2
+    },
+    {
+      "id": "component/select-empty",
+      "component": "SelectList",
+      "args": {
+        "items": [],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-filter-no-match",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "filter": "zzz"
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-basic",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-no-descriptions",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-narrow-single-column",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 36
+    },
+    {
+      "id": "component/select-exactly-40",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 40
+    },
+    {
+      "id": "component/select-41-two-column",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 41
+    },
+    {
+      "id": "component/select-scrolled-middle",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          },
+          {
+            "value": "delta",
+            "label": "Delta",
+            "description": "Description for delta"
+          },
+          {
+            "value": "epsilon",
+            "label": "Epsilon",
+            "description": "Description for epsilon"
+          },
+          {
+            "value": "zeta",
+            "label": "Zeta",
+            "description": "Description for zeta"
+          },
+          {
+            "value": "eta",
+            "label": "Eta",
+            "description": "Description for eta"
+          },
+          {
+            "value": "theta",
+            "label": "Theta",
+            "description": "Description for theta"
+          }
+        ],
+        "maxVisible": 3,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "selectedIndex": 4
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-scrolled-end",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          },
+          {
+            "value": "delta",
+            "label": "Delta",
+            "description": "Description for delta"
+          },
+          {
+            "value": "epsilon",
+            "label": "Epsilon",
+            "description": "Description for epsilon"
+          },
+          {
+            "value": "zeta",
+            "label": "Zeta",
+            "description": "Description for zeta"
+          },
+          {
+            "value": "eta",
+            "label": "Eta",
+            "description": "Description for eta"
+          },
+          {
+            "value": "theta",
+            "label": "Theta",
+            "description": "Description for theta"
+          }
+        ],
+        "maxVisible": 3,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "selectedIndex": 7
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-wraps-up-from-top",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          },
+          {
+            "value": "delta",
+            "label": "Delta",
+            "description": "Description for delta"
+          }
+        ],
+        "maxVisible": 4,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "keys": [
+        "\u001b[A"
+      ],
+      "width": 60
+    },
+    {
+      "id": "component/select-wraps-down-from-bottom",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          }
+        ],
+        "maxVisible": 3,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "selectedIndex": 2
+      },
+      "keys": [
+        "\u001b[B"
+      ],
+      "width": 60
+    },
+    {
+      "id": "component/select-arrow-navigation",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          },
+          {
+            "value": "delta",
+            "label": "Delta",
+            "description": "Description for delta"
+          },
+          {
+            "value": "epsilon",
+            "label": "Epsilon",
+            "description": "Description for epsilon"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "keys": [
+        "\u001b[B",
+        "\u001b[B"
+      ],
+      "width": 60
+    },
+    {
+      "id": "component/select-filter-prefix",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          },
+          {
+            "value": "delta",
+            "label": "Delta",
+            "description": "Description for delta"
+          },
+          {
+            "value": "epsilon",
+            "label": "Epsilon",
+            "description": "Description for epsilon"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "filter": "e"
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-long-labels-truncate",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "x",
+            "label": "a very long label that will not fit in the primary column",
+            "description": "and a description that is also quite long indeed"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-multiline-description-normalized",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "x",
+            "label": "Item",
+            "description": "  line one\nline two\r\nline three  "
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 70
+    },
+    {
+      "id": "component/select-column-bounds",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "layout": {
+          "minPrimaryColumnWidth": 10,
+          "maxPrimaryColumnWidth": 14
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-column-min-only",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "alpha",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          },
+          {
+            "value": "beta",
+            "label": "Beta",
+            "description": "Description for beta"
+          },
+          {
+            "value": "gamma",
+            "label": "Gamma",
+            "description": "Description for gamma"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "layout": {
+          "minPrimaryColumnWidth": 20
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-value-used-when-no-label",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "raw-value",
+            "label": ""
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/select-wide-chars",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "cjk",
+            "label": "日本語のラベル",
+            "description": "説明文です"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/settings-empty",
+      "component": "SettingsList",
+      "args": {
+        "items": [],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/settings-basic",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "currentValue": "dark",
+            "values": [
+              "dark",
+              "light"
+            ]
+          },
+          {
+            "id": "model",
+            "label": "Model",
+            "currentValue": "opus"
+          },
+          {
+            "id": "verbose",
+            "label": "Verbose logging",
+            "currentValue": "off",
+            "values": [
+              "off",
+              "on"
+            ]
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/settings-with-description",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "currentValue": "dark",
+            "values": [
+              "dark",
+              "light"
+            ],
+            "description": "Colour scheme used across the whole interface"
+          },
+          {
+            "id": "model",
+            "label": "Model",
+            "currentValue": "opus"
+          },
+          {
+            "id": "verbose",
+            "label": "Verbose logging",
+            "currentValue": "off",
+            "values": [
+              "off",
+              "on"
+            ]
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/settings-scrolled",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "currentValue": "dark",
+            "values": [
+              "dark",
+              "light"
+            ]
+          },
+          {
+            "id": "model",
+            "label": "Model",
+            "currentValue": "opus"
+          },
+          {
+            "id": "verbose",
+            "label": "Verbose logging",
+            "currentValue": "off",
+            "values": [
+              "off",
+              "on"
+            ]
+          },
+          {
+            "id": "editor",
+            "label": "External editor",
+            "currentValue": "vim"
+          },
+          {
+            "id": "wrap",
+            "label": "Wrap",
+            "currentValue": "on"
+          }
+        ],
+        "maxVisible": 2,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "keys": [
+        "\u001b[B",
+        "\u001b[B",
+        "\u001b[B"
+      ],
+      "width": 60
+    },
+    {
+      "id": "component/settings-cycle-value",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "currentValue": "dark",
+            "values": [
+              "dark",
+              "light"
+            ]
+          },
+          {
+            "id": "model",
+            "label": "Model",
+            "currentValue": "opus"
+          },
+          {
+            "id": "verbose",
+            "label": "Verbose logging",
+            "currentValue": "off",
+            "values": [
+              "off",
+              "on"
+            ]
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "keys": [
+        "\r"
+      ],
+      "width": 60
+    },
+    {
+      "id": "component/settings-cycle-with-space",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "currentValue": "dark",
+            "values": [
+              "dark",
+              "light"
+            ]
+          },
+          {
+            "id": "model",
+            "label": "Model",
+            "currentValue": "opus"
+          },
+          {
+            "id": "verbose",
+            "label": "Verbose logging",
+            "currentValue": "off",
+            "values": [
+              "off",
+              "on"
+            ]
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "keys": [
+        " ",
+        " "
+      ],
+      "width": 60
+    },
+    {
+      "id": "component/settings-search-enabled",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "currentValue": "dark",
+            "values": [
+              "dark",
+              "light"
+            ]
+          },
+          {
+            "id": "model",
+            "label": "Model",
+            "currentValue": "opus"
+          },
+          {
+            "id": "verbose",
+            "label": "Verbose logging",
+            "currentValue": "off",
+            "values": [
+              "off",
+              "on"
+            ]
+          },
+          {
+            "id": "editor",
+            "label": "External editor",
+            "currentValue": "vim"
+          },
+          {
+            "id": "wrap",
+            "label": "Wrap",
+            "currentValue": "on"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "options": {
+          "enableSearch": true
+        }
+      },
+      "width": 60
+    },
+    {
+      "id": "component/settings-search-typed",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "currentValue": "dark",
+            "values": [
+              "dark",
+              "light"
+            ]
+          },
+          {
+            "id": "model",
+            "label": "Model",
+            "currentValue": "opus"
+          },
+          {
+            "id": "verbose",
+            "label": "Verbose logging",
+            "currentValue": "off",
+            "values": [
+              "off",
+              "on"
+            ]
+          },
+          {
+            "id": "editor",
+            "label": "External editor",
+            "currentValue": "vim"
+          },
+          {
+            "id": "wrap",
+            "label": "Wrap",
+            "currentValue": "on"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "options": {
+          "enableSearch": true
+        }
+      },
+      "keys": [
+        "m",
+        "o",
+        "d"
+      ],
+      "width": 60
+    },
+    {
+      "id": "component/settings-search-no-match",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "currentValue": "dark",
+            "values": [
+              "dark",
+              "light"
+            ]
+          },
+          {
+            "id": "model",
+            "label": "Model",
+            "currentValue": "opus"
+          },
+          {
+            "id": "verbose",
+            "label": "Verbose logging",
+            "currentValue": "off",
+            "values": [
+              "off",
+              "on"
+            ]
+          },
+          {
+            "id": "editor",
+            "label": "External editor",
+            "currentValue": "vim"
+          },
+          {
+            "id": "wrap",
+            "label": "Wrap",
+            "currentValue": "on"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "options": {
+          "enableSearch": true
+        }
+      },
+      "keys": [
+        "z",
+        "z",
+        "z",
+        "z"
+      ],
+      "width": 60
+    },
+    {
+      "id": "component/settings-narrow",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "currentValue": "dark",
+            "values": [
+              "dark",
+              "light"
+            ]
+          },
+          {
+            "id": "model",
+            "label": "Model",
+            "currentValue": "opus"
+          },
+          {
+            "id": "verbose",
+            "label": "Verbose logging",
+            "currentValue": "off",
+            "values": [
+              "off",
+              "on"
+            ]
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 28
+    },
+    {
+      "id": "component/settings-long-label-capped-at-30",
+      "component": "SettingsList",
+      "args": {
+        "items": [
+          {
+            "id": "a",
+            "label": "an extremely long setting label well past thirty columns",
+            "currentValue": "value"
+          },
+          {
+            "id": "b",
+            "label": "Short",
+            "currentValue": "x"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "label": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "value": {
+            "open": "\u001b[36m",
+            "close": "\u001b[39m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "cursor": "> ",
+          "hint": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        }
+      },
+      "width": 70
+    },
+    {
+      "id": "component/select-40-short-column",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "a",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "layout": {
+          "minPrimaryColumnWidth": 8,
+          "maxPrimaryColumnWidth": 8
+        }
+      },
+      "width": 40
+    },
+    {
+      "id": "component/select-41-short-column",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "a",
+            "label": "Alpha",
+            "description": "Description for alpha"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "layout": {
+          "minPrimaryColumnWidth": 8,
+          "maxPrimaryColumnWidth": 8
+        }
+      },
+      "width": 41
+    },
+    {
+      "id": "component/select-column-width-from-widest",
+      "component": "SelectList",
+      "args": {
+        "items": [
+          {
+            "value": "a",
+            "label": "Al",
+            "description": "desc a"
+          },
+          {
+            "value": "b",
+            "label": "Bertram",
+            "description": "desc b"
+          }
+        ],
+        "maxVisible": 5,
+        "theme": {
+          "selectedText": {
+            "open": "\u001b[1m",
+            "close": "\u001b[22m"
+          },
+          "description": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "scrollInfo": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          },
+          "noMatch": {
+            "open": "\u001b[2m",
+            "close": "\u001b[22m"
+          }
+        },
+        "layout": {
+          "minPrimaryColumnWidth": 1,
+          "maxPrimaryColumnWidth": 40
+        }
+      },
+      "width": 60
     }
   ],
   "renderer": [

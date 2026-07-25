@@ -553,6 +553,378 @@
       ],
       "stable": true,
       "referenceIdentical": false
+    },
+    {
+      "id": "component/select-empty",
+      "width": 60,
+      "lines": [
+        "\u001b[2m  No matching commands\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-filter-no-match",
+      "width": 60,
+      "lines": [
+        "\u001b[2m  No matching commands\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-basic",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ Alpha                           Description for alpha\u001b[22m",
+        "  Beta\u001b[2m                            Description for beta\u001b[22m",
+        "  Gamma\u001b[2m                           Description for gamma\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-no-descriptions",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ Alpha\u001b[22m",
+        "  Beta",
+        "  Gamma"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-narrow-single-column",
+      "width": 36,
+      "lines": [
+        "\u001b[1m→ Alpha\u001b[22m",
+        "  Beta",
+        "  Gamma"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-exactly-40",
+      "width": 40,
+      "lines": [
+        "\u001b[1m→ Alpha\u001b[22m",
+        "  Beta",
+        "  Gamma"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-41-two-column",
+      "width": 41,
+      "lines": [
+        "\u001b[1m→ Alpha\u001b[22m",
+        "  Beta",
+        "  Gamma"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-scrolled-middle",
+      "width": 60,
+      "lines": [
+        "  Delta\u001b[2m                           Description for delta\u001b[22m",
+        "\u001b[1m→ Epsilon                         Description for epsilon\u001b[22m",
+        "  Zeta\u001b[2m                            Description for zeta\u001b[22m",
+        "\u001b[2m  (5/8)\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-scrolled-end",
+      "width": 60,
+      "lines": [
+        "  Zeta\u001b[2m                            Description for zeta\u001b[22m",
+        "  Eta\u001b[2m                             Description for eta\u001b[22m",
+        "\u001b[1m→ Theta                           Description for theta\u001b[22m",
+        "\u001b[2m  (8/8)\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-wraps-up-from-top",
+      "width": 60,
+      "lines": [
+        "  Alpha\u001b[2m                           Description for alpha\u001b[22m",
+        "  Beta\u001b[2m                            Description for beta\u001b[22m",
+        "  Gamma\u001b[2m                           Description for gamma\u001b[22m",
+        "\u001b[1m→ Delta                           Description for delta\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-wraps-down-from-bottom",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ Alpha                           Description for alpha\u001b[22m",
+        "  Beta\u001b[2m                            Description for beta\u001b[22m",
+        "  Gamma\u001b[2m                           Description for gamma\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-arrow-navigation",
+      "width": 60,
+      "lines": [
+        "  Alpha\u001b[2m                           Description for alpha\u001b[22m",
+        "  Beta\u001b[2m                            Description for beta\u001b[22m",
+        "\u001b[1m→ Gamma                           Description for gamma\u001b[22m",
+        "  Delta\u001b[2m                           Description for delta\u001b[22m",
+        "  Epsilon\u001b[2m                         Description for epsilon\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-filter-prefix",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ Epsilon                         Description for epsilon\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-long-labels-truncate",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ a very long label that will no\u001b[0m  and a description that i\u001b[0m\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-multiline-description-normalized",
+      "width": 70,
+      "lines": [
+        "\u001b[1m→ Item                            line one line two line three\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-column-bounds",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ Alpha     Description for alpha\u001b[22m",
+        "  Beta\u001b[2m      Description for beta\u001b[22m",
+        "  Gamma\u001b[2m     Description for gamma\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-column-min-only",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ Alpha               Description for alpha\u001b[22m",
+        "  Beta\u001b[2m                Description for beta\u001b[22m",
+        "  Gamma\u001b[2m               Description for gamma\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-value-used-when-no-label",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ raw-value\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-wide-chars",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ 日本語のラベル                  説明文です\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-empty",
+      "width": 60,
+      "lines": [
+        "\u001b[2m  No settings available\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-basic",
+      "width": 60,
+      "lines": [
+        "> \u001b[1mTheme          \u001b[22m  \u001b[36mdark\u001b[39m",
+        "  Model            opus",
+        "  Verbose logging  off",
+        "",
+        "\u001b[2m  Enter/Space to change · Esc to cancel\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-with-description",
+      "width": 60,
+      "lines": [
+        "> \u001b[1mTheme          \u001b[22m  \u001b[36mdark\u001b[39m",
+        "  Model            opus",
+        "  Verbose logging  off",
+        "",
+        "\u001b[2m  Colour scheme used across the whole interface\u001b[22m",
+        "",
+        "\u001b[2m  Enter/Space to change · Esc to cancel\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-scrolled",
+      "width": 60,
+      "lines": [
+        "  Verbose logging  off",
+        "> \u001b[1mExternal editor\u001b[22m  \u001b[36mvim\u001b[39m",
+        "\u001b[2m  (4/5)\u001b[22m",
+        "",
+        "\u001b[2m  Enter/Space to change · Esc to cancel\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-cycle-value",
+      "width": 60,
+      "lines": [
+        "> \u001b[1mTheme          \u001b[22m  \u001b[36mlight\u001b[39m",
+        "  Model            opus",
+        "  Verbose logging  off",
+        "",
+        "\u001b[2m  Enter/Space to change · Esc to cancel\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-cycle-with-space",
+      "width": 60,
+      "lines": [
+        "> \u001b[1mTheme          \u001b[22m  \u001b[36mdark\u001b[39m",
+        "  Model            opus",
+        "  Verbose logging  off",
+        "",
+        "\u001b[2m  Enter/Space to change · Esc to cancel\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-search-enabled",
+      "width": 60,
+      "lines": [
+        "> \u001b[7m \u001b[27m                                                         ",
+        "",
+        "> \u001b[1mTheme          \u001b[22m  \u001b[36mdark\u001b[39m",
+        "  Model            opus",
+        "  Verbose logging  off",
+        "  External editor  vim",
+        "  Wrap             on",
+        "",
+        "\u001b[2m  Type to search · Enter/Space to change · Esc to cancel\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-search-typed",
+      "width": 60,
+      "lines": [
+        "> mod\u001b[7m \u001b[27m                                                      ",
+        "",
+        "> \u001b[1mModel          \u001b[22m  \u001b[36mopus\u001b[39m",
+        "",
+        "\u001b[2m  Type to search · Enter/Space to change · Esc to cancel\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-search-no-match",
+      "width": 60,
+      "lines": [
+        "> zzzz\u001b[7m \u001b[27m                                                     ",
+        "",
+        "\u001b[2m  No matching settings\u001b[22m",
+        "",
+        "\u001b[2m  Type to search · Enter/Space to change · Esc to cancel\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-narrow",
+      "width": 28,
+      "lines": [
+        "> \u001b[1mTheme          \u001b[22m  \u001b[36mdark\u001b[39m",
+        "  Model            opus",
+        "  Verbose logging  off",
+        "",
+        "\u001b[2m  Enter/Space to change ·\u001b[0m...\u001b[0m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/settings-long-label-capped-at-30",
+      "width": 70,
+      "lines": [
+        "> \u001b[1man extremely long setting label well past thirty columns\u001b[22m  \u001b[36mvalue\u001b[39m",
+        "  Short                           x",
+        "",
+        "\u001b[2m  Enter/Space to change · Esc to cancel\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-40-short-column",
+      "width": 40,
+      "lines": [
+        "\u001b[1m→ Alpha\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-41-short-column",
+      "width": 41,
+      "lines": [
+        "\u001b[1m→ Alpha   Description for alpha\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/select-column-width-from-widest",
+      "width": 60,
+      "lines": [
+        "\u001b[1m→ Al       desc a\u001b[22m",
+        "  Bertram\u001b[2m  desc b\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
     }
   ]
 }

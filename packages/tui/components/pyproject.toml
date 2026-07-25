@@ -9,6 +9,7 @@ dependencies = [
     "cortexcode-tui-util",
     "cortexcode-tui-editing",
     "cortexcode-tui-keys",
+    "cortexcode-tui-fuzzy",
 ]
 
 [tool.cortex]
@@ -24,6 +25,7 @@ cortexcode-tui-render = { workspace = true }
 cortexcode-tui-util = { workspace = true }
 cortexcode-tui-editing = { workspace = true }
 cortexcode-tui-keys = { workspace = true }
+cortexcode-tui-fuzzy = { workspace = true }
 
 [build-system]
 requires = [

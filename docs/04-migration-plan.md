@@ -116,7 +116,7 @@ Parallelizable across these leaves; dependencies flow upward from util.
 - [x] **1.10 components — input** — `packages/tui/src/components/input.ts` →
       `components/input.py` + parity goldens. Depends on 1.16 and 1.17. Gate:
       `pytest packages/tui/components`.
-- [ ] **1.11 components — lists** — `packages/tui/src/components/{select-list,settings-list}.ts`
+- [x] **1.11 components — lists** — `packages/tui/src/components/{select-list,settings-list}.ts`
       → `components/{select_list,settings_list}.py` + parity goldens. Gate:
       `pytest packages/tui/components`.
 - [ ] **1.12 components — markdown** — `packages/tui/src/components/markdown.ts` (808 lines,
