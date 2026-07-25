@@ -159,6 +159,25 @@ TS `packages/ai/src/` is split across MULTIPLE python packages:
   their own leaf.
 
 ## Step log
+- 1.10 components — input — DONE. `input.ts` (503) → `components/input.py` + 24 parity
+  scenarios + 46 unit tests. Needed TWO prerequisite steps (1.16, 1.17) that only
+  surfaced when the component was driven for real.
+  1. `decode_kitty_printable` had to be EXPORTED from the keys leaf. `input.ts` calls
+     `decodeKittyPrintable` specifically; the Python public `decode_printable_key` is
+     a superset that also decodes modifyOtherKeys. Using the superset would have been
+     a silent behaviour widening.
+  2. The corpus gained `keys: [...]` and `focused: true` on component scenarios, so
+     stateful components are driven to the state under test before the frame is
+     captured. Both dumpers apply them in the same order.
+  3. Cursor positions are CODE-UNIT indices into the value, but movement/deletion step
+     by grapheme cluster — hence `grapheme_segments` from 1.16.
+  4. UNDO COALESCING, easy to get wrong: whitespace snapshots *before* inserting
+     itself and then still sets `last_action = "type-word"`, so the space and the word
+     after it are ONE undo unit. Typing "hello world" then undo gives "hello", not
+     "hello ". My first unit test asserted the wrong model; the golden was right.
+  5. `_move_word_forwards` uses an index into a materialised grapheme list rather than
+     the TS's iterator, which reads better in Python and behaves identically.
+
 - 1.17 keys — legacy escape sequences — DONE (prerequisite for 1.10, found BY the
   parity harness). `parse_key` returned `None` for the whole legacy ESC-prefixed
   family, so `ctrl+-` (undo) and every alt word-motion binding were dead keys.

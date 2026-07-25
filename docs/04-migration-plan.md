@@ -113,7 +113,7 @@ Parallelizable across these leaves; dependencies flow upward from util.
       `\x1bf` → `alt+right`, `\x1bp`/`\x1bn` → `alt+up`/`alt+down`). Found by the
       `component/input-{undo,word-motion}` parity scenarios diverging. Gate:
       `pytest packages/tui/keys`.
-- [ ] **1.10 components — input** — `packages/tui/src/components/input.ts` →
+- [x] **1.10 components — input** — `packages/tui/src/components/input.ts` →
       `components/input.py` + parity goldens. Depends on 1.16 and 1.17. Gate:
       `pytest packages/tui/components`.
 - [ ] **1.11 components — lists** — `packages/tui/src/components/{select-list,settings-list}.ts`
