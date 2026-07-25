@@ -3775,6 +3775,615 @@
         "paddingY": 0
       },
       "width": 30
+    },
+    {
+      "id": "component/editor-empty",
+      "component": "Editor",
+      "args": {},
+      "width": 30
+    },
+    {
+      "id": "component/editor-empty-focused",
+      "component": "Editor",
+      "args": {},
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-typed",
+      "component": "Editor",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-preset-text",
+      "component": "Editor",
+      "args": {
+        "text": "preset value"
+      },
+      "width": 30
+    },
+    {
+      "id": "component/editor-multiline-text",
+      "component": "Editor",
+      "args": {
+        "text": "first line\nsecond line\nthird"
+      },
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-cursor-mid-line",
+      "component": "Editor",
+      "args": {
+        "text": "hello world"
+      },
+      "keys": [
+        "\u0001",
+        "\u001b[C",
+        "\u001b[C"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-cursor-on-emoji",
+      "component": "Editor",
+      "args": {
+        "text": "ab🙂cd"
+      },
+      "keys": [
+        "\u0001",
+        "\u001b[C",
+        "\u001b[C"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-cursor-on-wide-cjk",
+      "component": "Editor",
+      "args": {
+        "text": "あいうえお"
+      },
+      "keys": [
+        "\u0001",
+        "\u001b[C"
+      ],
+      "focused": true,
+      "width": 20
+    },
+    {
+      "id": "component/editor-padding",
+      "component": "Editor",
+      "args": {
+        "text": "padded",
+        "paddingX": 2
+      },
+      "width": 30
+    },
+    {
+      "id": "component/editor-cursor-in-padding",
+      "component": "Editor",
+      "args": {
+        "text": "0123456789012345678901234",
+        "paddingX": 2
+      },
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-padding-clamped",
+      "component": "Editor",
+      "args": {
+        "text": "hi",
+        "paddingX": 40
+      },
+      "focused": true,
+      "width": 10
+    },
+    {
+      "id": "component/editor-prompt-prefix",
+      "component": "Editor",
+      "args": {
+        "text": "with a prompt",
+        "promptPrefix": ">",
+        "promptColor": {
+          "open": "\u001b[35m",
+          "close": "\u001b[39m"
+        }
+      },
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-prompt-prefix-wrapped",
+      "component": "Editor",
+      "args": {
+        "text": "the quick brown fox jumps over the lazy dog and keeps on running past the fence",
+        "promptPrefix": "!!"
+      },
+      "focused": true,
+      "width": 24
+    },
+    {
+      "id": "component/editor-wrap-words",
+      "component": "Editor",
+      "args": {
+        "text": "the quick brown fox jumps over the lazy dog and keeps on running past the fence"
+      },
+      "focused": true,
+      "width": 24
+    },
+    {
+      "id": "component/editor-wrap-force-break",
+      "component": "Editor",
+      "args": {
+        "text": "supercalifragilisticexpialidocious"
+      },
+      "focused": true,
+      "width": 16
+    },
+    {
+      "id": "component/editor-wrap-wide-chars",
+      "component": "Editor",
+      "args": {
+        "text": "日本語のテキストが折り返される"
+      },
+      "focused": true,
+      "width": 16
+    },
+    {
+      "id": "component/editor-wrap-runs-of-spaces",
+      "component": "Editor",
+      "args": {
+        "text": "alpha    beta    gamma delta"
+      },
+      "focused": true,
+      "width": 14
+    },
+    {
+      "id": "component/editor-narrow-width",
+      "component": "Editor",
+      "args": {
+        "text": "abc"
+      },
+      "focused": true,
+      "width": 2
+    },
+    {
+      "id": "component/editor-scroll-down-indicator",
+      "component": "Editor",
+      "args": {
+        "text": "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9",
+        "rows": 10
+      },
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-scroll-up-indicator",
+      "component": "Editor",
+      "args": {
+        "text": "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9",
+        "rows": 10
+      },
+      "keys": [
+        "\u0005"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-scroll-indicator-truncated",
+      "component": "Editor",
+      "args": {
+        "text": "l1\nl2\nl3\nl4\nl5\nl6\nl7\nl8\nl9",
+        "rows": 10
+      },
+      "focused": true,
+      "width": 10
+    },
+    {
+      "id": "component/editor-min-visible-lines",
+      "component": "Editor",
+      "args": {
+        "text": "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7",
+        "rows": 4
+      },
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-page-down",
+      "component": "Editor",
+      "args": {
+        "text": "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10\nline 11\nline 12\nline 13\nline 14\nline 15\nline 16\nline 17\nline 18\nline 19\nline 20\nline 21\nline 22\nline 23\nline 24\nline 25\nline 26\nline 27\nline 28\nline 29",
+        "rows": 24
+      },
+      "keys": [
+        "\u001b[6~"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-page-up-from-bottom",
+      "component": "Editor",
+      "args": {
+        "text": "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10\nline 11\nline 12\nline 13\nline 14\nline 15\nline 16\nline 17\nline 18\nline 19\nline 20\nline 21\nline 22\nline 23\nline 24\nline 25\nline 26\nline 27\nline 28\nline 29",
+        "rows": 24
+      },
+      "keys": [
+        "\u001b[6~",
+        "\u001b[6~",
+        "\u001b[5~"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-newline",
+      "component": "Editor",
+      "args": {},
+      "keys": [
+        "o",
+        "n",
+        "e",
+        "\u001b[13;2~",
+        "t",
+        "w",
+        "o"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-backslash-enter",
+      "component": "Editor",
+      "args": {},
+      "keys": [
+        "o",
+        "n",
+        "e",
+        "\\",
+        "\r",
+        "t",
+        "w",
+        "o"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-backspace-joins-lines",
+      "component": "Editor",
+      "args": {
+        "text": "one\ntwo"
+      },
+      "keys": [
+        "\u0001",
+        ""
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-forward-delete",
+      "component": "Editor",
+      "args": {
+        "text": "hello"
+      },
+      "keys": [
+        "\u0001",
+        "\u001b[3~",
+        "\u001b[3~"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-delete-word-backward",
+      "component": "Editor",
+      "args": {
+        "text": "alpha beta gamma"
+      },
+      "keys": [
+        "\u0017"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-word-motion",
+      "component": "Editor",
+      "args": {
+        "text": "alpha beta gamma"
+      },
+      "keys": [
+        "\u001b[1;3D",
+        "\u001b[1;3D",
+        "\u001b[1;3C"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-kill-and-yank",
+      "component": "Editor",
+      "args": {
+        "text": "alpha beta"
+      },
+      "keys": [
+        "\u0001",
+        "\u000b",
+        "x",
+        "\u0019"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-yank-pop",
+      "component": "Editor",
+      "args": {
+        "text": "alpha\nbeta"
+      },
+      "keys": [
+        "\u0001",
+        "\u000b",
+        "\u001b[3~",
+        "\u0005",
+        "\u0015",
+        "\u0019",
+        "\u001by"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-kill-to-start",
+      "component": "Editor",
+      "args": {
+        "text": "alpha beta"
+      },
+      "keys": [
+        "\u0015",
+        "x"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-undo-typing",
+      "component": "Editor",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o",
+        " ",
+        "w",
+        "o",
+        "r",
+        "l",
+        "d",
+        "\u001f"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-undo-set-text",
+      "component": "Editor",
+      "args": {
+        "text": "programmatic"
+      },
+      "keys": [
+        "\u001f"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-jump-to-char",
+      "component": "Editor",
+      "args": {
+        "text": "alpha beta gamma"
+      },
+      "keys": [
+        "\u0001",
+        "\u001d",
+        "g"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-submit-clears",
+      "component": "Editor",
+      "args": {
+        "text": "sent"
+      },
+      "keys": [
+        "\r"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-submit-disabled",
+      "component": "Editor",
+      "args": {
+        "text": "kept",
+        "disableSubmit": true
+      },
+      "keys": [
+        "\r"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-tab-without-provider",
+      "component": "Editor",
+      "args": {
+        "text": "/hel"
+      },
+      "keys": [
+        "\t"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-sticky-column",
+      "component": "Editor",
+      "args": {
+        "text": "a very long first line\nshort\nanother long line here"
+      },
+      "keys": [
+        "\u0005",
+        "\u001b[A",
+        "\u001b[A",
+        "\u001b[B",
+        "\u001b[B"
+      ],
+      "focused": true,
+      "width": 40
+    },
+    {
+      "id": "component/editor-up-at-top-goes-to-line-start",
+      "component": "Editor",
+      "args": {
+        "text": "only line"
+      },
+      "keys": [
+        "\u001b[A"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-down-at-bottom-goes-to-line-end",
+      "component": "Editor",
+      "args": {
+        "text": "only line"
+      },
+      "keys": [
+        "\u0001",
+        "\u001b[B"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-paste-small",
+      "component": "Editor",
+      "args": {},
+      "keys": [
+        "\u001b[200~pasted text\u001b[201~"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-paste-marker",
+      "component": "Editor",
+      "args": {},
+      "keys": [
+        "\u001b[200~line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10\nline 11\nline 12\nline 13\nline 14\u001b[201~"
+      ],
+      "focused": true,
+      "width": 34
+    },
+    {
+      "id": "component/editor-paste-marker-cursor-atomic",
+      "component": "Editor",
+      "args": {},
+      "keys": [
+        "\u001b[200~line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10\nline 11\nline 12\nline 13\nline 14\u001b[201~",
+        "\u001b[D"
+      ],
+      "focused": true,
+      "width": 34
+    },
+    {
+      "id": "component/editor-paste-marker-wrapped",
+      "component": "Editor",
+      "args": {},
+      "keys": [
+        "\u001b[200~line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10\nline 11\nline 12\nline 13\nline 14\u001b[201~"
+      ],
+      "focused": true,
+      "width": 14
+    },
+    {
+      "id": "component/editor-paste-marker-word-left",
+      "component": "Editor",
+      "args": {},
+      "keys": [
+        "\u001b[200~line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10\nline 11\nline 12\nline 13\nline 14\u001b[201~",
+        " ",
+        "t",
+        "a",
+        "i",
+        "l",
+        "\u001b[1;3D",
+        "\u001b[1;3D"
+      ],
+      "focused": true,
+      "width": 34
+    },
+    {
+      "id": "component/editor-paste-path-after-word",
+      "component": "Editor",
+      "args": {
+        "text": "see"
+      },
+      "keys": [
+        "\u001b[200~/tmp/file.txt\u001b[201~"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-paste-csi-u-newline",
+      "component": "Editor",
+      "args": {},
+      "keys": [
+        "\u001b[200~one\u001b[106;5utwo\u001b[201~"
+      ],
+      "focused": true,
+      "width": 30
+    },
+    {
+      "id": "component/editor-cursor-at-wrap-boundary",
+      "component": "Editor",
+      "args": {
+        "text": "hello world test"
+      },
+      "keys": [
+        "\u0001",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C"
+      ],
+      "focused": true,
+      "width": 12
     }
   ],
   "renderer": [

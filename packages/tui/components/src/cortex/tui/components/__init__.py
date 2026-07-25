@@ -6,6 +6,14 @@ from cortex.tui.components.cancellable_loader import (
     AbortSignal,
     CancellableLoader,
 )
+from cortex.tui.components.editor import (
+    Editor,
+    EditorOptions,
+    EditorState,
+    EditorTheme,
+    TextChunk,
+    word_wrap_line,
+)
 from cortex.tui.components.input import Input, InputState
 from cortex.tui.components.loader import Loader, LoaderIndicatorOptions
 from cortex.tui.components.markdown import DefaultTextStyle, Markdown, MarkdownTheme
@@ -32,6 +40,10 @@ __all__ = [
     "Box",
     "CancellableLoader",
     "DefaultTextStyle",
+    "Editor",
+    "EditorOptions",
+    "EditorState",
+    "EditorTheme",
     "Input",
     "InputState",
     "Loader",
@@ -49,5 +61,7 @@ __all__ = [
     "SettingsListTheme",
     "Spacer",
     "Text",
+    "TextChunk",
     "TruncatedText",
+    "word_wrap_line",
 ]

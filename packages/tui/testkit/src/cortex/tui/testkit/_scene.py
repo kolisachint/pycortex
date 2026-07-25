@@ -125,6 +125,24 @@ def _highlight_fn(spec: dict[str, Any] | None) -> Callable[[str, str | None], li
     return highlight
 
 
+#: `test-themes.ts` builds the editor border from `chalk.dim`.
+DEFAULT_EDITOR_BORDER = {"open": "\x1b[2m", "close": "\x1b[22m"}
+
+
+def _select_list_theme(spec: dict[str, Any] | None) -> Any:
+    """The select-list theme, shared by `SelectList` and the editor's autocomplete."""
+    from cortex.tui.components import SelectListTheme
+
+    theme = spec or {}
+    return SelectListTheme(
+        selected_prefix=_wrap_fn(theme.get("selectedPrefix")),
+        selected_text=_wrap_fn(theme.get("selectedText")),
+        description=_wrap_fn(theme.get("description")),
+        scroll_info=_wrap_fn(theme.get("scrollInfo")),
+        no_match=_wrap_fn(theme.get("noMatch")),
+    )
+
+
 def _theme_pair_fn(spec: dict[str, Any] | None) -> Callable[[str, bool], str]:
     """Theme fn taking (text, selected) — the settings-list label/value shape."""
     if not spec:
@@ -193,15 +211,44 @@ def build_component(spec: dict[str, Any]) -> Renderable:
 
     if name == "StaticLines":
         return StaticLines(args.get("lines", []))
+    if name == "Editor":
+        from cortex.tui.components import Editor, EditorOptions, EditorTheme
+        from cortex.tui.render import TUI
+        from cortex.tui.testkit._capture import CaptureTerminal
+
+        theme_spec = args.get("theme", {})
+        # The editor reads `tui.terminal.rows` (30% of it caps the visible lines)
+        # and calls `request_render`, so it needs a real TUI. The terminal is the
+        # same recording stub the renderer scenarios use; nothing it writes is
+        # part of a component golden.
+        terminal = CaptureTerminal(args.get("cols", spec["width"]), args.get("rows", 24))
+        editor = Editor(
+            TUI(terminal, False),  # pyright: ignore[reportArgumentType]
+            EditorTheme(
+                border_color=_wrap_fn(theme_spec.get("borderColor", DEFAULT_EDITOR_BORDER)),
+                select_list=_select_list_theme(theme_spec.get("selectList")),
+            ),
+            EditorOptions(
+                padding_x=args.get("paddingX"),
+                autocomplete_max_visible=args.get("autocompleteMaxVisible"),
+            ),
+        )
+        if args.get("text") is not None:
+            editor.set_text(args["text"])
+        if args.get("promptPrefix") is not None:
+            editor.prompt_prefix = args["promptPrefix"]
+        if args.get("promptColor") is not None:
+            editor.prompt_color = _wrap_fn(args["promptColor"])
+        if args.get("disableSubmit"):
+            editor.disable_submit = True
+        return editor
     if name == "SelectList":
         from cortex.tui.components import (
             SelectItem,
             SelectList,
             SelectListLayoutOptions,
-            SelectListTheme,
         )
 
-        theme_spec = args.get("theme", {})
         layout_spec = args.get("layout", {})
         select_list = SelectList(
             [
@@ -213,13 +260,7 @@ def build_component(spec: dict[str, Any]) -> Renderable:
                 for raw in args.get("items", [])
             ],
             args.get("maxVisible", 5),
-            SelectListTheme(
-                selected_prefix=_wrap_fn(theme_spec.get("selectedPrefix")),
-                selected_text=_wrap_fn(theme_spec.get("selectedText")),
-                description=_wrap_fn(theme_spec.get("description")),
-                scroll_info=_wrap_fn(theme_spec.get("scrollInfo")),
-                no_match=_wrap_fn(theme_spec.get("noMatch")),
-            ),
+            _select_list_theme(args.get("theme")),
             SelectListLayoutOptions(
                 min_primary_column_width=layout_spec.get("minPrimaryColumnWidth"),
                 max_primary_column_width=layout_spec.get("maxPrimaryColumnWidth"),

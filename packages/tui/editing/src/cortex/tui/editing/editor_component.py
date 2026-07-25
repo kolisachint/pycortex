@@ -7,10 +7,27 @@ compatibility with the core application.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Protocol, runtime_checkable
 
 from cortex.tui.render import Component
+
+
+class AbortSignal(Protocol):
+    """The read half of an ``AbortController``.
+
+    Structural on purpose: the TS passes the platform ``AbortSignal`` into
+    ``getSuggestions`` so a provider can drop a request whose editor state has
+    moved on. Python has no such type, so this leaf states the only thing a
+    provider may read, and any object with a bool ``aborted`` satisfies it —
+    including ``cortex.tui.components.AbortController``'s signal, which is what
+    the editor actually passes.
+    """
+
+    @property
+    def aborted(self) -> bool:
+        """Has the request been cancelled?"""
+        ...
 
 
 class AutocompleteItem(Protocol):
@@ -36,8 +53,13 @@ class AutocompleteSuggestions(Protocol):
     """Protocol for autocomplete suggestions."""
 
     @property
-    def items(self) -> list[AutocompleteItem]:
-        """The list of items."""
+    def items(self) -> Sequence[AutocompleteItem]:
+        """The items to offer.
+
+        A `Sequence`, not a `list`: `list` is invariant, so a provider returning
+        its own concrete item type would not satisfy this protocol at all — and
+        nothing on the editor side does more than index and iterate.
+        """
         ...
 
     @property
@@ -75,6 +97,7 @@ class AutocompleteProvider(Protocol):
         cursor_line: int,
         cursor_col: int,
         *,
+        signal: AbortSignal,
         force: bool = False,
     ) -> AutocompleteSuggestions | None:
         """Get autocomplete suggestions for current text/cursor position.
