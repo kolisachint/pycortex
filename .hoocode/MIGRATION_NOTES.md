@@ -159,6 +159,20 @@ TS `packages/ai/src/` is split across MULTIPLE python packages:
   their own leaf.
 
 ## Step log
+- 1.17 keys — legacy escape sequences — DONE (prerequisite for 1.10, found BY the
+  parity harness). `parse_key` returned `None` for the whole legacy ESC-prefixed
+  family, so `ctrl+-` (undo) and every alt word-motion binding were dead keys.
+  Ported the TS branch verbatim: `\x1c`/`\x1d`/`\x1f`, the `ctrl+alt+[\]-` forms,
+  `\x08`, `\x1b\r`, `\x1b<space>`, and generic `ESC <char>` → `ctrl+alt+<letter>`
+  (1-26) or `alt+<letter|digit>`.
+  GOTCHA: `\x1bb`/`\x1bf`/`\x1bp`/`\x1bn` must stay in `LEGACY_SEQUENCE_KEY_IDS`
+  mapping to `alt+left`/`alt+right`/`alt+up`/`alt+down`. Falling through to the
+  generic rule yields `alt+b`, which matches NO keybinding — the Emacs aliases only
+  work because the TS rewrites them to the arrow forms. All values were diffed
+  against the TS `parseKey` under bun rather than reasoned about.
+  This is the second gap behind 1.3's "minimal" label; assume more of keys.ts is
+  missing and check before relying on it.
+
 - 1.16 keybindings + grapheme segmentation — DONE (prerequisite for 1.10).
   1. `TUI_KEYBINDINGS` was 15 of 31 ids, with truncated default key lists. Ported the
      TS table in full, in TS order. The missing Emacs alternates (ctrl+b/f/a/e,

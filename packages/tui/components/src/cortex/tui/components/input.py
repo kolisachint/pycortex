@@ -366,7 +366,10 @@ class Input:
 
         # A single-line input drops line breaks outright and widens tabs.
         clean_text = (
-            pasted_text.replace("\r\n", "").replace("\r", "").replace("\n", "").replace("\t", "    ")
+            pasted_text.replace("\r\n", "")
+            .replace("\r", "")
+            .replace("\n", "")
+            .replace("\t", "    ")
         )
 
         self._value = self._value[: self._cursor] + clean_text + self._value[self._cursor :]

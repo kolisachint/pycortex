@@ -104,7 +104,7 @@ Parallelizable across these leaves; dependencies flow upward from util.
       `cortex.tui.util`: `get_segmenter()` currently returns `None` as a stub, but it
       is the TS's public API for what `input.ts` and `editor.ts` split text with.
       Gate: `pytest packages/tui/keys packages/tui/util`.
-- [ ] **1.17 keys — legacy escape sequences** *(prerequisite for 1.10; out of numeric
+- [x] **1.17 keys — legacy escape sequences** *(prerequisite for 1.10; out of numeric
       order on purpose)* — the second half of 1.3's "minimal" `keys.ts` port.
       `parse_key` returns `None` for the whole legacy ESC-prefixed family: `\x1f`
       (`ctrl+-`, the undo binding), `\x1c`/`\x1d`, the `\x1b\x1b`/`\x1c`/`\x1d`/`\x1f`

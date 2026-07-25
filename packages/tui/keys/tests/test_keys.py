@@ -151,3 +151,52 @@ class TestKeybindingTableCompleteness:
         assert kb.matches("\r", "tui.input.submit")
         assert kb.matches("\t", "tui.input.tab")
         assert kb.matches("\x1b", "tui.select.cancel")
+
+
+class TestLegacyEscapeSequences:
+    """Step 1.17. Values verified against the TS `parseKey` under bun."""
+
+    def test_lone_control_codes(self) -> None:
+        assert parse_key("\x1c") == "ctrl+\\"
+        assert parse_key("\x1d") == "ctrl+]"
+        assert parse_key("\x1f") == "ctrl+-"
+        assert parse_key("\x08") == "backspace"
+        assert parse_key("\x00") == "ctrl+space"
+
+    def test_emacs_word_motion_aliases_map_to_arrows(self) -> None:
+        # Deliberately NOT "alt+b"/"alt+f": the TS aliases these to the arrow
+        # forms so they hit the cursorWordLeft/Right bindings.
+        assert parse_key("\x1bb") == "alt+left"
+        assert parse_key("\x1bf") == "alt+right"
+        assert parse_key("\x1bp") == "alt+up"
+        assert parse_key("\x1bn") == "alt+down"
+        assert parse_key("\x1bB") == "alt+left"
+        assert parse_key("\x1bF") == "alt+right"
+
+    def test_generic_alt_letters_and_digits(self) -> None:
+        assert parse_key("\x1bd") == "alt+d"
+        assert parse_key("\x1by") == "alt+y"
+        assert parse_key("\x1b5") == "alt+5"
+
+    def test_esc_prefixed_control_codes_are_ctrl_alt(self) -> None:
+        assert parse_key("\x1b\x01") == "ctrl+alt+a"
+        assert parse_key("\x1b\x1a") == "ctrl+alt+z"
+
+    def test_ctrl_alt_bracket_family(self) -> None:
+        assert parse_key("\x1b\x1b") == "ctrl+alt+["
+        assert parse_key("\x1b\x1c") == "ctrl+alt+\\"
+        assert parse_key("\x1b\x1d") == "ctrl+alt+]"
+        assert parse_key("\x1b\x1f") == "ctrl+alt+-"
+
+    def test_alt_whitespace_forms(self) -> None:
+        assert parse_key("\x1b\r") == "alt+enter"
+        assert parse_key("\x1b ") == "alt+space"
+        assert parse_key("\x1b\x7f") == "alt+backspace"
+
+    def test_the_bindings_these_unblock_now_match(self) -> None:
+        kb = get_keybindings()
+        assert kb.matches("\x1f", "tui.editor.undo")
+        assert kb.matches("\x1bb", "tui.editor.cursorWordLeft")
+        assert kb.matches("\x1bf", "tui.editor.cursorWordRight")
+        assert kb.matches("\x1bd", "tui.editor.deleteWordForward")
+        assert kb.matches("\x1by", "tui.editor.yankPop")

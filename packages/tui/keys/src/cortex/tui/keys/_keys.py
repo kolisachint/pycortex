@@ -71,6 +71,13 @@ LEGACY_SEQUENCE_KEY_IDS: dict[str, str] = {
     "\x1bOH": "home",
     "\x1bOF": "end",
     "\x1bOM": "enter",
+    # Emacs word-motion aliases. These must stay in the table rather than fall
+    # through to the generic `ESC <letter>` rule below, which would yield
+    # "alt+b"/"alt+f" and miss the alt+left/alt+right keybindings entirely.
+    "\x1bb": "alt+left",
+    "\x1bf": "alt+right",
+    "\x1bp": "alt+up",
+    "\x1bn": "alt+down",
 }
 
 
@@ -267,6 +274,20 @@ def parse_key(data: str) -> str | None:
 
     if data == "\x1b":
         return "escape"
+    if data == "\x1c":
+        return "ctrl+\\"
+    if data == "\x1d":
+        return "ctrl+]"
+    if data == "\x1f":
+        return "ctrl+-"
+    if data == "\x1b\x1b":
+        return "ctrl+alt+["
+    if data == "\x1b\x1c":
+        return "ctrl+alt+\\"
+    if data == "\x1b\x1d":
+        return "ctrl+alt+]"
+    if data == "\x1b\x1f":
+        return "ctrl+alt+-"
     if data == "\t":
         return "tab"
     if data == "\r" or data == "\n":
@@ -275,12 +296,29 @@ def parse_key(data: str) -> str | None:
         return "space"
     if data == "\x7f":
         return "backspace"
+    if data == "\x08":
+        return "backspace"
     if data == "\x00":
         return "ctrl+space"
     if data == "\x1b[Z":
         return "shift+tab"
+    if data == "\x1b\r":
+        return "alt+enter"
+    if data == "\x1b ":
+        return "alt+space"
     if data == "\x1b\x7f" or data == "\x1b\b":
         return "alt+backspace"
+    if data == "\x1bB":
+        return "alt+left"
+    if data == "\x1bF":
+        return "alt+right"
+    if len(data) == 2 and data[0] == "\x1b":
+        # ESC-prefixed legacy alt combinations.
+        code = ord(data[1])
+        if 1 <= code <= 26:
+            return f"ctrl+alt+{chr(code + 96)}"
+        if (97 <= code <= 122) or (48 <= code <= 57):
+            return f"alt+{chr(code)}"
     if data == "\x1b[A":
         return "up"
     if data == "\x1b[B":
