@@ -595,6 +595,360 @@
         }
       },
       "width": 24
+    },
+    {
+      "id": "component/input-empty",
+      "component": "Input",
+      "args": {},
+      "width": 20
+    },
+    {
+      "id": "component/input-empty-focused",
+      "component": "Input",
+      "args": {},
+      "focused": true,
+      "width": 20
+    },
+    {
+      "id": "component/input-typed",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-set-value",
+      "component": "Input",
+      "args": {
+        "value": "preset"
+      },
+      "width": 20
+    },
+    {
+      "id": "component/input-cursor-mid",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o",
+        "\u001b[D",
+        "\u001b[D"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-cursor-home",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o",
+        "\u0001"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-backspace",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o",
+        "",
+        ""
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-forward-delete",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o",
+        "\u0001",
+        "\u0004"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-delete-to-line-end",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o",
+        " ",
+        "w",
+        "o",
+        "r",
+        "l",
+        "d",
+        "\u0001",
+        "\u000b"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-delete-to-line-start",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o",
+        " ",
+        "w",
+        "o",
+        "r",
+        "l",
+        "d",
+        "\u0015"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-kill-and-yank",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o",
+        " ",
+        "w",
+        "o",
+        "r",
+        "l",
+        "d",
+        "\u0001",
+        "\u000b",
+        "\u0019"
+      ],
+      "width": 24
+    },
+    {
+      "id": "component/input-delete-word-backward",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "a",
+        "l",
+        "p",
+        "h",
+        "a",
+        " ",
+        "b",
+        "e",
+        "t",
+        "a",
+        " ",
+        "g",
+        "a",
+        "m",
+        "m",
+        "a",
+        "\u0017"
+      ],
+      "width": 24
+    },
+    {
+      "id": "component/input-word-motion",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "a",
+        "l",
+        "p",
+        "h",
+        "a",
+        " ",
+        "b",
+        "e",
+        "t",
+        "a",
+        " ",
+        "g",
+        "a",
+        "m",
+        "m",
+        "a",
+        "\u001bb",
+        "\u001bb"
+      ],
+      "width": 24
+    },
+    {
+      "id": "component/input-undo",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "h",
+        "e",
+        "l",
+        "l",
+        "o",
+        " ",
+        "w",
+        "o",
+        "r",
+        "l",
+        "d",
+        "\u001f"
+      ],
+      "width": 24
+    },
+    {
+      "id": "component/input-scroll-at-end",
+      "component": "Input",
+      "args": {
+        "value": "the quick brown fox jumps over the lazy dog"
+      },
+      "keys": [
+        "\u0005"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-scroll-at-start",
+      "component": "Input",
+      "args": {
+        "value": "the quick brown fox jumps over the lazy dog"
+      },
+      "keys": [
+        "\u0001"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-scroll-middle",
+      "component": "Input",
+      "args": {
+        "value": "the quick brown fox jumps over the lazy dog"
+      },
+      "keys": [
+        "\u0001",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C",
+        "\u001b[C"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-exact-fit",
+      "component": "Input",
+      "args": {
+        "value": "1234567890123456"
+      },
+      "width": 20
+    },
+    {
+      "id": "component/input-wide-chars",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "你",
+        "好",
+        "世",
+        "界"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-wide-chars-cursor-mid",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "你",
+        "好",
+        "世",
+        "界",
+        "\u001b[D"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-focused-marker",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "a",
+        "b",
+        "c"
+      ],
+      "focused": true,
+      "width": 20
+    },
+    {
+      "id": "component/input-paste",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "\u001b[200~pasted\tline\nmore\u001b[201~"
+      ],
+      "width": 30
+    },
+    {
+      "id": "component/input-control-chars-rejected",
+      "component": "Input",
+      "args": {},
+      "keys": [
+        "a",
+        "b",
+        "\u0000\u001e",
+        "c"
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/input-narrow-width",
+      "component": "Input",
+      "args": {
+        "value": "hello"
+      },
+      "width": 2
     }
   ],
   "renderer": [

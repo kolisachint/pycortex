@@ -104,8 +104,17 @@ Parallelizable across these leaves; dependencies flow upward from util.
       `cortex.tui.util`: `get_segmenter()` currently returns `None` as a stub, but it
       is the TS's public API for what `input.ts` and `editor.ts` split text with.
       Gate: `pytest packages/tui/keys packages/tui/util`.
+- [ ] **1.17 keys — legacy escape sequences** *(prerequisite for 1.10; out of numeric
+      order on purpose)* — the second half of 1.3's "minimal" `keys.ts` port.
+      `parse_key` returns `None` for the whole legacy ESC-prefixed family: `\x1f`
+      (`ctrl+-`, the undo binding), `\x1c`/`\x1d`, the `\x1b\x1b`/`\x1c`/`\x1d`/`\x1f`
+      ctrl+alt forms, `\x1b\r`/`\x1b ` , and every `ESC <letter>` alt binding —
+      including the Emacs aliases the TS maps to arrows (`\x1bb` → `alt+left`,
+      `\x1bf` → `alt+right`, `\x1bp`/`\x1bn` → `alt+up`/`alt+down`). Found by the
+      `component/input-{undo,word-motion}` parity scenarios diverging. Gate:
+      `pytest packages/tui/keys`.
 - [ ] **1.10 components — input** — `packages/tui/src/components/input.ts` →
-      `components/input.py` + parity goldens. Depends on 1.16. Gate:
+      `components/input.py` + parity goldens. Depends on 1.16 and 1.17. Gate:
       `pytest packages/tui/components`.
 - [ ] **1.11 components — lists** — `packages/tui/src/components/{select-list,settings-list}.ts`
       → `components/{select_list,settings_list}.py` + parity goldens. Gate:

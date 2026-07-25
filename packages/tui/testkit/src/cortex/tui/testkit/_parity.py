@@ -65,6 +65,12 @@ def evaluate_component(spec: dict[str, Any], golden: dict[str, Any]) -> Result:
     expected = surface_from_lines(golden["lines"], width)
     try:
         component = build_component(spec)
+        # Stateful components (Input) are driven to the state under test before
+        # the frame is captured — same order as reference/dump.ts.
+        if spec.get("focused"):
+            component.focused = True  # pyright: ignore[reportAttributeAccessIssue]
+        for key in spec.get("keys", []):
+            component.handle_input(key)  # pyright: ignore[reportAttributeAccessIssue]
     except Unported as exc:
         return Result(spec["id"], "component", Verdict.UNPORTED, str(exc), exc.blocked_by)
 

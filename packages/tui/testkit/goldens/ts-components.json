@@ -337,6 +337,222 @@
       ],
       "stable": true,
       "referenceIdentical": false
+    },
+    {
+      "id": "component/input-empty",
+      "width": 20,
+      "lines": [
+        "> \u001b[7m \u001b[27m                 "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-empty-focused",
+      "width": 20,
+      "lines": [
+        "> \u001b_pi:c\u0007\u001b[7m \u001b[27m                 "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-typed",
+      "width": 20,
+      "lines": [
+        "> hello\u001b[7m \u001b[27m            "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-set-value",
+      "width": 20,
+      "lines": [
+        "> \u001b[7mp\u001b[27mreset            "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-cursor-mid",
+      "width": 20,
+      "lines": [
+        "> hel\u001b[7ml\u001b[27mo             "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-cursor-home",
+      "width": 20,
+      "lines": [
+        "> \u001b[7mh\u001b[27mello             "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-backspace",
+      "width": 20,
+      "lines": [
+        "> hel\u001b[7m \u001b[27m              "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-forward-delete",
+      "width": 20,
+      "lines": [
+        "> \u001b[7me\u001b[27mllo              "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-delete-to-line-end",
+      "width": 20,
+      "lines": [
+        "> \u001b[7m \u001b[27m                 "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-delete-to-line-start",
+      "width": 20,
+      "lines": [
+        "> \u001b[7m \u001b[27m                 "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-kill-and-yank",
+      "width": 24,
+      "lines": [
+        "> hello world\u001b[7m \u001b[27m          "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-delete-word-backward",
+      "width": 24,
+      "lines": [
+        "> alpha beta \u001b[7m \u001b[27m          "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-word-motion",
+      "width": 24,
+      "lines": [
+        "> alpha \u001b[7mb\u001b[27meta gamma      "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-undo",
+      "width": 24,
+      "lines": [
+        "> hello\u001b[7m \u001b[27m                "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-scroll-at-end",
+      "width": 20,
+      "lines": [
+        "> over the lazy dog\u001b[7m \u001b[27m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-scroll-at-start",
+      "width": 20,
+      "lines": [
+        "> \u001b[7mt\u001b[27mhe quick brown fo"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-scroll-middle",
+      "width": 20,
+      "lines": [
+        "> rown fox \u001b[7mj\u001b[27mumps ove"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-exact-fit",
+      "width": 20,
+      "lines": [
+        "> \u001b[7m1\u001b[27m234567890123456  "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-wide-chars",
+      "width": 20,
+      "lines": [
+        "> 你好世界\u001b[7m \u001b[27m         "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-wide-chars-cursor-mid",
+      "width": 20,
+      "lines": [
+        "> 你好世\u001b[7m界\u001b[27m          "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-focused-marker",
+      "width": 20,
+      "lines": [
+        "> abc\u001b_pi:c\u0007\u001b[7m \u001b[27m              "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-paste",
+      "width": 30,
+      "lines": [
+        "> pasted    linemore\u001b[7m \u001b[27m         "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-control-chars-rejected",
+      "width": 20,
+      "lines": [
+        "> abc\u001b[7m \u001b[27m              "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/input-narrow-width",
+      "width": 2,
+      "lines": [
+        "> "
+      ],
+      "stable": true,
+      "referenceIdentical": false
     }
   ]
 }

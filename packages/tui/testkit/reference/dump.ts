@@ -29,6 +29,7 @@ const { Text, TruncatedText, Box, Spacer } = await import(join(SRC_DIR, "index.t
 const { TUI } = await import(join(SRC_DIR, "tui.ts"));
 const { Loader } = await import(join(SRC_DIR, "components/loader.ts"));
 const { CancellableLoader } = await import(join(SRC_DIR, "components/cancellable-loader.ts"));
+const { Input } = await import(join(SRC_DIR, "components/input.ts"));
 
 type Json = Record<string, any>;
 
@@ -74,6 +75,11 @@ function build(spec: Json): any {
 	switch (spec.component) {
 		case "StaticLines":
 			return new StaticLines(args.lines ?? []);
+		case "Input": {
+			const input = new Input();
+			if (args.value !== undefined) input.setValue(args.value);
+			return input;
+		}
 		case "Loader":
 		case "CancellableLoader": {
 			// `ui: null` keeps the component out of the render loop — the frame
@@ -152,6 +158,10 @@ function renderNow(tui: any): void {
 const componentGoldens: Json[] = [];
 for (const spec of corpus.components ?? []) {
 	const component = build(spec);
+	// Stateful components (Input) are driven to the state under test before the
+	// frame is captured.
+	if (spec.focused) component.focused = true;
+	for (const key of spec.keys ?? []) component.handleInput(key);
 	const lines: string[] = component.render(spec.width);
 	// Render twice: components memoize, and a stale cache is a real bug class.
 	const second: string[] = component.render(spec.width);

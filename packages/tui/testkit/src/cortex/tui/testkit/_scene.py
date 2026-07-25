@@ -146,6 +146,13 @@ def build_component(spec: dict[str, Any]) -> Renderable:
 
     if name == "StaticLines":
         return StaticLines(args.get("lines", []))
+    if name == "Input":
+        from cortex.tui.components import Input
+
+        component = Input()
+        if args.get("value") is not None:
+            component.set_value(args["value"])
+        return component
     if name in ("Loader", "CancellableLoader"):
         from cortex.tui.components import (
             CancellableLoader,

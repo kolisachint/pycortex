@@ -402,6 +402,7 @@ version = "0.0.3"
 source = { editable = "packages/tui/components" }
 dependencies = [
     { name = "cortexcode-tui-editing" },
+    { name = "cortexcode-tui-keys" },
     { name = "cortexcode-tui-render" },
     { name = "cortexcode-tui-util" },
 ]
@@ -409,6 +410,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "cortexcode-tui-editing", editable = "packages/tui/editing" },
+    { name = "cortexcode-tui-keys", editable = "packages/tui/keys" },
     { name = "cortexcode-tui-render", editable = "packages/tui/render" },
     { name = "cortexcode-tui-util", editable = "packages/tui/util" },
 ]

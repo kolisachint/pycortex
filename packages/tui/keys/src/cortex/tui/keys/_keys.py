@@ -310,7 +310,7 @@ def parse_key(data: str) -> str | None:
     return None
 
 
-def _decode_kitty_printable(data: str) -> str | None:
+def decode_kitty_printable(data: str) -> str | None:
     m = KITTY_CSI_U_REGEX.match(data)
     if not m:
         return None
@@ -349,7 +349,7 @@ def _decode_modify_other_keys_printable(data: str) -> str | None:
 
 def decode_printable_key(data: str) -> str | None:
     """Decode a Kitty CSI-u or modifyOtherKeys sequence into a printable char."""
-    return _decode_kitty_printable(data) or _decode_modify_other_keys_printable(data)
+    return decode_kitty_printable(data) or _decode_modify_other_keys_printable(data)
 
 
 # Keybindings
