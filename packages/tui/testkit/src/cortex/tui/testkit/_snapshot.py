@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from cortex.tui.testkit._surface import DEFAULT_STYLE, Style, Surface
+from cortex.tui.testkit._surface import DEFAULT_STYLE, Color, Style, Surface
 from cortex.tui.util import visible_width
 
 __all__ = ["CellDiff", "SurfaceDiff", "diff_surfaces", "snapshot"]
@@ -128,9 +128,14 @@ def diff_surfaces(
             act = actual.grid[row][col]
             char_differs = exp.char != act.char or exp.wide_continuation != act.wide_continuation
             style_differs = compare_styles and exp.style != act.style
-            # A blank cell's style is unobservable unless it paints a background.
+            # Most of a blank cell's style is unobservable — a bold, italic or
+            # red space looks like any other space. Three attributes do paint
+            # one: a background, an underline or strike rule drawn through it,
+            # and inverse (which swaps the invisible fg onto the visible bg).
+            # Ignoring those would hide exactly the bug hoocode's own
+            # "underline leaks into the padding" test exists to catch.
             if style_differs and _blank(exp) and _blank(act):
-                style_differs = exp.style.bg != act.style.bg
+                style_differs = _blank_paint(exp.style) != _blank_paint(act.style)
             if char_differs or style_differs:
                 cells.append(
                     CellDiff(
@@ -156,3 +161,8 @@ def diff_surfaces(
 def _blank(cell: object) -> bool:
     char = getattr(cell, "char", " ")
     return char in ("", " ")
+
+
+def _blank_paint(style: Style) -> tuple[Color, bool, bool, bool]:
+    """The part of a style a blank cell still shows on screen."""
+    return (style.bg, style.underline, style.strike, style.inverse)

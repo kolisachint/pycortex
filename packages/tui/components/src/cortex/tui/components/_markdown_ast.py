@@ -13,15 +13,24 @@ real `marked` (`packages/tui/testkit/goldens/marked-ast.json`) — see
 TypeScript.
 
 Only the fields `markdown.ts` consults are produced. `raw` is carried for
-`html` tokens because that branch prints it; elsewhere marked's `raw` and
-source offsets are internal bookkeeping no renderer branch reads.
+`html` tokens because that branch prints it and for `table` tokens because the
+too-narrow fallback reprints the table's markdown source; elsewhere marked's
+`raw` and source offsets are internal bookkeeping no renderer branch reads.
 """
 
 from __future__ import annotations
 
-from typing import Any, cast
+import re
+from typing import TYPE_CHECKING, Any, cast
 
 import mistune
+from mistune.block_parser import BlockParser
+from mistune.plugins.table import parse_nptable, parse_table, table_in_list, table_in_quote
+
+if TYPE_CHECKING:
+    from re import Match
+
+    from mistune.core import BlockState
 
 __all__ = ["lex_markdown"]
 
@@ -48,25 +57,101 @@ _INLINE_TYPES = {
     "inline_html": "html",
 }
 
-# marked's heading rule consumes its own trailing blank lines, so no `space`
-# token follows one. Every other block leaves the blank line behind.
-_CONSUMES_TRAILING_BLANK = frozenset({"heading"})
+# marked's heading, table and html rules consume their own trailing blank lines,
+# so no `space` token follows one. Every other block leaves the blank line
+# behind. All three were found by diffing against marked, not by reading it.
+_CONSUMES_TRAILING_BLANK = frozenset({"heading", "table", "html"})
+
+
+# A source ending in a blank line (optionally holding spaces or tabs).
+_TRAILING_BLANK_RE = re.compile(r"\n[^\S\n]*\n[^\S\n]*$")
+
+# Set per call in `lex_markdown`: mistune appends a newline to the source it
+# parses, marked does not, and the difference shows up in the last block's `raw`.
+_ENDS_WITH_NEWLINE = "cortex_source_ends_with_newline"
+
+
+def _skip_blank_lines(src: str, pos: int) -> int:
+    """Advance past the run of blank lines starting at `pos`."""
+    while pos < len(src):
+        line_end = src.find("\n", pos)
+        stop = len(src) if line_end < 0 else line_end + 1
+        if src[pos:stop].strip():
+            return pos
+        pos = stop
+    return pos
+
+
+def _record_raw(parse: Any, token_type: str) -> Any:
+    """Wrap a block rule so its token keeps the markdown it was parsed from.
+
+    marked puts the source of every block on `token.raw`, and `markdown.ts`
+    reads it for two of them: a table too narrow to draw reprints its own
+    markdown, and an html block prints its source. mistune's AST carries no
+    source spans, but the rule knows them — `state.cursor` is where the block
+    started and the return value is where it ended.
+
+    Two adjustments make it marked's span rather than mistune's, both pinned by
+    goldens: marked's table and html rules swallow the blank lines that follow
+    the block (which is also why no `space` token comes after one), and mistune
+    parses a source it has appended a final newline to, which marked never sees.
+    """
+
+    def rule(block: BlockParser, m: Match[str], state: BlockState) -> int | None:
+        start = state.cursor
+        end = cast("int | None", parse(block, m, state))
+        if end is None or not state.tokens or state.tokens[-1].get("type") != token_type:
+            return end
+        stop = _skip_blank_lines(state.src, end)
+        raw = state.src[start:stop]
+        if stop >= len(state.src) and not state.env.get(_ENDS_WITH_NEWLINE, True):
+            raw = raw.removesuffix("\n")
+        state.tokens[-1]["raw"] = raw
+        return end
+
+    return rule
 
 
 _PARSER = mistune.create_markdown(
     renderer=None,
-    plugins=["table", "strikethrough", "task_lists", "url"],
+    # `table_in_quote`/`table_in_list` reuse the same rules in nested contexts;
+    # marked parses tables there too, so leaving them off would silently render
+    # a quoted table as paragraphs.
+    plugins=[
+        "table",
+        table_in_quote,
+        table_in_list,
+        "strikethrough",
+        "task_lists",
+        "url",
+    ],
 )
+# Re-register the two table rules through the raw-recording wrapper. `register`
+# with `pattern=None` keeps the plugin's own pattern and rule ordering; only the
+# parse function changes, and the nested rule lists point at the same one.
+_PARSER.block.register("table", None, _record_raw(parse_table, "table"))
+_PARSER.block.register("nptable", None, _record_raw(parse_nptable, "table"))
+_PARSER.block.register("raw_html", None, _record_raw(BlockParser.parse_raw_html, "block_html"))
 
 
 def lex_markdown(text: str) -> list[dict[str, Any]]:
     """Lex `text` into `marked`-shaped block tokens."""
     if not text:
         return []
-    # `create_markdown(renderer=None)` always yields the AST, but mistune types
-    # the call as `str | list` because a renderer would produce a string.
-    ast = cast("list[dict[str, Any]]", _PARSER(text))
-    return _normalize_spaces([t for t in (_block(n) for n in ast) if t is not None])
+    state = _PARSER.block.state_cls()
+    # Shared with every nested state, so a table inside a quote or a list item
+    # sees it too.
+    state.env[_ENDS_WITH_NEWLINE] = text.endswith("\n")
+    # `parse(renderer=None)` always yields the AST, but mistune types the result
+    # as `str | list` because a renderer would produce a string.
+    ast = cast("list[dict[str, Any]]", _PARSER.parse(text, state)[0])
+    tokens = _normalize_spaces([t for t in (_block(n) for n in ast) if t is not None])
+    # mistune emits no blank line of its own after a list, so a document that
+    # *ends* with one has nothing for `_normalize_spaces` to keep; marked still
+    # reports the trailing blank, and the renderer prints it as a blank line.
+    if tokens and tokens[-1]["type"] == "list" and _TRAILING_BLANK_RE.search(text):
+        tokens.append({"type": "space"})
+    return tokens
 
 
 def _children(node: dict[str, Any]) -> list[dict[str, Any]]:
@@ -112,13 +197,17 @@ def _block(node: dict[str, Any]) -> dict[str, Any] | None:  # noqa: C901 - flat 
 
     if mapped == "blockquote":
         inner = [t for t in (_block(c) for c in _children(node)) if t is not None]
-        return {"type": "blockquote", "tokens": _normalize_spaces(inner)}
+        return {
+            "type": "blockquote",
+            "tokens": _normalize_spaces(inner, keep_trailing_space=False),
+        }
 
     if mapped == "hr":
         return {"type": "hr"}
 
     if mapped == "html":
-        return {"type": "html", "raw": (node.get("raw") or "").rstrip("\n")}
+        # Recorded by `_record_raw`; the html branch prints it (trimmed).
+        return {"type": "html", "raw": node.get("raw") or ""}
 
     if mapped == "space":
         return {"type": "space"}
@@ -134,12 +223,28 @@ def _block(node: dict[str, Any]) -> dict[str, Any] | None:  # noqa: C901 - flat 
     return {"type": mapped, "tokens": _inlines(_children(node))}
 
 
+def _item_child(token: dict[str, Any]) -> dict[str, Any]:
+    """A list item's own blocks, as marked models them.
+
+    marked never puts a `paragraph` directly inside a `list_item`: even a loose
+    item (blank line between items, or several paragraphs in one item) keeps its
+    prose as `text` tokens carrying inline children. mistune produces
+    `block_text` for tight items and `paragraph` for loose ones, so the loose
+    case is folded in here. It matters: `renderToken` renders `text` through
+    `renderInlineTokens` and `paragraph` through a branch that appends a blank
+    line, so a loose list would grow spacing the TS does not have.
+    """
+    if token["type"] != "paragraph":
+        return token
+    return {"type": "text", "text": _plain(token["tokens"]), "tokens": token["tokens"]}
+
+
 def _list_item(node: dict[str, Any]) -> dict[str, Any]:
     is_task = node.get("type") == "task_list_item"
     item: dict[str, Any] = {
         "type": "list_item",
         "task": is_task,
-        "tokens": [t for t in (_block(c) for c in _children(node)) if t is not None],
+        "tokens": [_item_child(t) for t in (_block(c) for c in _children(node)) if t is not None],
     }
     if is_task:
         item["checked"] = bool((node.get("attrs") or {}).get("checked"))
@@ -164,7 +269,14 @@ def _table(node: dict[str, Any]) -> dict[str, Any]:
             for row in _children(section):
                 rows.append([{"tokens": _inlines(_children(cell))} for cell in _children(row)])
 
-    return {"type": "table", "align": align, "header": head_cells, "rows": rows}
+    return {
+        "type": "table",
+        "align": align,
+        "header": head_cells,
+        "rows": rows,
+        # Recorded by `_record_table_raw`; the narrow-table fallback prints it.
+        "raw": node.get("raw", ""),
+    }
 
 
 def _inlines(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -238,18 +350,27 @@ def _plain(tokens: list[dict[str, Any]]) -> str:
     return "".join(parts)
 
 
-def _normalize_spaces(tokens: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _normalize_spaces(
+    tokens: list[dict[str, Any]], *, keep_trailing_space: bool = True
+) -> list[dict[str, Any]]:
     """Make mistune's blank lines line up with marked's `space` tokens.
 
     `markdown.ts` keys its blank-line spacing off `nextToken.type === "space"`,
-    so this is not cosmetic. Four adjustments, each pinned by a golden:
+    so this is not cosmetic. Three adjustments, each pinned by a golden:
 
     - collapse a run of blank lines into a single `space`, as marked does;
-    - drop the `space` after a heading, whose rule eats its own trailing blanks;
+    - drop the `space` after a heading or table, whose rules eat their own
+      trailing blanks;
     - add the `space` after a `list` that mistune omits — `list` is the one
       block `markdown.ts` never lets add its own trailing blank, so without this
-      the line simply disappears;
-    - drop a trailing `space`, which marked only emits for an all-blank document.
+      the line simply disappears.
+
+    A document that ends with a blank line ends with a `space` token in both
+    lexers, and the renderer prints it as a trailing blank line, so it is kept.
+    Inside a blockquote (`keep_trailing_space=False`) mistune emits one where
+    marked does not — for `"> para\n>\n"` marked's inner source ends at the
+    paragraph — but the blockquote branch pops trailing blank lines before
+    drawing borders, so dropping it there keeps the screens identical.
     """
     out: list[dict[str, Any]] = []
     for token in tokens:
@@ -262,6 +383,7 @@ def _normalize_spaces(tokens: list[dict[str, Any]]) -> list[dict[str, Any]]:
         elif out and out[-1]["type"] == "list":
             out.append({"type": "space"})
         out.append(token)
-    while len(out) > 1 and out[-1]["type"] == "space":
-        out.pop()
+    if not keep_trailing_space:
+        while len(out) > 1 and out[-1]["type"] == "space":
+            out.pop()
     return out

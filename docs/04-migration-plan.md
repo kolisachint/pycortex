@@ -135,7 +135,7 @@ Parallelizable across these leaves; dependencies flow upward from util.
       missing one is directly visible on screen. Verified token-for-token against AST
       goldens captured from the real `marked`, the same way the surface harness works.
       Gate: `pytest packages/tui/components`.
-- [ ] **1.12 components — markdown** — `packages/tui/src/components/markdown.ts` (808 lines,
+- [x] **1.12 components — markdown** — `packages/tui/src/components/markdown.ts` (808 lines,
       `marked` AST → styled lines) → `components/markdown.py` + parity goldens. Depends
       on 1.18. Gate: `pytest packages/tui/components`.
 - [ ] **1.13 components — editor** — `packages/tui/src/components/editor.ts` (2309 lines) →

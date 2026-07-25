@@ -87,6 +87,44 @@ def _bg_fn(spec: dict[str, Any] | None) -> Callable[[str], str] | None:
     return lambda text: f"{open_seq}{text}{close_seq}"
 
 
+# Serialisable stand-in for the app's markdown theme, mirroring the chalk
+# colours `test/test-themes.ts` uses at chalk level 3. The same table lives in
+# `reference/dump.ts`; every element gets a *distinct* code so a mis-applied
+# style shows up on the surface instead of blending in.
+DEFAULT_MARKDOWN_THEME: dict[str, dict[str, str]] = {
+    "heading": {"open": "\x1b[1m\x1b[36m", "close": "\x1b[39m\x1b[22m"},
+    "link": {"open": "\x1b[34m", "close": "\x1b[39m"},
+    "linkUrl": {"open": "\x1b[2m", "close": "\x1b[22m"},
+    "code": {"open": "\x1b[33m", "close": "\x1b[39m"},
+    "codeBlock": {"open": "\x1b[32m", "close": "\x1b[39m"},
+    "codeBlockBorder": {"open": "\x1b[2m", "close": "\x1b[22m"},
+    "quote": {"open": "\x1b[35m", "close": "\x1b[39m"},
+    "quoteBorder": {"open": "\x1b[2m", "close": "\x1b[22m"},
+    "hr": {"open": "\x1b[2m", "close": "\x1b[22m"},
+    "listBullet": {"open": "\x1b[36m", "close": "\x1b[39m"},
+    "bold": {"open": "\x1b[1m", "close": "\x1b[22m"},
+    "italic": {"open": "\x1b[3m", "close": "\x1b[23m"},
+    "strikethrough": {"open": "\x1b[9m", "close": "\x1b[29m"},
+    "underline": {"open": "\x1b[4m", "close": "\x1b[24m"},
+}
+
+
+def _highlight_fn(spec: dict[str, Any] | None) -> Callable[[str, str | None], list[str]] | None:
+    """Test double for a syntax highlighter — one styled line per code line.
+
+    Tags each line with the language so a dropped `lang` argument is visible.
+    """
+    if not spec:
+        return None
+    open_seq = spec["open"]
+    close_seq = spec["close"]
+
+    def highlight(code: str, lang: str | None = None) -> list[str]:
+        return [f"{open_seq}{lang or ''}|{line}{close_seq}" for line in code.split("\n")]
+
+    return highlight
+
+
 def _theme_pair_fn(spec: dict[str, Any] | None) -> Callable[[str, bool], str]:
     """Theme fn taking (text, selected) — the settings-list label/value shape."""
     if not spec:
@@ -260,6 +298,49 @@ def build_component(spec: dict[str, Any]) -> Renderable:
         )
         loader.stop()
         return loader
+    if name == "Markdown":
+        from cortex.tui.components import DefaultTextStyle, Markdown, MarkdownTheme
+
+        if (spec.get("capabilities") or {}).get("hyperlinks"):
+            # `markdown.ts` asks `terminal-image.ts` whether the terminal speaks
+            # OSC 8. pycortex has no capability source until the images leaf
+            # lands, so this scenario is a tracked gap rather than a stand-in.
+            raise Unported("terminal hyperlink capabilities", "1.15")
+        theme_spec = {**DEFAULT_MARKDOWN_THEME, **(args.get("theme") or {})}
+        style_spec = args.get("defaultTextStyle")
+        return Markdown(
+            args.get("text", ""),
+            args.get("paddingX", 1),
+            args.get("paddingY", 1),
+            MarkdownTheme(
+                heading=_wrap_fn(theme_spec["heading"]),
+                link=_wrap_fn(theme_spec["link"]),
+                link_url=_wrap_fn(theme_spec["linkUrl"]),
+                code=_wrap_fn(theme_spec["code"]),
+                code_block=_wrap_fn(theme_spec["codeBlock"]),
+                code_block_border=_wrap_fn(theme_spec["codeBlockBorder"]),
+                quote=_wrap_fn(theme_spec["quote"]),
+                quote_border=_wrap_fn(theme_spec["quoteBorder"]),
+                hr=_wrap_fn(theme_spec["hr"]),
+                list_bullet=_wrap_fn(theme_spec["listBullet"]),
+                bold=_wrap_fn(theme_spec["bold"]),
+                italic=_wrap_fn(theme_spec["italic"]),
+                strikethrough=_wrap_fn(theme_spec["strikethrough"]),
+                underline=_wrap_fn(theme_spec["underline"]),
+                highlight_code=_highlight_fn(args.get("highlightCode")),
+                code_block_indent=args.get("codeBlockIndent"),
+            ),
+            DefaultTextStyle(
+                color=_bg_fn(style_spec.get("color")),
+                bg_color=_bg_fn(style_spec.get("bgColor")),
+                bold=style_spec.get("bold", False),
+                italic=style_spec.get("italic", False),
+                strikethrough=style_spec.get("strikethrough", False),
+                underline=style_spec.get("underline", False),
+            )
+            if style_spec
+            else None,
+        )
     if name == "Text":
         from cortex.tui.components import Text
 

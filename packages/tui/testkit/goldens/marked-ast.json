@@ -820,6 +820,7 @@
       "tokens": [
         {
           "type": "table",
+          "raw": "| a | b |\n|---|---|\n| 1 | 2 |",
           "align": [
             null,
             null
@@ -871,6 +872,7 @@
       "tokens": [
         {
           "type": "table",
+          "raw": "| left | center | right |\n|:--|:-:|--:|\n| 1 | 2 | 3 |",
           "align": [
             "left",
             "center",
@@ -939,6 +941,7 @@
       "tokens": [
         {
           "type": "table",
+          "raw": "| x |\n|---|\n| **b** |",
           "align": [
             null
           ],
@@ -1118,6 +1121,1219 @@
       "tokens": [
         {
           "type": "space"
+        }
+      ]
+    },
+    {
+      "id": "table-no-leading-pipe",
+      "source": "a | b\n--- | ---\n1 | 2",
+      "tokens": [
+        {
+          "type": "table",
+          "raw": "a | b\n--- | ---\n1 | 2",
+          "align": [
+            null,
+            null
+          ],
+          "header": [
+            {
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "a"
+                }
+              ]
+            },
+            {
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "b"
+                }
+              ]
+            }
+          ],
+          "rows": [
+            [
+              {
+                "tokens": [
+                  {
+                    "type": "text",
+                    "text": "1"
+                  }
+                ]
+              },
+              {
+                "tokens": [
+                  {
+                    "type": "text",
+                    "text": "2"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "table-in-quote",
+      "source": "> | a | b |\n> |---|---|\n> | 1 | 2 |",
+      "tokens": [
+        {
+          "type": "blockquote",
+          "tokens": [
+            {
+              "type": "table",
+              "raw": "| a | b |\n|---|---|\n| 1 | 2 |",
+              "align": [
+                null,
+                null
+              ],
+              "header": [
+                {
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "a"
+                    }
+                  ]
+                },
+                {
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "b"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "tokens": [
+                      {
+                        "type": "text",
+                        "text": "1"
+                      }
+                    ]
+                  },
+                  {
+                    "tokens": [
+                      {
+                        "type": "text",
+                        "text": "2"
+                      }
+                    ]
+                  }
+                ]
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "table-in-list",
+      "source": "- item\n\n  | a | b |\n  |---|---|\n  | 1 | 2 |",
+      "tokens": [
+        {
+          "type": "list",
+          "ordered": false,
+          "start": "",
+          "items": [
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "item",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "item"
+                    }
+                  ]
+                },
+                {
+                  "type": "space"
+                },
+                {
+                  "type": "table",
+                  "raw": "| a | b |\n|---|---|\n| 1 | 2 |",
+                  "align": [
+                    null,
+                    null
+                  ],
+                  "header": [
+                    {
+                      "tokens": [
+                        {
+                          "type": "text",
+                          "text": "a"
+                        }
+                      ]
+                    },
+                    {
+                      "tokens": [
+                        {
+                          "type": "text",
+                          "text": "b"
+                        }
+                      ]
+                    }
+                  ],
+                  "rows": [
+                    [
+                      {
+                        "tokens": [
+                          {
+                            "type": "text",
+                            "text": "1"
+                          }
+                        ]
+                      },
+                      {
+                        "tokens": [
+                          {
+                            "type": "text",
+                            "text": "2"
+                          }
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "table-then-text",
+      "source": "| a | b |\n|---|---|\n| 1 | 2 |\n\nafter the table",
+      "tokens": [
+        {
+          "type": "table",
+          "raw": "| a | b |\n|---|---|\n| 1 | 2 |\n\n",
+          "align": [
+            null,
+            null
+          ],
+          "header": [
+            {
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "a"
+                }
+              ]
+            },
+            {
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "b"
+                }
+              ]
+            }
+          ],
+          "rows": [
+            [
+              {
+                "tokens": [
+                  {
+                    "type": "text",
+                    "text": "1"
+                  }
+                ]
+              },
+              {
+                "tokens": [
+                  {
+                    "type": "text",
+                    "text": "2"
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "after the table"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "table-eof-newline",
+      "source": "| a | b |\n|---|---|\n| 1 | 2 |\n",
+      "tokens": [
+        {
+          "type": "table",
+          "raw": "| a | b |\n|---|---|\n| 1 | 2 |\n",
+          "align": [
+            null,
+            null
+          ],
+          "header": [
+            {
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "a"
+                }
+              ]
+            },
+            {
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "b"
+                }
+              ]
+            }
+          ],
+          "rows": [
+            [
+              {
+                "tokens": [
+                  {
+                    "type": "text",
+                    "text": "1"
+                  }
+                ]
+              },
+              {
+                "tokens": [
+                  {
+                    "type": "text",
+                    "text": "2"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "table-blank-run",
+      "source": "| a |\n|---|\n| 1 |\n\n\nafter",
+      "tokens": [
+        {
+          "type": "table",
+          "raw": "| a |\n|---|\n| 1 |\n\n\n",
+          "align": [
+            null
+          ],
+          "header": [
+            {
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "a"
+                }
+              ]
+            }
+          ],
+          "rows": [
+            [
+              {
+                "tokens": [
+                  {
+                    "type": "text",
+                    "text": "1"
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "after"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "table-in-quote-then-text",
+      "source": "> | a |\n> |---|\n> | 1 |\n\nafter",
+      "tokens": [
+        {
+          "type": "blockquote",
+          "tokens": [
+            {
+              "type": "table",
+              "raw": "| a |\n|---|\n| 1 |",
+              "align": [
+                null
+              ],
+              "header": [
+                {
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "a"
+                    }
+                  ]
+                }
+              ],
+              "rows": [
+                [
+                  {
+                    "tokens": [
+                      {
+                        "type": "text",
+                        "text": "1"
+                      }
+                    ]
+                  }
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "type": "space"
+        },
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "after"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "link-autolink-email",
+      "source": "mail <someone@example.com> now",
+      "tokens": [
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "mail "
+            },
+            {
+              "type": "link",
+              "href": "mailto:someone@example.com",
+              "text": "someone@example.com",
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "someone@example.com"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": " now"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "link-bare-url",
+      "source": "visit https://example.com/path today",
+      "tokens": [
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "visit "
+            },
+            {
+              "type": "link",
+              "href": "https://example.com/path",
+              "text": "https://example.com/path",
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "https://example.com/path"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": " today"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "link-text-equals-href",
+      "source": "[https://example.com](https://example.com)",
+      "tokens": [
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "link",
+              "href": "https://example.com",
+              "text": "https://example.com",
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "https://example.com"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inline-html",
+      "source": "text with <b>tags</b> inside",
+      "tokens": [
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "text with "
+            },
+            {
+              "type": "html",
+              "raw": "<b>"
+            },
+            {
+              "type": "text",
+              "text": "tags"
+            },
+            {
+              "type": "html",
+              "raw": "</b>"
+            },
+            {
+              "type": "text",
+              "text": " inside"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "html-block-multiline",
+      "source": "<div>\n  <span>hi</span>\n</div>",
+      "tokens": [
+        {
+          "type": "html",
+          "raw": "<div>\n  <span>hi</span>\n</div>"
+        }
+      ]
+    },
+    {
+      "id": "list-loose",
+      "source": "- first\n\n- second",
+      "tokens": [
+        {
+          "type": "list",
+          "ordered": false,
+          "start": "",
+          "items": [
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "first",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "first"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "second",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "second"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "list-item-multi-block",
+      "source": "- para one\n\n  para two\n- next",
+      "tokens": [
+        {
+          "type": "list",
+          "ordered": false,
+          "start": "",
+          "items": [
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "para one",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "para one"
+                    }
+                  ]
+                },
+                {
+                  "type": "space"
+                },
+                {
+                  "type": "text",
+                  "text": "para two",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "para two"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "next",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "next"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "list-item-code",
+      "source": "- item\n\n  ```sh\n  ls\n  ```",
+      "tokens": [
+        {
+          "type": "list",
+          "ordered": false,
+          "start": "",
+          "items": [
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "item",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "item"
+                    }
+                  ]
+                },
+                {
+                  "type": "space"
+                },
+                {
+                  "type": "code",
+                  "lang": "sh",
+                  "text": "ls"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "list-item-quote",
+      "source": "- > quoted in a list",
+      "tokens": [
+        {
+          "type": "list",
+          "ordered": false,
+          "start": "",
+          "items": [
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "blockquote",
+                  "tokens": [
+                    {
+                      "type": "paragraph",
+                      "tokens": [
+                        {
+                          "type": "text",
+                          "text": "quoted in a list"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "list-unindented-code",
+      "source": "1. first\n\n```js\ncode()\n```\n\n2. second",
+      "tokens": [
+        {
+          "type": "list",
+          "ordered": true,
+          "start": 1,
+          "items": [
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "first",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "first"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "space"
+        },
+        {
+          "type": "code",
+          "lang": "js",
+          "text": "code()"
+        },
+        {
+          "type": "space"
+        },
+        {
+          "type": "list",
+          "ordered": true,
+          "start": 2,
+          "items": [
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "second",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "second"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blockquote-lazy",
+      "source": "> lazy quote\ncontinuation line",
+      "tokens": [
+        {
+          "type": "blockquote",
+          "tokens": [
+            {
+              "type": "paragraph",
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "lazy quote\ncontinuation line"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blockquote-code",
+      "source": "> ```sh\n> ls\n> ```",
+      "tokens": [
+        {
+          "type": "blockquote",
+          "tokens": [
+            {
+              "type": "code",
+              "lang": "sh",
+              "text": "ls"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "heading-then-list",
+      "source": "## Head\n- one\n- two",
+      "tokens": [
+        {
+          "type": "heading",
+          "depth": 2,
+          "tokens": [
+            {
+              "type": "text",
+              "text": "Head"
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "start": "",
+          "items": [
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "one",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "one"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "two",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "two"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "paragraph-then-list",
+      "source": "intro text\n\n- one\n- two",
+      "tokens": [
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "intro text"
+            }
+          ]
+        },
+        {
+          "type": "space"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "start": "",
+          "items": [
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "one",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "one"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "two",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "two"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hr-then-paragraph",
+      "source": "---\n\nafter the rule",
+      "tokens": [
+        {
+          "type": "hr"
+        },
+        {
+          "type": "space"
+        },
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "after the rule"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "code-then-paragraph",
+      "source": "```js\ncode()\n```\n\nafter the code",
+      "tokens": [
+        {
+          "type": "code",
+          "lang": "js",
+          "text": "code()"
+        },
+        {
+          "type": "space"
+        },
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "after the code"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "para-trailing-blank",
+      "source": "para\n\n",
+      "tokens": [
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "para"
+            }
+          ]
+        },
+        {
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "id": "list-trailing-blank",
+      "source": "- a\n- b\n\n",
+      "tokens": [
+        {
+          "type": "list",
+          "ordered": false,
+          "start": "",
+          "items": [
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "a",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "a"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "b",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "b"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "id": "list-trailing-blank-spaces",
+      "source": "- a\n- b\n \n",
+      "tokens": [
+        {
+          "type": "list",
+          "ordered": false,
+          "start": "",
+          "items": [
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "a",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "a"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "b",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "b"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "id": "code-trailing-blank",
+      "source": "```\nx\n```\n\n",
+      "tokens": [
+        {
+          "type": "code",
+          "lang": "",
+          "text": "x"
+        },
+        {
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "id": "quote-trailing-blank",
+      "source": "> q\n\n",
+      "tokens": [
+        {
+          "type": "blockquote",
+          "tokens": [
+            {
+              "type": "paragraph",
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "q"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "id": "heading-trailing-blank",
+      "source": "# h\n\n",
+      "tokens": [
+        {
+          "type": "heading",
+          "depth": 1,
+          "tokens": [
+            {
+              "type": "text",
+              "text": "h"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "table-trailing-blank",
+      "source": "| a |\n|---|\n| 1 |\n\n",
+      "tokens": [
+        {
+          "type": "table",
+          "raw": "| a |\n|---|\n| 1 |\n\n",
+          "align": [
+            null
+          ],
+          "header": [
+            {
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "a"
+                }
+              ]
+            }
+          ],
+          "rows": [
+            [
+              {
+                "tokens": [
+                  {
+                    "type": "text",
+                    "text": "1"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "html-trailing-blank",
+      "source": "<div>x</div>\n\n",
+      "tokens": [
+        {
+          "type": "html",
+          "raw": "<div>x</div>\n\n"
+        }
+      ]
+    },
+    {
+      "id": "hr-trailing-blank",
+      "source": "---\n\n",
+      "tokens": [
+        {
+          "type": "hr"
+        },
+        {
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "id": "quote-inner-trailing-blank",
+      "source": "> para\n>\n> \n",
+      "tokens": [
+        {
+          "type": "blockquote",
+          "tokens": [
+            {
+              "type": "paragraph",
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "para"
+                }
+              ]
+            },
+            {
+              "type": "space"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "html-then-text",
+      "source": "<div>x</div>\n\nafter",
+      "tokens": [
+        {
+          "type": "html",
+          "raw": "<div>x</div>\n\n"
+        },
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "after"
+            }
+          ]
         }
       ]
     }

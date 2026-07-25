@@ -8,6 +8,7 @@ from cortex.tui.components.cancellable_loader import (
 )
 from cortex.tui.components.input import Input, InputState
 from cortex.tui.components.loader import Loader, LoaderIndicatorOptions
+from cortex.tui.components.markdown import DefaultTextStyle, Markdown, MarkdownTheme
 from cortex.tui.components.select_list import (
     SelectItem,
     SelectList,
@@ -30,10 +31,13 @@ __all__ = [
     "AbortSignal",
     "Box",
     "CancellableLoader",
+    "DefaultTextStyle",
     "Input",
     "InputState",
     "Loader",
     "LoaderIndicatorOptions",
+    "Markdown",
+    "MarkdownTheme",
     "SelectItem",
     "SelectList",
     "SelectListLayoutOptions",

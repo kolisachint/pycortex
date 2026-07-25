@@ -32,6 +32,8 @@ const { CancellableLoader } = await import(join(SRC_DIR, "components/cancellable
 const { Input } = await import(join(SRC_DIR, "components/input.ts"));
 const { SelectList } = await import(join(SRC_DIR, "components/select-list.ts"));
 const { SettingsList } = await import(join(SRC_DIR, "components/settings-list.ts"));
+const { Markdown } = await import(join(SRC_DIR, "components/markdown.ts"));
+const { setCapabilities } = await import(join(SRC_DIR, "terminal-image.ts"));
 
 type Json = Record<string, any>;
 
@@ -47,6 +49,61 @@ function makeBgFn(spec: Json | undefined): ((text: string) => string) | undefine
 function makeWrapFn(spec: Json | undefined): (text: string) => string {
 	if (!spec) return (text: string) => text;
 	return (text: string) => `${spec.open}${text}${spec.close}`;
+}
+
+/**
+ * Serialisable stand-in for the app's markdown theme, mirroring the chalk
+ * colours `test/test-themes.ts` uses at chalk level 3. Kept as data so the
+ * Python builder can construct the identical functions; every element gets a
+ * *distinct* code so a mis-applied style shows up on the surface instead of
+ * blending in.
+ */
+const DEFAULT_MARKDOWN_THEME: Json = {
+	heading: { open: "\x1b[1m\x1b[36m", close: "\x1b[39m\x1b[22m" },
+	link: { open: "\x1b[34m", close: "\x1b[39m" },
+	linkUrl: { open: "\x1b[2m", close: "\x1b[22m" },
+	code: { open: "\x1b[33m", close: "\x1b[39m" },
+	codeBlock: { open: "\x1b[32m", close: "\x1b[39m" },
+	codeBlockBorder: { open: "\x1b[2m", close: "\x1b[22m" },
+	quote: { open: "\x1b[35m", close: "\x1b[39m" },
+	quoteBorder: { open: "\x1b[2m", close: "\x1b[22m" },
+	hr: { open: "\x1b[2m", close: "\x1b[22m" },
+	listBullet: { open: "\x1b[36m", close: "\x1b[39m" },
+	bold: { open: "\x1b[1m", close: "\x1b[22m" },
+	italic: { open: "\x1b[3m", close: "\x1b[23m" },
+	strikethrough: { open: "\x1b[9m", close: "\x1b[29m" },
+	underline: { open: "\x1b[4m", close: "\x1b[24m" },
+};
+
+/** Capabilities the goldens are captured under, so the capture machine's
+ * TERM_PROGRAM cannot change what is recorded. */
+const DEFAULT_CAPABILITIES: Json = { images: null, trueColor: true, hyperlinks: false };
+
+function makeMarkdownTheme(args: Json): Json {
+	const spec: Json = { ...DEFAULT_MARKDOWN_THEME, ...(args.theme ?? {}) };
+	const theme: Json = {};
+	for (const key of Object.keys(DEFAULT_MARKDOWN_THEME)) theme[key] = makeWrapFn(spec[key]);
+	if (args.highlightCode) {
+		const hl = args.highlightCode;
+		// Test double for a syntax highlighter: one styled line per code line,
+		// tagged with the language so a dropped `lang` argument is visible.
+		theme.highlightCode = (code: string, lang?: string) =>
+			code.split("\n").map((line: string) => `${hl.open}${lang ?? ""}|${line}${hl.close}`);
+	}
+	if (args.codeBlockIndent !== undefined) theme.codeBlockIndent = args.codeBlockIndent;
+	return theme;
+}
+
+function makeDefaultTextStyle(spec: Json | undefined): Json | undefined {
+	if (!spec) return undefined;
+	return {
+		color: spec.color ? makeWrapFn(spec.color) : undefined,
+		bgColor: spec.bgColor ? makeWrapFn(spec.bgColor) : undefined,
+		bold: spec.bold ?? false,
+		italic: spec.italic ?? false,
+		strikethrough: spec.strikethrough ?? false,
+		underline: spec.underline ?? false,
+	};
 }
 
 /** Theme fn taking (text, selected) — the settings-list label/value shape. */
@@ -139,6 +196,14 @@ function build(spec: Json): any {
 			loader.stop();
 			return loader;
 		}
+		case "Markdown":
+			return new Markdown(
+				args.text ?? "",
+				args.paddingX ?? 1,
+				args.paddingY ?? 1,
+				makeMarkdownTheme(args),
+				makeDefaultTextStyle(args.defaultTextStyle),
+			);
 		case "Text":
 			return new Text(args.text ?? "", args.paddingX ?? 1, args.paddingY ?? 1, bg);
 		case "TruncatedText":
@@ -200,6 +265,10 @@ function renderNow(tui: any): void {
 
 const componentGoldens: Json[] = [];
 for (const spec of corpus.components ?? []) {
+	// Terminal capabilities are read at render time (markdown links pick OSC 8
+	// over `text (url)` from them), so pin them per scenario instead of
+	// inheriting whatever terminal the capture ran in.
+	setCapabilities({ ...DEFAULT_CAPABILITIES, ...(spec.capabilities ?? {}) });
 	const component = build(spec);
 	// Stateful components (Input) are driven to the state under test before the
 	// frame is captured.
@@ -218,6 +287,7 @@ for (const spec of corpus.components ?? []) {
 }
 
 const rendererGoldens: Json[] = [];
+setCapabilities({ ...DEFAULT_CAPABILITIES });
 for (const spec of corpus.renderer ?? []) {
 	const terminal = new CaptureTerminal(spec.cols, spec.rows);
 	const tui = new TUI(terminal as any, false);

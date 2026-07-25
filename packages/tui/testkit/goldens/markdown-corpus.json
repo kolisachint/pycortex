@@ -128,6 +128,142 @@
     {
       "id": "whitespace-only",
       "source": "   \n  \n"
+    },
+    {
+      "id": "table-no-leading-pipe",
+      "source": "a | b\n--- | ---\n1 | 2"
+    },
+    {
+      "id": "table-in-quote",
+      "source": "> | a | b |\n> |---|---|\n> | 1 | 2 |"
+    },
+    {
+      "id": "table-in-list",
+      "source": "- item\n\n  | a | b |\n  |---|---|\n  | 1 | 2 |"
+    },
+    {
+      "id": "table-then-text",
+      "source": "| a | b |\n|---|---|\n| 1 | 2 |\n\nafter the table"
+    },
+    {
+      "id": "table-eof-newline",
+      "source": "| a | b |\n|---|---|\n| 1 | 2 |\n"
+    },
+    {
+      "id": "table-blank-run",
+      "source": "| a |\n|---|\n| 1 |\n\n\nafter"
+    },
+    {
+      "id": "table-in-quote-then-text",
+      "source": "> | a |\n> |---|\n> | 1 |\n\nafter"
+    },
+    {
+      "id": "link-autolink-email",
+      "source": "mail <someone@example.com> now"
+    },
+    {
+      "id": "link-bare-url",
+      "source": "visit https://example.com/path today"
+    },
+    {
+      "id": "link-text-equals-href",
+      "source": "[https://example.com](https://example.com)"
+    },
+    {
+      "id": "inline-html",
+      "source": "text with <b>tags</b> inside"
+    },
+    {
+      "id": "html-block-multiline",
+      "source": "<div>\n  <span>hi</span>\n</div>"
+    },
+    {
+      "id": "list-loose",
+      "source": "- first\n\n- second"
+    },
+    {
+      "id": "list-item-multi-block",
+      "source": "- para one\n\n  para two\n- next"
+    },
+    {
+      "id": "list-item-code",
+      "source": "- item\n\n  ```sh\n  ls\n  ```"
+    },
+    {
+      "id": "list-item-quote",
+      "source": "- > quoted in a list"
+    },
+    {
+      "id": "list-unindented-code",
+      "source": "1. first\n\n```js\ncode()\n```\n\n2. second"
+    },
+    {
+      "id": "blockquote-lazy",
+      "source": "> lazy quote\ncontinuation line"
+    },
+    {
+      "id": "blockquote-code",
+      "source": "> ```sh\n> ls\n> ```"
+    },
+    {
+      "id": "heading-then-list",
+      "source": "## Head\n- one\n- two"
+    },
+    {
+      "id": "paragraph-then-list",
+      "source": "intro text\n\n- one\n- two"
+    },
+    {
+      "id": "hr-then-paragraph",
+      "source": "---\n\nafter the rule"
+    },
+    {
+      "id": "code-then-paragraph",
+      "source": "```js\ncode()\n```\n\nafter the code"
+    },
+    {
+      "id": "para-trailing-blank",
+      "source": "para\n\n"
+    },
+    {
+      "id": "list-trailing-blank",
+      "source": "- a\n- b\n\n"
+    },
+    {
+      "id": "list-trailing-blank-spaces",
+      "source": "- a\n- b\n \n"
+    },
+    {
+      "id": "code-trailing-blank",
+      "source": "```\nx\n```\n\n"
+    },
+    {
+      "id": "quote-trailing-blank",
+      "source": "> q\n\n"
+    },
+    {
+      "id": "heading-trailing-blank",
+      "source": "# h\n\n"
+    },
+    {
+      "id": "table-trailing-blank",
+      "source": "| a |\n|---|\n| 1 |\n\n"
+    },
+    {
+      "id": "html-trailing-blank",
+      "source": "<div>x</div>\n\n"
+    },
+    {
+      "id": "hr-trailing-blank",
+      "source": "---\n\n"
+    },
+    {
+      "id": "quote-inner-trailing-blank",
+      "source": "> para\n>\n> \n"
+    },
+    {
+      "id": "html-then-text",
+      "source": "<div>x</div>\n\nafter"
     }
   ]
 }
