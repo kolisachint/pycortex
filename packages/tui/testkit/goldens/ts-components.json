@@ -1,0 +1,249 @@
+{
+  "source": "hoocode TS",
+  "scenarios": [
+    {
+      "id": "component/text-basic",
+      "width": 20,
+      "lines": [
+        "                    ",
+        " hello              ",
+        "                    "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-no-padding",
+      "width": 20,
+      "lines": [
+        "hello               "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-empty",
+      "width": 20,
+      "lines": [],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-whitespace-only",
+      "width": 20,
+      "lines": [],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-wrap-words",
+      "width": 20,
+      "lines": [
+        " the quick brown    ",
+        " fox jumps over the ",
+        " lazy dog           "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-wrap-long-word",
+      "width": 14,
+      "lines": [
+        " supercalifra ",
+        " gilisticexpi ",
+        " alidocious   "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-explicit-newlines",
+      "width": 20,
+      "lines": [
+        " first              ",
+        " second             ",
+        " third              "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-tabs",
+      "width": 20,
+      "lines": [
+        "a   b   c           "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-ansi-colors",
+      "width": 24,
+      "lines": [
+        " \u001b[31mred\u001b[39m and \u001b[1mbold\u001b[22m           "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-ansi-wrapped",
+      "width": 18,
+      "lines": [
+        " \u001b[32mgreen text that  ",
+        " \u001b[32mmust wrap across ",
+        " \u001b[32mlines\u001b[39m            "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-wide-chars",
+      "width": 16,
+      "lines": [
+        " 你好世界 hello "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-wide-chars-wrap",
+      "width": 12,
+      "lines": [
+        " 今日は世界 ",
+        " こんにちは ",
+        " みなさん   "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/text-with-bg",
+      "width": 18,
+      "lines": [
+        "\u001b[44m                  \u001b[49m",
+        "\u001b[44m on blue          \u001b[49m",
+        "\u001b[44m                  \u001b[49m"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/truncated-fits",
+      "width": 20,
+      "lines": [
+        "short               "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/truncated-cuts",
+      "width": 16,
+      "lines": [
+        "a line that i\u001b[0m...\u001b[0m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/truncated-padding",
+      "width": 16,
+      "lines": [
+        "                ",
+        "  padded        ",
+        "                "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/truncated-stops-at-newline",
+      "width": 20,
+      "lines": [
+        "first line          "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/truncated-ansi",
+      "width": 16,
+      "lines": [
+        "\u001b[36mcyan text tha\u001b[0m...\u001b[0m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/truncated-wide-chars",
+      "width": 9,
+      "lines": [
+        "你好世\u001b[0m...\u001b[0m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/spacer-default",
+      "width": 10,
+      "lines": [
+        ""
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/spacer-three",
+      "width": 10,
+      "lines": [
+        "",
+        "",
+        ""
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/box-empty",
+      "width": 20,
+      "lines": [],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/box-with-text",
+      "width": 20,
+      "lines": [
+        "                    ",
+        "  inside            ",
+        "                    "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/box-nested-padding",
+      "width": 18,
+      "lines": [
+        "  wrapped         ",
+        "  content here    ",
+        "                  ",
+        " tail             "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/box-with-bg",
+      "width": 16,
+      "lines": [
+        "\u001b[41m                \u001b[49m",
+        "\u001b[41m warn           \u001b[49m",
+        "\u001b[41m                \u001b[49m"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    }
+  ]
+}

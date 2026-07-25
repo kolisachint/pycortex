@@ -14,7 +14,13 @@ from functools import lru_cache
 _EAW_WIDTH = {
     "F": 2,  # Fullwidth
     "W": 2,  # Wide
-    "A": 2,  # Ambiguous (treated as wide in terminal contexts)
+    # Ambiguous is NARROW. `get-east-asian-width` defaults `ambiguousAsWide` to
+    # false and utils.ts never overrides it, so the TS measures `┌ ─ │ ± ° → █`
+    # as one column — and so does every terminal we render into (verified
+    # against @xterm/headless in packages/tui/testkit). Treating these as wide
+    # made every box border and spinner measure double, which over-truncates
+    # lines and, in tui.ts, trips the "exceeds terminal width" crash guard.
+    "A": 1,
     "N": 1,  # Neutral
     "Na": 1,  # Narrow
     "H": 1,  # Halfwidth

@@ -45,6 +45,7 @@ members = [
     "cortexcode-tui-keys",
     "cortexcode-tui-render",
     "cortexcode-tui-terminal",
+    "cortexcode-tui-testkit",
     "cortexcode-tui-util",
     "pycortex-workspace",
 ]
@@ -449,6 +450,17 @@ source = { editable = "packages/tui/render" }
 name = "cortexcode-tui-terminal"
 version = "0.0.3"
 source = { editable = "packages/tui/terminal" }
+
+[[package]]
+name = "cortexcode-tui-testkit"
+version = "0.0.3"
+source = { editable = "packages/tui/testkit" }
+dependencies = [
+    { name = "cortexcode-tui-util" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "cortexcode-tui-util", editable = "packages/tui/util" }]
 
 [[package]]
 name = "cortexcode-tui-util"

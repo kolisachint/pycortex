@@ -1,0 +1,27 @@
+[project]
+name = "cortexcode-tui-testkit"
+version = "0.0.3"
+description = "Cortex TUI leaf: testkit — authoritative rendering surface (never published)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "cortexcode-tui-util",
+]
+
+[tool.cortex]
+# Test infrastructure, not a port of anything in hoocode. Never publish.
+publish = false
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "src/cortex",
+]
+
+[tool.uv.sources]
+cortexcode-tui-util = { workspace = true }
+
+[build-system]
+requires = [
+    "hatchling",
+]
+build-backend = "hatchling.build"

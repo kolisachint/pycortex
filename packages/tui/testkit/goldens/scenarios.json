@@ -1,0 +1,805 @@
+{
+  "$comment": "Shared corpus. Both the TS reference dumper (reference/*.ts) and the Python parity tests read THIS file, so the two sides cannot drift into testing different things. Add a scenario here first, then regenerate goldens with `uv run scripts/tui_goldens.py --refresh`.",
+  "ansi": [
+    {
+      "id": "ansi/plain-text",
+      "cols": 20,
+      "rows": 4,
+      "data": "hello world"
+    },
+    {
+      "id": "ansi/crlf-lines",
+      "cols": 20,
+      "rows": 4,
+      "data": "one\r\ntwo\r\nthree"
+    },
+    {
+      "id": "ansi/carriage-return-overwrite",
+      "cols": 20,
+      "rows": 3,
+      "data": "abcdef\rXY"
+    },
+    {
+      "id": "ansi/cursor-absolute",
+      "cols": 20,
+      "rows": 4,
+      "data": "\u001b[2;5Hmid\u001b[1;1Htop"
+    },
+    {
+      "id": "ansi/cursor-relative",
+      "cols": 20,
+      "rows": 4,
+      "data": "a\u001b[2Bb\u001b[1Ac\u001b[3Dd"
+    },
+    {
+      "id": "ansi/column-absolute",
+      "cols": 20,
+      "rows": 3,
+      "data": "abcdefgh\u001b[3Gxy"
+    },
+    {
+      "id": "ansi/erase-line-to-end",
+      "cols": 20,
+      "rows": 3,
+      "data": "abcdefgh\u001b[4G\u001b[K"
+    },
+    {
+      "id": "ansi/erase-whole-line",
+      "cols": 20,
+      "rows": 3,
+      "data": "abcdefgh\u001b[2K"
+    },
+    {
+      "id": "ansi/erase-display",
+      "cols": 20,
+      "rows": 4,
+      "data": "one\r\ntwo\r\nthree\u001b[2;1H\u001b[J"
+    },
+    {
+      "id": "ansi/clear-and-home",
+      "cols": 20,
+      "rows": 4,
+      "data": "junk\r\nmore\u001b[2J\u001b[Hfresh"
+    },
+    {
+      "id": "ansi/sgr-basic",
+      "cols": 20,
+      "rows": 3,
+      "data": "\u001b[1mbold\u001b[0m \u001b[31mred\u001b[39m plain"
+    },
+    {
+      "id": "ansi/sgr-256-and-truecolor",
+      "cols": 24,
+      "rows": 3,
+      "data": "\u001b[38;5;208mx\u001b[38;2;10;20;30my\u001b[0mz"
+    },
+    {
+      "id": "ansi/sgr-background",
+      "cols": 20,
+      "rows": 3,
+      "data": "\u001b[44mblue bg\u001b[49m off"
+    },
+    {
+      "id": "ansi/sgr-combined",
+      "cols": 20,
+      "rows": 3,
+      "data": "\u001b[1;4;32mmix\u001b[22mnobold\u001b[0m"
+    },
+    {
+      "id": "ansi/autowrap",
+      "cols": 8,
+      "rows": 4,
+      "data": "abcdefghijklmno"
+    },
+    {
+      "id": "ansi/scroll-on-overflow",
+      "cols": 10,
+      "rows": 3,
+      "data": "l1\r\nl2\r\nl3\r\nl4\r\nl5"
+    },
+    {
+      "id": "ansi/wide-chars",
+      "cols": 12,
+      "rows": 3,
+      "data": "你好世界ok"
+    },
+    {
+      "id": "ansi/wide-char-wrap-boundary",
+      "cols": 5,
+      "rows": 3,
+      "data": "ab你好"
+    },
+    {
+      "id": "ansi/box-drawing",
+      "cols": 12,
+      "rows": 4,
+      "data": "┌──┐\r\n│ab│\r\n└──┘"
+    },
+    {
+      "id": "ansi/cursor-hide-show",
+      "cols": 10,
+      "rows": 3,
+      "data": "\u001b[?25lhidden\u001b[?25h"
+    },
+    {
+      "id": "ansi/synchronized-output-wrapper",
+      "cols": 16,
+      "rows": 3,
+      "data": "\u001b[?2026habc\r\ndef\u001b[?2026l"
+    },
+    {
+      "id": "ansi/erase-then-write-shorter",
+      "cols": 16,
+      "rows": 3,
+      "data": "longer line\r\u001b[2Kshort"
+    },
+    {
+      "id": "ansi/erase-at-pending-wrap",
+      "cols": 8,
+      "rows": 3,
+      "data": "abcdefgh\u001b[K"
+    },
+    {
+      "id": "ansi/write-full-width-then-newline",
+      "cols": 8,
+      "rows": 3,
+      "data": "abcdefgh\r\nxy"
+    },
+    {
+      "id": "ansi/cursor-home-after-full-width",
+      "cols": 8,
+      "rows": 3,
+      "data": "abcdefgh\u001b[1;1HZ"
+    },
+    {
+      "id": "ansi/erase-line-then-shorter-write",
+      "cols": 8,
+      "rows": 3,
+      "data": "abcdefgh\r\u001b[Kxy"
+    },
+    {
+      "id": "ansi/absolute-move-then-line",
+      "cols": 12,
+      "rows": 4,
+      "data": "\u001b[1;1Hrow one\u001b[K\u001b[2;1Hrow two\u001b[K"
+    }
+  ],
+  "components": [
+    {
+      "id": "component/text-basic",
+      "component": "Text",
+      "args": {
+        "text": "hello",
+        "paddingX": 1,
+        "paddingY": 1
+      },
+      "width": 20
+    },
+    {
+      "id": "component/text-no-padding",
+      "component": "Text",
+      "args": {
+        "text": "hello",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 20
+    },
+    {
+      "id": "component/text-empty",
+      "component": "Text",
+      "args": {
+        "text": "",
+        "paddingX": 1,
+        "paddingY": 1
+      },
+      "width": 20
+    },
+    {
+      "id": "component/text-whitespace-only",
+      "component": "Text",
+      "args": {
+        "text": "   ",
+        "paddingX": 1,
+        "paddingY": 1
+      },
+      "width": 20
+    },
+    {
+      "id": "component/text-wrap-words",
+      "component": "Text",
+      "args": {
+        "text": "the quick brown fox jumps over the lazy dog",
+        "paddingX": 1,
+        "paddingY": 0
+      },
+      "width": 20
+    },
+    {
+      "id": "component/text-wrap-long-word",
+      "component": "Text",
+      "args": {
+        "text": "supercalifragilisticexpialidocious",
+        "paddingX": 1,
+        "paddingY": 0
+      },
+      "width": 14
+    },
+    {
+      "id": "component/text-explicit-newlines",
+      "component": "Text",
+      "args": {
+        "text": "first\nsecond\nthird",
+        "paddingX": 1,
+        "paddingY": 0
+      },
+      "width": 20
+    },
+    {
+      "id": "component/text-tabs",
+      "component": "Text",
+      "args": {
+        "text": "a\tb\tc",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 20
+    },
+    {
+      "id": "component/text-ansi-colors",
+      "component": "Text",
+      "args": {
+        "text": "\u001b[31mred\u001b[39m and \u001b[1mbold\u001b[22m",
+        "paddingX": 1,
+        "paddingY": 0
+      },
+      "width": 24
+    },
+    {
+      "id": "component/text-ansi-wrapped",
+      "component": "Text",
+      "args": {
+        "text": "\u001b[32mgreen text that must wrap across lines\u001b[39m",
+        "paddingX": 1,
+        "paddingY": 0
+      },
+      "width": 18
+    },
+    {
+      "id": "component/text-wide-chars",
+      "component": "Text",
+      "args": {
+        "text": "你好世界 hello",
+        "paddingX": 1,
+        "paddingY": 0
+      },
+      "width": 16
+    },
+    {
+      "id": "component/text-wide-chars-wrap",
+      "component": "Text",
+      "args": {
+        "text": "今日は世界こんにちはみなさん",
+        "paddingX": 1,
+        "paddingY": 0
+      },
+      "width": 12
+    },
+    {
+      "id": "component/text-with-bg",
+      "component": "Text",
+      "args": {
+        "text": "on blue",
+        "paddingX": 1,
+        "paddingY": 1
+      },
+      "bgFn": {
+        "open": "\u001b[44m",
+        "close": "\u001b[49m"
+      },
+      "width": 18
+    },
+    {
+      "id": "component/truncated-fits",
+      "component": "TruncatedText",
+      "args": {
+        "text": "short",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 20
+    },
+    {
+      "id": "component/truncated-cuts",
+      "component": "TruncatedText",
+      "args": {
+        "text": "a line that is far too long to fit",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 16
+    },
+    {
+      "id": "component/truncated-padding",
+      "component": "TruncatedText",
+      "args": {
+        "text": "padded",
+        "paddingX": 2,
+        "paddingY": 1
+      },
+      "width": 16
+    },
+    {
+      "id": "component/truncated-stops-at-newline",
+      "component": "TruncatedText",
+      "args": {
+        "text": "first line\nsecond line",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 20
+    },
+    {
+      "id": "component/truncated-ansi",
+      "component": "TruncatedText",
+      "args": {
+        "text": "\u001b[36mcyan text that overflows the width\u001b[39m",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 16
+    },
+    {
+      "id": "component/truncated-wide-chars",
+      "component": "TruncatedText",
+      "args": {
+        "text": "你好世界你好世界",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 9
+    },
+    {
+      "id": "component/spacer-default",
+      "component": "Spacer",
+      "args": {},
+      "width": 10
+    },
+    {
+      "id": "component/spacer-three",
+      "component": "Spacer",
+      "args": {
+        "lines": 3
+      },
+      "width": 10
+    },
+    {
+      "id": "component/box-empty",
+      "component": "Box",
+      "args": {
+        "paddingX": 1,
+        "paddingY": 1
+      },
+      "children": [],
+      "width": 20
+    },
+    {
+      "id": "component/box-with-text",
+      "component": "Box",
+      "args": {
+        "paddingX": 2,
+        "paddingY": 1
+      },
+      "children": [
+        {
+          "component": "Text",
+          "args": {
+            "text": "inside",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        }
+      ],
+      "width": 20
+    },
+    {
+      "id": "component/box-nested-padding",
+      "component": "Box",
+      "args": {
+        "paddingX": 1,
+        "paddingY": 0
+      },
+      "children": [
+        {
+          "component": "Text",
+          "args": {
+            "text": "wrapped content here",
+            "paddingX": 1,
+            "paddingY": 0
+          }
+        },
+        {
+          "component": "Spacer",
+          "args": {
+            "lines": 1
+          }
+        },
+        {
+          "component": "TruncatedText",
+          "args": {
+            "text": "tail",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        }
+      ],
+      "width": 18
+    },
+    {
+      "id": "component/box-with-bg",
+      "component": "Box",
+      "args": {
+        "paddingX": 1,
+        "paddingY": 1
+      },
+      "bgFn": {
+        "open": "\u001b[41m",
+        "close": "\u001b[49m"
+      },
+      "children": [
+        {
+          "component": "Text",
+          "args": {
+            "text": "warn",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        }
+      ],
+      "width": 16
+    }
+  ],
+  "renderer": [
+    {
+      "id": "renderer/first-render",
+      "cols": 20,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "hello",
+            "paddingX": 1,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/append-line",
+      "cols": 20,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "one",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "two",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/change-in-place",
+      "cols": 20,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "before",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setText",
+          "target": 0,
+          "text": "after"
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/shrink-content",
+      "cols": 20,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "line one\nline two\nline three",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setText",
+          "target": 0,
+          "text": "only one"
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/grow-past-viewport",
+      "cols": 20,
+      "rows": 4,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "a\nb\nc",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setText",
+          "target": 0,
+          "text": "a\nb\nc\nd\ne\nf"
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/width-change",
+      "cols": 24,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "wrap me across the width",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "resize",
+          "cols": 12,
+          "rows": 6
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/multiple-children",
+      "cols": 20,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "head",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "add",
+          "component": "Spacer",
+          "args": {
+            "lines": 1
+          }
+        },
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "body",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setText",
+          "target": 2,
+          "text": "body!"
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-centered",
+      "cols": 24,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "background content here",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlay",
+          "component": "Box",
+          "args": {
+            "paddingX": 1,
+            "paddingY": 0
+          },
+          "children": [
+            {
+              "component": "Text",
+              "args": {
+                "text": "modal",
+                "paddingX": 0,
+                "paddingY": 0
+              }
+            }
+          ],
+          "options": {
+            "width": 10
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-anchored-top-right",
+      "cols": 24,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "base",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlay",
+          "component": "TruncatedText",
+          "args": {
+            "text": "tip",
+            "paddingX": 0,
+            "paddingY": 0
+          },
+          "options": {
+            "width": 6,
+            "anchor": "top-right"
+          }
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-hidden-then-shown",
+      "cols": 24,
+      "rows": 8,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "base",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "overlay",
+          "component": "TruncatedText",
+          "args": {
+            "text": "over",
+            "paddingX": 0,
+            "paddingY": 0
+          },
+          "options": {
+            "width": 6
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "hideOverlay"
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/no-change-is-silent",
+      "cols": 20,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "same",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "render"
+        }
+      ]
+    }
+  ]
+}

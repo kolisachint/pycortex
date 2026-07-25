@@ -1,0 +1,296 @@
+{
+  "source": "hoocode TS",
+  "scenarios": [
+    {
+      "id": "renderer/first-render",
+      "cols": 20,
+      "rows": 6,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026h hello              \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            " hello              "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/append-line",
+      "cols": 20,
+      "rows": 6,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026hone                 \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "one                 "
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026h\r\n\u001b[2Ktwo                 \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "one                 ",
+            "two                 "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/change-in-place",
+      "cols": 20,
+      "rows": 6,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026hbefore              \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "after               "
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026h\r\u001b[2Kafter               \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "after               "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/shrink-content",
+      "cols": 20,
+      "rows": 6,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026hline one            \u001b[0m\u001b]8;;\u0007\r\nline two            \u001b[0m\u001b]8;;\u0007\r\nline three          \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "line one            ",
+            "line two            ",
+            "line three          "
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026h\u001b[2A\r\u001b[2Konly one            \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\r\n\u001b[2K\u001b[2A\u001b[?2026l",
+          "lines": [
+            "only one            "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/grow-past-viewport",
+      "cols": 20,
+      "rows": 4,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 4,
+          "stream": "\u001b[?2026ha                   \u001b[0m\u001b]8;;\u0007\r\nb                   \u001b[0m\u001b]8;;\u0007\r\nc                   \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "a                   ",
+            "b                   ",
+            "c                   "
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 4,
+          "stream": "\u001b[?2026h\r\n\u001b[2Kd                   \u001b[0m\u001b]8;;\u0007\r\n\u001b[2Ke                   \u001b[0m\u001b]8;;\u0007\r\n\u001b[2Kf                   \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "a                   ",
+            "b                   ",
+            "c                   ",
+            "d                   ",
+            "e                   ",
+            "f                   "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/width-change",
+      "cols": 24,
+      "rows": 6,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 6,
+          "stream": "\u001b[?2026hwrap me across the width\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "wrap me across the width"
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 12,
+          "rows": 6,
+          "stream": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3Jwrap me     \u001b[0m\u001b]8;;\u0007\r\nacross the  \u001b[0m\u001b]8;;\u0007\r\nwidth       \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "wrap me     ",
+            "across the  ",
+            "width       "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/multiple-children",
+      "cols": 20,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 8,
+          "stream": "\u001b[?2026hhead                \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\nbody                \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "head                ",
+            "",
+            "body!               "
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 8,
+          "stream": "\u001b[?2026h\r\u001b[2Kbody!               \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "head                ",
+            "",
+            "body!               "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-centered",
+      "cols": 24,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026hbackground content here \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "background content here "
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[3B\r\u001b[2K       \u001b[0m\u001b]8;;\u0007 modal    \u001b[0m\u001b]8;;\u0007       \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "background content here "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-anchored-top-right",
+      "cols": 24,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026hbase                    \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base                    "
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026h\r\u001b[2Kbase              \u001b[0m\u001b]8;;\u0007tip   \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base                    "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/overlay-hidden-then-shown",
+      "cols": 24,
+      "rows": 8,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026hbase                    \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base                    "
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[3B\r\u001b[2K         \u001b[0m\u001b]8;;\u0007over  \u001b[0m\u001b]8;;\u0007         \u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "base                    "
+          ]
+        },
+        {
+          "index": 2,
+          "cols": 24,
+          "rows": 8,
+          "stream": "\u001b[?2026h\u001b[7A\r\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[7A\u001b[?2026l",
+          "lines": [
+            "base                    "
+          ]
+        }
+      ]
+    },
+    {
+      "id": "renderer/no-change-is-silent",
+      "cols": 20,
+      "rows": 6,
+      "frames": [
+        {
+          "index": 0,
+          "cols": 20,
+          "rows": 6,
+          "stream": "\u001b[?2026hsame                \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+          "lines": [
+            "same                "
+          ]
+        },
+        {
+          "index": 1,
+          "cols": 20,
+          "rows": 6,
+          "stream": "",
+          "lines": [
+            "same                "
+          ]
+        }
+      ]
+    }
+  ]
+}

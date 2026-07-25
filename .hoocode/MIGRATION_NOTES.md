@@ -114,6 +114,50 @@ TS `packages/ai/src/` is split across MULTIPLE python packages:
 - Lesson: a step whose evidence is "the file exists" is under-specified. Say in the
   step body what would prove it, and make the driver able to check it.
 
+## TUI porting rule (added with step 1.9)
+- **Do not verify a tui port by reading the diff.** `tui.ts` emits cursor moves,
+  erases and text; a plausible-looking refactor can produce a completely different
+  screen, and a self-written test will happily agree with it. The 1.5 render leaf is
+  exactly that failure: 191 lines of invented redraw logic with 6 passing tests.
+- The contract is the **cell grid**. `packages/tui/testkit` (`cortex.tui.testkit`,
+  never published) provides it: `Surface` (grid + ANSI interpreter), `snapshot()`,
+  `diff_surfaces()`, `CaptureTerminal`.
+- Authority chain, in order — each link exists because the one below it is not
+  self-evidently right:
+  1. `@xterm/headless` defines correct ANSI interpretation → `Surface` is held to
+     it cell-for-cell over the `ansi/*` corpus (`test_surface_xterm.py`).
+  2. The real hoocode TS defines correct rendering → `reference/dump.ts` **imports
+     it** and records what it produces. Never a reimplementation.
+  3. Parity tests run the same scenario in Python, project both through the
+     validated `Surface`, and diff.
+- Workflow: add scenarios to `goldens/scenarios.json` → `uv run scripts/tui_goldens.py
+  --refresh` (needs bun + TS source) → make the diff go away →
+  `uv run scripts/tui_parity.py --write`.
+- Comparing raw line strings is the WRONG test: `\x1b[1m\x1b[31m` and `\x1b[31;1m`
+  are different strings and the same screen. Compare surfaces.
+- Scenarios pycortex can't run yet report as UNPORTED against the plan step that
+  closes them — never as a pass against a stand-in.
+
+## Bugs the surface harness found immediately
+- **`cortex.tui.util` measured East Asian *Ambiguous* as 2 columns.** TS uses
+  `get-east-asian-width` with its default `ambiguousAsWide: false`, so `┌ ─ │ ± ° →
+  █` are ONE column there and in every real terminal. The port had `"A": 2` with a
+  confident comment saying otherwise. Impact: every box border, arrow and spinner
+  measured double → over-truncated lines, and in `tui.ts` it would trip the
+  "rendered line exceeds terminal width" crash guard. The 19 existing `tui/util`
+  tests passed before and after the fix — they never covered an ambiguous-width
+  character. Found by `ansi/box-drawing` disagreeing with xterm.
+- **The harness caught a bug in itself.** `ansi/erase-at-pending-wrap` showed the
+  Surface erasing the last glyph on `ESC [ K` after a full-width line. Real
+  terminals park the cursor at column `cols` (wrap pending) so that erase is a
+  no-op. Without the xterm link this would have been logged as a pycortex renderer
+  bug. Hence `Surface.cursor_x`, and only cursor-*moves* clear the wrap flag.
+- **Step 2.8 shipped 2 pyright errors** (`ai/util/tool_constraints.py`, `_is_record`
+  needed to be a `TypeGuard`). The gate ran `pyright packages/ai/provider-openai`
+  while the new file landed in `ai/util`. Fixed, and `gates()` now always runs
+  pyright over all of `packages` — steps routinely add prerequisites outside
+  their own leaf.
+
 ## Step log
 - 2.8 provider-openai — DONE (notes reconstructed after the fact; the step landed
   without them). `openai-completions.ts` (1168), `openai-responses.ts` (273),

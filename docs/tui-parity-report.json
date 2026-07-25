@@ -1,0 +1,64 @@
+{
+  "generated_from": "db79647",
+  "note": "Written by scripts/tui_parity.py. Consumed by scripts/migrate_next.py --status.",
+  "matched": [
+    "component/box-empty",
+    "component/box-nested-padding",
+    "component/box-with-bg",
+    "component/box-with-text",
+    "component/spacer-default",
+    "component/spacer-three",
+    "component/text-ansi-colors",
+    "component/text-ansi-wrapped",
+    "component/text-basic",
+    "component/text-empty",
+    "component/text-explicit-newlines",
+    "component/text-no-padding",
+    "component/text-tabs",
+    "component/text-whitespace-only",
+    "component/text-wide-chars",
+    "component/text-wide-chars-wrap",
+    "component/text-with-bg",
+    "component/text-wrap-long-word",
+    "component/text-wrap-words",
+    "component/truncated-ansi",
+    "component/truncated-cuts",
+    "component/truncated-fits",
+    "component/truncated-padding",
+    "component/truncated-stops-at-newline",
+    "component/truncated-wide-chars",
+    "renderer/append-line",
+    "renderer/change-in-place",
+    "renderer/first-render",
+    "renderer/multiple-children",
+    "renderer/no-change-is-silent",
+    "renderer/shrink-content"
+  ],
+  "unported": [
+    {
+      "id": "renderer/grow-past-viewport",
+      "kind": "renderer",
+      "blocked_by": "1.5"
+    },
+    {
+      "id": "renderer/overlay-anchored-top-right",
+      "kind": "renderer",
+      "blocked_by": "1.5"
+    },
+    {
+      "id": "renderer/overlay-centered",
+      "kind": "renderer",
+      "blocked_by": "1.5"
+    },
+    {
+      "id": "renderer/overlay-hidden-then-shown",
+      "kind": "renderer",
+      "blocked_by": "1.5"
+    },
+    {
+      "id": "renderer/width-change",
+      "kind": "renderer",
+      "blocked_by": "1.5"
+    }
+  ]
+}

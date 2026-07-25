@@ -117,14 +117,21 @@ def next_steps(steps: list[Step]) -> list[Step]:
 
 
 def gates(packages: list[str] | None = None) -> bool:
+    """Run the gates for a step.
+
+    pytest stays targeted (whole-repo collection is broken by duplicate `tests`
+    basenames), but **pyright always runs over all of `packages`**. Steps
+    routinely add prerequisite modules outside their own leaf — 2.8 landed
+    `ai/util/tool_constraints.py` while its gate only type-checked
+    `ai/provider-openai`, and two errors sat in `main` as a result.
+    """
     pytest_targets = [f"packages/{p}" for p in packages] if packages else None
     checks: list[list[str]] = [
         ["uv", "run", "pytest", *pytest_targets] if pytest_targets else ["uv", "run", "pytest"],
         ["uv", "run", "ruff", "check", "."],
         ["uv", "run", "ruff", "format", "--check", "."],
+        ["uv", "run", "pyright", "packages"],
     ]
-    targets = [f"packages/{p}" for p in packages] if packages else ["packages"]
-    checks.append(["uv", "run", "pyright", *targets])
     for cmd in checks:
         print(f"$ {' '.join(cmd)}")
         result = subprocess.run(cmd, cwd=REPO_ROOT)
@@ -227,27 +234,31 @@ def audit(steps: list[Step]) -> list[str]:
                     f"{step.id} {step.title}: checked, but publish=false on "
                     f"{', '.join(unpublished)}"
                 )
-    problems.extend(parity_problems())
+    # A parity gap is owned by the step that closes it. It only contradicts a
+    # checkbox when *that* step is the one ticked — building the harness (1.9)
+    # must not be blocked by the renderer gaps (1.5) it exists to expose.
+    ticked = {s.id for s in steps if s.done}
+    problems.extend(msg for step_id, msg in parity_gaps() if step_id in ticked)
     return problems
 
 
-def parity_problems() -> list[str]:
-    """Surface-parity gaps recorded by the TUI parity harness, if it has run."""
+def parity_gaps() -> list[tuple[str, str]]:
+    """TUI scenarios that still diverge, as (owning step id, message)."""
     if not PARITY_REPORT.is_file():
         return []
     try:
         report = json.loads(PARITY_REPORT.read_text())
     except json.JSONDecodeError:
-        return [f"{PARITY_REPORT.name}: not valid JSON"]
-    unported = report.get("unported", [])
-    if not unported:
-        return []
+        return [("?", f"{PARITY_REPORT.name}: not valid JSON")]
     by_step: dict[str, list[str]] = {}
-    for entry in unported:
+    for entry in report.get("unported", []):
         by_step.setdefault(entry.get("blocked_by", "?"), []).append(entry.get("id", "?"))
     return [
-        f"tui parity: {len(ids)} scenario(s) unported, blocked by step {step_id} "
-        f"({', '.join(sorted(ids)[:4])}{'…' if len(ids) > 4 else ''})"
+        (
+            step_id,
+            f"step {step_id}: {len(ids)} tui scenario(s) still diverge from the TS "
+            f"({', '.join(sorted(ids)[:3])}{'…' if len(ids) > 3 else ''})",
+        )
         for step_id, ids in sorted(by_step.items())
     ]
 
@@ -307,6 +318,13 @@ def cmd_status(steps: list[Step], as_json: bool, strict: bool) -> int:
             print(f"  ✗ {problem}")
     else:
         print("Audit — clean: every ticked step is backed by code + tests on disk.")
+
+    ticked = {s.id for s in steps if s.done}
+    open_gaps = [msg for step_id, msg in parity_gaps() if step_id not in ticked]
+    if open_gaps:
+        print("\nKnown gaps (tracked, not yet claimed done)")
+        for gap in open_gaps:
+            print(f"  · {gap}")
     return 1 if (strict and problems) else 0
 
 

@@ -11,7 +11,7 @@ be sent — otherwise the API rejects the request.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TypeGuard
 
 STRICT_KEYWORD_ALLOWLIST: frozenset[str] = frozenset(
     [
@@ -32,8 +32,12 @@ STRICT_KEYWORD_ALLOWLIST: frozenset[str] = frozenset(
 )
 
 
-def _is_record(value: Any) -> bool:
-    """Check if value is a dict-like object."""
+def _is_record(value: Any) -> TypeGuard[dict[str, Any]]:
+    """Check if value is a dict-like object.
+
+    A `TypeGuard` rather than a plain `bool` so the callers below narrow — the
+    `.items()` accesses that follow are otherwise pyright errors.
+    """
     return isinstance(value, dict)
 
 

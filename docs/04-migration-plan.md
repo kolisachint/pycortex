@@ -72,7 +72,7 @@ Parallelizable across these leaves; dependencies flow upward from util.
       `packages/tui/keys/src/cortex/tui/keys.py` + tests. Gate: `pytest packages/tui/keys`.
 - [x] **1.4 terminal** — `packages/tui/src/{terminal,stdin-buffer}.ts` →
       `packages/tui/terminal/src/cortex/tui/terminal.py` + tests. Gate: `pytest packages/tui/terminal`.
-- [ ] **1.9 tui testkit — authoritative rendering surface** *(prerequisite for 1.5/1.7;
+- [x] **1.9 tui testkit — authoritative rendering surface** *(prerequisite for 1.5/1.7;
       out of numeric order on purpose)* — `packages/tui/testkit/` (`cortex.tui.testkit`,
       `publish=false`): a cell-grid `Surface` + ANSI interpreter that turns a write
       stream into the grid a user would actually see, cross-validated against
