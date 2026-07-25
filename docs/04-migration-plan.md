@@ -119,9 +119,25 @@ Parallelizable across these leaves; dependencies flow upward from util.
 - [x] **1.11 components — lists** — `packages/tui/src/components/{select-list,settings-list}.ts`
       → `components/{select_list,settings_list}.py` + parity goldens. Gate:
       `pytest packages/tui/components`.
+- [ ] **1.18 markdown AST adapter** *(prerequisite for 1.12; out of numeric order on
+      purpose)* — `markdown.ts` is written against `marked`'s token tree, and Python has
+      no `marked`. Measured both candidates against real `marked` output before
+      choosing: **markdown-it-py** emits a flat `_open`/`_close` stream that would need
+      tree reconstruction; **mistune** already gives a nested AST carrying every field
+      the renderer reads (`heading.level`, `block_code.info/raw`, list `ordered`,
+      `task_list_item.checked`, table `align`/`head`, `strong`/`emphasis`/`codespan`/
+      `link`) and agreed with `marked` on 19 of 20 block-type sequences. Port an adapter
+      `cortex.tui.components._markdown_ast` normalising mistune → marked token shape:
+      rename types (`block_code`→`code`, `block_quote`→`blockquote`,
+      `thematic_break`→`hr`, `emphasis`→`em`, …), rebuild `List.items` and
+      `Table.header/rows/align`, and **synthesise the `space` tokens mistune omits** —
+      `markdown.ts` keys its blank-line spacing off `nextToken.type === "space"`, so a
+      missing one is directly visible on screen. Verified token-for-token against AST
+      goldens captured from the real `marked`, the same way the surface harness works.
+      Gate: `pytest packages/tui/components`.
 - [ ] **1.12 components — markdown** — `packages/tui/src/components/markdown.ts` (808 lines,
-      `marked` AST → styled lines) → `components/markdown.py` + parity goldens. Gate:
-      `pytest packages/tui/components`.
+      `marked` AST → styled lines) → `components/markdown.py` + parity goldens. Depends
+      on 1.18. Gate: `pytest packages/tui/components`.
 - [ ] **1.13 components — editor** — `packages/tui/src/components/editor.ts` (2309 lines) →
       `components/editor.py` + parity goldens. Depends on 1.6. Gate:
       `pytest packages/tui/components`.
