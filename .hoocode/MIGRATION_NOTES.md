@@ -157,8 +157,92 @@ TS `packages/ai/src/` is split across MULTIPLE python packages:
   while the new file landed in `ai/util`. Fixed, and `gates()` now always runs
   pyright over all of `packages` — steps routinely add prerequisites outside
   their own leaf.
+- **`diff_surfaces` ignored underline/strike/inverse on blank cells** (found in 1.12
+  by mutation testing, not by a failing scenario). The rule was "a blank cell's
+  style is unobservable unless it paints a background", which is right for bold,
+  italic and foreground colour and wrong for the three attributes that *draw* on
+  an empty cell. Deleting `markdown.py`'s trailing-style-prefix strip — the exact
+  bug hoocode's own "h1 underline leaks into the padding" test exists to catch —
+  passed all 179 markdown scenarios before the fix. Now `_blank_paint()`.
+  LESSON: a corpus that passes on the first run has not been shown to work; break
+  the port on purpose and count what notices.
+
+## Mutation testing is part of "done" for a TUI step
+Run it before ticking the box: patch one behaviour in the ported module, re-run
+the parity subset, and count failures (`0 scenarios caught` = a corpus gap, an
+equivalent mutant, or dead code — decide which and say so). 1.12 ran 25
+mutations; 22 were caught, and every fix was a new *discriminating* scenario
+rather than a bigger corpus. The three that stayed uncaught are recorded in the
+step log with the reason each is unreachable rather than untested.
+**Kill the mutation script with `> file`, never `| head`** — a SIGPIPE at the
+wrong moment leaves the module mutated on disk, and the next green test run is
+lying to you (this happened; `heading_level >= 2` sat in the tree for two runs).
 
 ## Step log
+- 1.12 components — markdown — DONE. `markdown.ts` (808) → `components/markdown.py`
+  (~700), 110 parity scenarios, 57 unit tests (39 ported from `markdown.test.ts`).
+  All 200 component + 39 renderer scenarios match; one scenario is unported by
+  design (see 5).
+  1. **1.18's adapter was missing four things `markdown.ts` reads**, all found by
+     adding corpus samples and diffing against marked, none by reading the TS:
+     (a) `table.raw` — the too-narrow-table fallback reprints the table's own
+     markdown, and without it the table simply vanished. mistune has no source
+     spans, so the table rules are re-registered through `_record_raw`, which
+     takes the span from `state.cursor` → the rule's return value;
+     (b) tables inside blockquotes and list items needed mistune's
+     `table_in_quote`/`table_in_list` — marked parses them, so a quoted table was
+     rendering as paragraphs;
+     (c) marked's `table` and `html` rules swallow their trailing blank lines
+     exactly like `heading` (so no `space` token follows, and the swallowed
+     newlines are part of `raw`);
+     (d) a list item's prose is a `text` token in marked **even when the list is
+     loose** — the adapter emitted `paragraph`, which renders through a branch
+     that appends a blank line, so every loose list grew spacing the TS lacks.
+  2. **A document ending in a blank line ends in a `space` token**, and the TS
+     prints it. 1.18's "drop a trailing space" rule was derived from too few
+     samples and deleted that line. mistune agrees with marked at the top level,
+     so the rule is gone there; inside a blockquote mistune emits one where marked
+     does not, and the blockquote branch pops trailing blanks before drawing
+     borders, so it is dropped there and the AST difference is recorded as a
+     strict xfail (`KNOWN_DIVERGENCES`) with the scenario that proves the screens
+     agree. Lists need the opposite fix: mistune emits no blank line after a list
+     at all, so `lex_markdown` appends the `space` when the source ends in one.
+  3. **The corpus, not the diff, is the deliverable.** All 179 first-draft
+     scenarios passed on the first run; mutation testing then showed 8 of 12
+     deliberate bugs went unnoticed. Fixing that meant *discriminating* scenarios,
+     e.g. a table narrow enough to actually hit the fallback (3 columns need 10
+     columns of border alone — a 2-column table at width 10 never gets there), a
+     blockquote whose inner reset is not already followed by the style prefix
+     (a bulleted list under a reset-closing theme), a styled table header (plain
+     ASCII headers cannot tell `visible_width` from `len`), and padding with text
+     long enough to wrap.
+  4. Three mutations stay uncaught, each analysed rather than papered over:
+     "heading always spaced" and "heading style prefix ignored" are **equivalent
+     mutants** (marked never emits a `space` after a heading, and in a heading
+     context `applyText` re-styles every text segment, so the prefix only matters
+     where `applyText` is identity — i.e. blockquotes, which *is* caught);
+     "blockquote keeps trailing blank" is **unreachable by construction** given
+     2's decision, and is kept because it is a faithful port of the TS.
+  5. **OSC 8 links need terminal capabilities, which are step 1.15.** Same soft
+     dependency `cortex.tui.render` takes on the images leaf: `_hyperlinks_supported()`
+     resolves `cortex.tui.images.get_capabilities` dynamically and reports "no
+     hyperlink support" until it exists — a real runtime state, and the branch the
+     TS takes on any terminal it has not positively identified. `hyperlink()` is
+     inlined (one format string) exactly as `_delete_kitty_image` was in 1.5.
+     `component/markdown-link-osc8` is captured from the TS and reported UNPORTED
+     against 1.15; `test_markdown.py` pins the rendering with the capability
+     forced, stubbing only where the boolean comes from.
+  6. **The goldens now pin the capabilities they were captured under**
+     (`setCapabilities` per scenario in `reference/dump.ts`). Without it, running
+     `--refresh` inside Ghostty or iTerm would silently recapture every link
+     scenario in the OSC 8 branch.
+  7. JS-truthiness trap: `if (cached)` is TRUE for an empty array, so blank text
+     is a cache *hit* in the TS. `if cached:` in Python re-renders forever;
+     `if cached is not None:` is the port.
+  8. `bun` resolves `node_modules` by walking up from the *importing file* — a
+     probe script in /tmp pulled a different `marked` and disagreed with the
+     goldens about table `raw`. Put throwaway probes in `testkit/reference/`.
+
 - 1.18 markdown AST adapter — DONE (prerequisite for 1.12).
   PARSER CHOICE, MEASURED NOT GUESSED: lexed a 20-sample corpus with real `marked`
   under bun, then compared. `markdown-it-py` emits a flat `_open`/`_close` stream
@@ -168,7 +252,8 @@ TS `packages/ai/src/` is split across MULTIPLE python packages:
   captures marked's tokens for `goldens/markdown-corpus.json` (32 samples) into
   `goldens/marked-ast.json`; `test_markdown_ast.py` asserts the adapter reproduces
   them token-for-token. Only the fields markdown.ts reads are recorded — pinning
-  marked's `raw`/offsets would fail the port over things nobody can see.
+  marked's offsets would fail the port over things nobody can see. (1.12 added
+  `raw` for `table` and `html`, which two branches *do* read.)
   Divergences the goldens caught (all would have been invisible by reading):
   1. `space` TOKENS. mistune DOES emit `blank_line`; my first attempt threw them
      away and re-derived spacing from a rule I invented, which was wrong. Correct
@@ -178,12 +263,17 @@ TS `packages/ai/src/` is split across MULTIPLE python packages:
      This is not cosmetic: `markdown.ts` keys spacing off `nextToken.type ===
      "space"`, and `list` is the ONE block that never adds its own trailing blank,
      so a missing space after a list silently loses a line on screen.
+     **SUPERSEDED BY 1.12**: "drop a trailing one" was wrong (marked emits it for
+     any source ending in a blank line), and `table`/`html` swallow their trailing
+     blanks the same way `heading` does. See the 1.12 entry.
   2. SOFT BREAKS. marked yields one text token per contiguous run with `\n` inside;
      mistune splits at every soft break and leaves empty text tokens around
      emphasis. `_inlines` merges adjacent text and drops empties.
   3. `start` is a NUMBER for every ordered list (1 when it starts at 1) and `""`
      for unordered. Not "empty unless non-1".
   4. marked trims the trailing newline off `html` raw; mistune keeps it.
+     **SUPERSEDED BY 1.12**: marked's `html` raw is the consumed span, trailing
+     blank lines included; it only looked trimmed because the sample ended at EOF.
   5. mistune's strikethrough plugin already rejects the loose `~~ spaced ~~` forms
      that markdown.ts installs a custom tokenizer for — pinned by a golden, so no
      override was needed. Verified rather than assumed.

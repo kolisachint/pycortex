@@ -65,6 +65,9 @@ function normalize(token: Json): Json {
 			}));
 			break;
 		case "table":
+			// `raw` matters here and nowhere else: markdown.ts reprints a
+			// table's own markdown when the terminal is too narrow to draw it.
+			out.raw = token.raw;
 			out.align = token.align ?? [];
 			out.header = (token.header ?? []).map((cell: Json) => ({
 				tokens: (cell.tokens ?? []).map(normalize),

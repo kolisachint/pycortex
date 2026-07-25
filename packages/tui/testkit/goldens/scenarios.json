@@ -2527,6 +2527,1254 @@
         }
       },
       "width": 60
+    },
+    {
+      "id": "component/markdown-heading-h1",
+      "component": "Markdown",
+      "args": {
+        "text": "# Title\n\nBody text",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-heading-levels",
+      "component": "Markdown",
+      "args": {
+        "text": "# H1\n## H2\n### H3\n#### H4",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-heading-inline-code",
+      "component": "Markdown",
+      "args": {
+        "text": "## Head with `code` tail",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-heading-h1-inline-code",
+      "component": "Markdown",
+      "args": {
+        "text": "# Head `code`",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-heading-h1-trailing-code-padded",
+      "component": "Markdown",
+      "args": {
+        "text": "# Head `code`",
+        "paddingX": 2,
+        "paddingY": 1
+      },
+      "width": 20
+    },
+    {
+      "id": "component/markdown-heading-last-block",
+      "component": "Markdown",
+      "args": {
+        "text": "text\n\n# Heading",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-heading-then-list",
+      "component": "Markdown",
+      "args": {
+        "text": "## Head\n- one\n- two",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-heading-bold-inside",
+      "component": "Markdown",
+      "args": {
+        "text": "## Head with **bold** tail",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-paragraph-wrap",
+      "component": "Markdown",
+      "args": {
+        "text": "The quick brown fox jumps over the lazy dog while the terminal reflows every single word of this paragraph.",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 30
+    },
+    {
+      "id": "component/markdown-paragraph-then-list",
+      "component": "Markdown",
+      "args": {
+        "text": "intro text\n\n- one\n- two",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-paragraph-softbreak",
+      "component": "Markdown",
+      "args": {
+        "text": "line one\nline two",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-paragraph-hard-break",
+      "component": "Markdown",
+      "args": {
+        "text": "line one  \nline two",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-paragraph-multi",
+      "component": "Markdown",
+      "args": {
+        "text": "Para one\n\nPara two\n\nPara three",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-inline-all",
+      "component": "Markdown",
+      "args": {
+        "text": "text **b** *i* `c` ~~s~~ end",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-inline-nested",
+      "component": "Markdown",
+      "args": {
+        "text": "**bold with *italic* inside**",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-inline-strike-loose",
+      "component": "Markdown",
+      "args": {
+        "text": "~~ not struck ~~ but ~~this is~~",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-inline-html",
+      "component": "Markdown",
+      "args": {
+        "text": "text with <b>tags</b> inside",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-html-block",
+      "component": "Markdown",
+      "args": {
+        "text": "<div>raw html</div>",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-html-block-multiline",
+      "component": "Markdown",
+      "args": {
+        "text": "<div>\n  <span>hi</span>\n</div>",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-link-with-url",
+      "component": "Markdown",
+      "args": {
+        "text": "see [docs](https://example.com/a/b) here",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 44
+    },
+    {
+      "id": "component/markdown-link-text-equals-href",
+      "component": "Markdown",
+      "args": {
+        "text": "[https://example.com](https://example.com)",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 44
+    },
+    {
+      "id": "component/markdown-link-autolink-email",
+      "component": "Markdown",
+      "args": {
+        "text": "mail <someone@example.com> now",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 44
+    },
+    {
+      "id": "component/markdown-link-bare-url",
+      "component": "Markdown",
+      "args": {
+        "text": "visit https://example.com/path today",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 44
+    },
+    {
+      "id": "component/markdown-link-wraps",
+      "component": "Markdown",
+      "args": {
+        "text": "prefix [a link](https://example.com/very/long/path) suffix",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 24
+    },
+    {
+      "id": "component/markdown-link-osc8",
+      "component": "Markdown",
+      "args": {
+        "text": "see [docs](https://example.com/a/b) here",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 44,
+      "capabilities": {
+        "hyperlinks": true
+      }
+    },
+    {
+      "id": "component/markdown-code-fenced",
+      "component": "Markdown",
+      "args": {
+        "text": "```python\nprint('hi')\nx = 1\n```",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-code-no-lang",
+      "component": "Markdown",
+      "args": {
+        "text": "```\nplain code\n```",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-code-indented",
+      "component": "Markdown",
+      "args": {
+        "text": "    indented code",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-code-then-paragraph",
+      "component": "Markdown",
+      "args": {
+        "text": "```js\ncode()\n```\n\nafter the code",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-code-last-block",
+      "component": "Markdown",
+      "args": {
+        "text": "before\n\n```js\ncode()\n```",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-code-long-line",
+      "component": "Markdown",
+      "args": {
+        "text": "```js\nconst value = compute(alpha, beta, gamma, delta);\n```",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 30
+    },
+    {
+      "id": "component/markdown-code-highlighted",
+      "component": "Markdown",
+      "args": {
+        "text": "```python\nprint('hi')\nx = 1\n```",
+        "paddingX": 0,
+        "paddingY": 0,
+        "highlightCode": {
+          "open": "\u001b[95m",
+          "close": "\u001b[39m"
+        }
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-code-highlighted-no-lang",
+      "component": "Markdown",
+      "args": {
+        "text": "```\nplain code\n```",
+        "paddingX": 0,
+        "paddingY": 0,
+        "highlightCode": {
+          "open": "\u001b[95m",
+          "close": "\u001b[39m"
+        }
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-code-custom-indent",
+      "component": "Markdown",
+      "args": {
+        "text": "```sh\nls -la\n```",
+        "paddingX": 0,
+        "paddingY": 0,
+        "codeBlockIndent": "|   "
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-code-empty-indent",
+      "component": "Markdown",
+      "args": {
+        "text": "```sh\nls -la\n```",
+        "paddingX": 0,
+        "paddingY": 0,
+        "codeBlockIndent": ""
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-list-simple",
+      "component": "Markdown",
+      "args": {
+        "text": "- one\n- two\n- three",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-list-nested",
+      "component": "Markdown",
+      "args": {
+        "text": "- Item 1\n  - Nested 1.1\n  - Nested 1.2\n- Item 2",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-list-deep",
+      "component": "Markdown",
+      "args": {
+        "text": "- L1\n  - L2\n    - L3\n      - L4",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-list-ordered",
+      "component": "Markdown",
+      "args": {
+        "text": "1. First\n   1. Nested first\n   2. Nested second\n2. Second",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-list-ordered-start",
+      "component": "Markdown",
+      "args": {
+        "text": "5. five\n6. six",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-list-mixed",
+      "component": "Markdown",
+      "args": {
+        "text": "1. Ordered\n   - Unordered nested\n2. Second\n   - More nested",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-list-wrap-unordered",
+      "component": "Markdown",
+      "args": {
+        "text": "- alpha beta gamma delta epsilon",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 20
+    },
+    {
+      "id": "component/markdown-list-wrap-ordered",
+      "component": "Markdown",
+      "args": {
+        "text": "1. alpha beta gamma delta epsilon",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 20
+    },
+    {
+      "id": "component/markdown-list-wrap-multi-digit",
+      "component": "Markdown",
+      "args": {
+        "text": "10. alpha beta gamma delta epsilon",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 20
+    },
+    {
+      "id": "component/markdown-list-wrap-nested",
+      "component": "Markdown",
+      "args": {
+        "text": "- parent\n  - alpha beta gamma delta epsilon",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 20
+    },
+    {
+      "id": "component/markdown-list-wrap-nested-ordered",
+      "component": "Markdown",
+      "args": {
+        "text": "1. parent\n   - alpha beta gamma delta epsilon",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 20
+    },
+    {
+      "id": "component/markdown-list-quote-inside",
+      "component": "Markdown",
+      "args": {
+        "text": "- > alpha beta gamma delta epsilon zeta",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 20
+    },
+    {
+      "id": "component/markdown-list-code-inside",
+      "component": "Markdown",
+      "args": {
+        "text": "- item\n\n  ```sh\n  ls -la\n  ```",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-list-task",
+      "component": "Markdown",
+      "args": {
+        "text": "- [ ] todo\n- [x] done",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-list-loose",
+      "component": "Markdown",
+      "args": {
+        "text": "- first\n\n- second",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-list-multi-block",
+      "component": "Markdown",
+      "args": {
+        "text": "- para one\n\n  para two\n- next",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-list-then-text",
+      "component": "Markdown",
+      "args": {
+        "text": "- a list\n\nthen more text.",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-list-unindented-code",
+      "component": "Markdown",
+      "args": {
+        "text": "1. first\n\n```js\ncode()\n```\n\n2. second",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-list-inline-styles",
+      "component": "Markdown",
+      "args": {
+        "text": "- **bold** item\n- `code` item",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-quote-simple",
+      "component": "Markdown",
+      "args": {
+        "text": "> quoted text\n> more quote",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-quote-lazy",
+      "component": "Markdown",
+      "args": {
+        "text": "> lazy quote\ncontinuation line",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-quote-wrap",
+      "component": "Markdown",
+      "args": {
+        "text": "> alpha beta gamma delta epsilon zeta eta theta",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 24
+    },
+    {
+      "id": "component/markdown-quote-rich",
+      "component": "Markdown",
+      "args": {
+        "text": "> quote with **bold**\n>\n> second para",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-quote-list",
+      "component": "Markdown",
+      "args": {
+        "text": "> - a\n> - b",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-quote-code",
+      "component": "Markdown",
+      "args": {
+        "text": "> ```sh\n> ls\n> ```",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-quote-then-paragraph",
+      "component": "Markdown",
+      "args": {
+        "text": "> a note\n\nafter the quote",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-quote-last-block",
+      "component": "Markdown",
+      "args": {
+        "text": "before\n\n> a note",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-quote-inline-code",
+      "component": "Markdown",
+      "args": {
+        "text": "> quote with `code` inside and more text",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 30
+    },
+    {
+      "id": "component/markdown-quote-reset-theme",
+      "component": "Markdown",
+      "args": {
+        "text": "> quote with **bold** and `code`",
+        "paddingX": 0,
+        "paddingY": 0,
+        "theme": {
+          "quote": {
+            "open": "\u001b[35m",
+            "close": "\u001b[0m"
+          },
+          "bold": {
+            "open": "\u001b[1m",
+            "close": "\u001b[0m"
+          },
+          "italic": {
+            "open": "\u001b[3m",
+            "close": "\u001b[0m"
+          },
+          "code": {
+            "open": "\u001b[33m",
+            "close": "\u001b[0m"
+          }
+        }
+      },
+      "width": 30
+    },
+    {
+      "id": "component/markdown-table-simple",
+      "component": "Markdown",
+      "args": {
+        "text": "| name | description |\n|---|---|\n| alpha | first entry |\n| beta | second entry |",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-table-natural-fit",
+      "component": "Markdown",
+      "args": {
+        "text": "| a | b |\n|---|---|\n| 1 | 2 |",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-table-aligned",
+      "component": "Markdown",
+      "args": {
+        "text": "| left | center | right |\n|:--|:-:|--:|\n| 1 | 2 | 3 |",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-table-wrap-cells",
+      "component": "Markdown",
+      "args": {
+        "text": "| name | description |\n|---|---|\n| alpha | first entry |\n| beta | second entry |",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 26
+    },
+    {
+      "id": "component/markdown-table-long-word",
+      "component": "Markdown",
+      "args": {
+        "text": "| key | value |\n|---|---|\n| a | supercalifragilisticexpialidociousandthensome |",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 30
+    },
+    {
+      "id": "component/markdown-table-narrow-fallback",
+      "component": "Markdown",
+      "args": {
+        "text": "| name | description |\n|---|---|\n| alpha | first entry |\n| beta | second entry |",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 10
+    },
+    {
+      "id": "component/markdown-table-inline-code",
+      "component": "Markdown",
+      "args": {
+        "text": "| x | y |\n|---|---|\n| `code` | **b** |",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 30
+    },
+    {
+      "id": "component/markdown-table-padding",
+      "component": "Markdown",
+      "args": {
+        "text": "| name | description |\n|---|---|\n| alpha | first entry |\n| beta | second entry |",
+        "paddingX": 2,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-table-last-block",
+      "component": "Markdown",
+      "args": {
+        "text": "before\n\n| name | description |\n|---|---|\n| alpha | first entry |\n| beta | second entry |",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-table-then-paragraph",
+      "component": "Markdown",
+      "args": {
+        "text": "| name | description |\n|---|---|\n| alpha | first entry |\n| beta | second entry |\n\nafter the table",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-table-no-leading-pipe",
+      "component": "Markdown",
+      "args": {
+        "text": "a | b\n--- | ---\n1 | 2",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-hr",
+      "component": "Markdown",
+      "args": {
+        "text": "above\n\n---\n\nbelow",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-hr-capped-at-80",
+      "component": "Markdown",
+      "args": {
+        "text": "---",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 100
+    },
+    {
+      "id": "component/markdown-hr-last-block",
+      "component": "Markdown",
+      "args": {
+        "text": "above\n\n---",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-empty",
+      "component": "Markdown",
+      "args": {
+        "text": "",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-whitespace-only",
+      "component": "Markdown",
+      "args": {
+        "text": "   \n  \n",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-tabs-normalized",
+      "component": "Markdown",
+      "args": {
+        "text": "para\twith\ttabs",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-padded",
+      "component": "Markdown",
+      "args": {
+        "text": "# Title\n\nBody text",
+        "paddingX": 2,
+        "paddingY": 1
+      },
+      "width": 30
+    },
+    {
+      "id": "component/markdown-wide-chars",
+      "component": "Markdown",
+      "args": {
+        "text": "日本語 text with **bold** 文字",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 30
+    },
+    {
+      "id": "component/markdown-mixed-document",
+      "component": "Markdown",
+      "args": {
+        "text": "# Title\n\nIntro paragraph with **bold** and `code`.\n\n- point one\n- point two\n\n```sh\nls -la\n```\n\n> A note.\n\n---\n\nDone.",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 44
+    },
+    {
+      "id": "component/markdown-default-style-colour",
+      "component": "Markdown",
+      "args": {
+        "text": "gray text with `code` and more",
+        "paddingX": 0,
+        "paddingY": 0,
+        "defaultTextStyle": {
+          "color": {
+            "open": "\u001b[90m",
+            "close": "\u001b[39m"
+          },
+          "italic": true
+        }
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-default-style-bold-after",
+      "component": "Markdown",
+      "args": {
+        "text": "gray text with **bold** and more",
+        "paddingX": 0,
+        "paddingY": 0,
+        "defaultTextStyle": {
+          "color": {
+            "open": "\u001b[90m",
+            "close": "\u001b[39m"
+          },
+          "italic": true
+        }
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-default-style-bg",
+      "component": "Markdown",
+      "args": {
+        "text": "text on a background",
+        "paddingX": 1,
+        "paddingY": 1,
+        "defaultTextStyle": {
+          "bgColor": {
+            "open": "\u001b[44m",
+            "close": "\u001b[49m"
+          }
+        }
+      },
+      "width": 30
+    },
+    {
+      "id": "component/markdown-default-style-all",
+      "component": "Markdown",
+      "args": {
+        "text": "everything at once",
+        "paddingX": 0,
+        "paddingY": 0,
+        "defaultTextStyle": {
+          "color": {
+            "open": "\u001b[90m",
+            "close": "\u001b[39m"
+          },
+          "bold": true,
+          "italic": true,
+          "strikethrough": true,
+          "underline": true
+        }
+      },
+      "width": 30
+    },
+    {
+      "id": "component/markdown-default-style-quote",
+      "component": "Markdown",
+      "args": {
+        "text": "> quoted under a default style",
+        "paddingX": 0,
+        "paddingY": 0,
+        "defaultTextStyle": {
+          "color": {
+            "open": "\u001b[90m",
+            "close": "\u001b[39m"
+          },
+          "italic": true
+        }
+      },
+      "width": 30
+    },
+    {
+      "id": "component/markdown-default-style-html",
+      "component": "Markdown",
+      "args": {
+        "text": "<div>raw html</div>",
+        "paddingX": 0,
+        "paddingY": 0,
+        "defaultTextStyle": {
+          "color": {
+            "open": "\u001b[90m",
+            "close": "\u001b[39m"
+          }
+        }
+      },
+      "width": 30
+    },
+    {
+      "id": "component/markdown-paragraph-tight-list",
+      "component": "Markdown",
+      "args": {
+        "text": "intro text\n- one\n- two",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-table-fallback-narrow",
+      "component": "Markdown",
+      "args": {
+        "text": "| id | a much longer heading | mid |\n|---|---|---|\n| 1 | some fairly long cell content here | middle value |",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 10
+    },
+    {
+      "id": "component/markdown-table-fallback-two-col",
+      "component": "Markdown",
+      "args": {
+        "text": "| a | b |\n|---|---|\n| 1 | 2 |",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 8
+    },
+    {
+      "id": "component/markdown-table-shrink-uneven",
+      "component": "Markdown",
+      "args": {
+        "text": "| id | a much longer heading | mid |\n|---|---|---|\n| 1 | some fairly long cell content here | middle value |",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 34
+    },
+    {
+      "id": "component/markdown-table-shrink-tight",
+      "component": "Markdown",
+      "args": {
+        "text": "| id | a much longer heading | mid |\n|---|---|---|\n| 1 | some fairly long cell content here | middle value |",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 22
+    },
+    {
+      "id": "component/markdown-quote-reset-theme-list",
+      "component": "Markdown",
+      "args": {
+        "text": "> - **a** item\n> - second",
+        "paddingX": 0,
+        "paddingY": 0,
+        "theme": {
+          "quote": {
+            "open": "\u001b[35m",
+            "close": "\u001b[0m"
+          },
+          "bold": {
+            "open": "\u001b[1m",
+            "close": "\u001b[0m"
+          },
+          "italic": {
+            "open": "\u001b[3m",
+            "close": "\u001b[0m"
+          },
+          "code": {
+            "open": "\u001b[33m",
+            "close": "\u001b[0m"
+          },
+          "listBullet": {
+            "open": "\u001b[36m",
+            "close": "\u001b[0m"
+          },
+          "codeBlock": {
+            "open": "\u001b[32m",
+            "close": "\u001b[0m"
+          },
+          "codeBlockBorder": {
+            "open": "\u001b[2m",
+            "close": "\u001b[0m"
+          }
+        }
+      },
+      "width": 30
+    },
+    {
+      "id": "component/markdown-quote-reset-theme-code",
+      "component": "Markdown",
+      "args": {
+        "text": "> ```sh\n> ls -la\n> ```",
+        "paddingX": 0,
+        "paddingY": 0,
+        "theme": {
+          "quote": {
+            "open": "\u001b[35m",
+            "close": "\u001b[0m"
+          },
+          "bold": {
+            "open": "\u001b[1m",
+            "close": "\u001b[0m"
+          },
+          "italic": {
+            "open": "\u001b[3m",
+            "close": "\u001b[0m"
+          },
+          "code": {
+            "open": "\u001b[33m",
+            "close": "\u001b[0m"
+          },
+          "listBullet": {
+            "open": "\u001b[36m",
+            "close": "\u001b[0m"
+          },
+          "codeBlock": {
+            "open": "\u001b[32m",
+            "close": "\u001b[0m"
+          },
+          "codeBlockBorder": {
+            "open": "\u001b[2m",
+            "close": "\u001b[0m"
+          }
+        }
+      },
+      "width": 30
+    },
+    {
+      "id": "component/markdown-heading-code-then-bold",
+      "component": "Markdown",
+      "args": {
+        "text": "## Head `code` **bold** tail",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-default-style-code-then-bold",
+      "component": "Markdown",
+      "args": {
+        "text": "gray `code` **bold** tail",
+        "paddingX": 0,
+        "paddingY": 0,
+        "defaultTextStyle": {
+          "color": {
+            "open": "\u001b[90m",
+            "close": "\u001b[39m"
+          },
+          "italic": true
+        }
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-default-style-trailing-code",
+      "component": "Markdown",
+      "args": {
+        "text": "gray text with `code`",
+        "paddingX": 1,
+        "paddingY": 1,
+        "defaultTextStyle": {
+          "color": {
+            "open": "\u001b[90m",
+            "close": "\u001b[39m"
+          },
+          "underline": true
+        }
+      },
+      "width": 30
+    },
+    {
+      "id": "component/markdown-paragraph-trailing-blank",
+      "component": "Markdown",
+      "args": {
+        "text": "para\n\n",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-list-trailing-blank",
+      "component": "Markdown",
+      "args": {
+        "text": "- a\n- b\n\n",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-quote-inner-trailing-blank",
+      "component": "Markdown",
+      "args": {
+        "text": "> para\n>\n> \n",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-html-trailing-blank",
+      "component": "Markdown",
+      "args": {
+        "text": "<div>x</div>\n\nafter",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 40
+    },
+    {
+      "id": "component/markdown-padded-paragraph-wrap",
+      "component": "Markdown",
+      "args": {
+        "text": "The quick brown fox jumps over the lazy dog while the terminal reflows every single word of this paragraph.",
+        "paddingX": 3,
+        "paddingY": 0
+      },
+      "width": 30
+    },
+    {
+      "id": "component/markdown-padded-hr",
+      "component": "Markdown",
+      "args": {
+        "text": "above\n\n---\n\nbelow",
+        "paddingX": 4,
+        "paddingY": 0
+      },
+      "width": 30
+    },
+    {
+      "id": "component/markdown-padded-list-wrap",
+      "component": "Markdown",
+      "args": {
+        "text": "- alpha beta gamma delta epsilon",
+        "paddingX": 2,
+        "paddingY": 1
+      },
+      "width": 24
+    },
+    {
+      "id": "component/markdown-table-styled-header",
+      "component": "Markdown",
+      "args": {
+        "text": "| `code` | 日本語 |\n|---|---|\n| 1 | 2 |",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 30
+    },
+    {
+      "id": "component/markdown-table-styled-header-wrap",
+      "component": "Markdown",
+      "args": {
+        "text": "| **a long bold heading** | b |\n|---|---|\n| one | two |",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 26
+    },
+    {
+      "id": "component/markdown-table-wide-cells",
+      "component": "Markdown",
+      "args": {
+        "text": "| 名前 | 説明 |\n|---|---|\n| 日本語 | テキスト |",
+        "paddingX": 0,
+        "paddingY": 0
+      },
+      "width": 30
     }
   ],
   "renderer": [

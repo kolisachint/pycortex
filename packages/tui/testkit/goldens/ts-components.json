@@ -925,6 +925,1297 @@
       ],
       "stable": true,
       "referenceIdentical": false
+    },
+    {
+      "id": "component/markdown-heading-h1",
+      "width": 40,
+      "lines": [
+        "\u001b[1m\u001b[36m\u001b[1m\u001b[4mTitle\u001b[24m\u001b[22m\u001b[39m\u001b[22m                                   ",
+        "                                        ",
+        "Body text                               "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-heading-levels",
+      "width": 40,
+      "lines": [
+        "\u001b[1m\u001b[36m\u001b[1m\u001b[4mH1\u001b[24m\u001b[22m\u001b[39m\u001b[22m                                      ",
+        "                                        ",
+        "\u001b[1m\u001b[36m\u001b[1mH2\u001b[22m\u001b[39m\u001b[22m                                      ",
+        "                                        ",
+        "\u001b[1m\u001b[36m\u001b[1m### \u001b[22m\u001b[39m\u001b[22m\u001b[1m\u001b[36m\u001b[1mH3\u001b[22m\u001b[39m\u001b[22m                                  ",
+        "                                        ",
+        "\u001b[1m\u001b[36m\u001b[1m#### \u001b[22m\u001b[39m\u001b[22m\u001b[1m\u001b[36m\u001b[1mH4\u001b[22m\u001b[39m\u001b[22m                                 "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-heading-inline-code",
+      "width": 40,
+      "lines": [
+        "\u001b[1m\u001b[36m\u001b[1mHead with \u001b[22m\u001b[39m\u001b[22m\u001b[33mcode\u001b[39m\u001b[1m\u001b[36m\u001b[1m\u001b[1m\u001b[36m\u001b[1m tail\u001b[22m\u001b[39m\u001b[22m                     "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-heading-h1-inline-code",
+      "width": 40,
+      "lines": [
+        "\u001b[1m\u001b[36m\u001b[1m\u001b[4mHead \u001b[24m\u001b[22m\u001b[39m\u001b[22m\u001b[33mcode\u001b[39m                               "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-heading-h1-trailing-code-padded",
+      "width": 20,
+      "lines": [
+        "                    ",
+        "  \u001b[1m\u001b[36m\u001b[1m\u001b[4mHead \u001b[24m\u001b[22m\u001b[39m\u001b[22m\u001b[33mcode\u001b[39m         ",
+        "                    "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-heading-last-block",
+      "width": 40,
+      "lines": [
+        "text                                    ",
+        "                                        ",
+        "\u001b[1m\u001b[36m\u001b[1m\u001b[4mHeading\u001b[24m\u001b[22m\u001b[39m\u001b[22m                                 "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-heading-then-list",
+      "width": 40,
+      "lines": [
+        "\u001b[1m\u001b[36m\u001b[1mHead\u001b[22m\u001b[39m\u001b[22m                                    ",
+        "                                        ",
+        "\u001b[36m- \u001b[39mone                                   ",
+        "\u001b[36m- \u001b[39mtwo                                   "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-heading-bold-inside",
+      "width": 40,
+      "lines": [
+        "\u001b[1m\u001b[36m\u001b[1mHead with \u001b[22m\u001b[39m\u001b[22m\u001b[1m\u001b[1m\u001b[36m\u001b[1mbold\u001b[22m\u001b[39m\u001b[22m\u001b[22m\u001b[1m\u001b[36m\u001b[1m\u001b[1m\u001b[36m\u001b[1m tail\u001b[22m\u001b[39m\u001b[22m                     "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-paragraph-wrap",
+      "width": 30,
+      "lines": [
+        "The quick brown fox jumps over",
+        "the lazy dog while the        ",
+        "terminal reflows every single ",
+        "word of this paragraph.       "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-paragraph-then-list",
+      "width": 40,
+      "lines": [
+        "intro text                              ",
+        "                                        ",
+        "\u001b[36m- \u001b[39mone                                   ",
+        "\u001b[36m- \u001b[39mtwo                                   "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-paragraph-softbreak",
+      "width": 40,
+      "lines": [
+        "line one                                ",
+        "line two                                "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-paragraph-hard-break",
+      "width": 40,
+      "lines": [
+        "line one                                ",
+        "line two                                "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-paragraph-multi",
+      "width": 40,
+      "lines": [
+        "Para one                                ",
+        "                                        ",
+        "Para two                                ",
+        "                                        ",
+        "Para three                              "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-inline-all",
+      "width": 40,
+      "lines": [
+        "text \u001b[1mb\u001b[22m \u001b[3mi\u001b[23m \u001b[33mc\u001b[39m \u001b[9ms\u001b[29m end                        "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-inline-nested",
+      "width": 40,
+      "lines": [
+        "\u001b[1mbold with \u001b[3mitalic\u001b[23m inside\u001b[22m                 "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-inline-strike-loose",
+      "width": 40,
+      "lines": [
+        "~~ not struck ~~ but \u001b[9mthis is\u001b[29m            "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-inline-html",
+      "width": 40,
+      "lines": [
+        "text with <b>tags</b> inside            "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-html-block",
+      "width": 40,
+      "lines": [
+        "<div>raw html</div>                     "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-html-block-multiline",
+      "width": 40,
+      "lines": [
+        "<div>                                   ",
+        "  <span>hi</span>                       ",
+        "</div>                                  "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-link-with-url",
+      "width": 44,
+      "lines": [
+        "see \u001b[34m\u001b[4mdocs\u001b[24m\u001b[39m\u001b[2m (https://example.com/a/b)\u001b[22m here     "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-link-text-equals-href",
+      "width": 44,
+      "lines": [
+        "\u001b[34m\u001b[4mhttps://example.com\u001b[24m\u001b[39m                         "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-link-autolink-email",
+      "width": 44,
+      "lines": [
+        "mail \u001b[34m\u001b[4msomeone@example.com\u001b[24m\u001b[39m now                "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-link-bare-url",
+      "width": 44,
+      "lines": [
+        "visit \u001b[34m\u001b[4mhttps://example.com/path\u001b[24m\u001b[39m today        "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-link-wraps",
+      "width": 24,
+      "lines": [
+        "prefix \u001b[34m\u001b[4ma link\u001b[24m\u001b[39m\u001b[2m           ",
+        "\u001b[2m(https://example.com/ver",
+        "\u001b[2my/long/path)\u001b[22m suffix     "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-link-osc8",
+      "width": 44,
+      "lines": [
+        "see \u001b]8;;https://example.com/a/b\u001b\\\u001b[34m\u001b[4mdocs\u001b[24m\u001b[39m\u001b]8;;\u001b\\ here                               "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-code-fenced",
+      "width": 40,
+      "lines": [
+        "\u001b[2m```python\u001b[22m                               ",
+        "  \u001b[32mprint('hi')\u001b[39m                           ",
+        "  \u001b[32mx = 1\u001b[39m                                 ",
+        "\u001b[2m```\u001b[22m                                     "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-code-no-lang",
+      "width": 40,
+      "lines": [
+        "\u001b[2m```\u001b[22m                                     ",
+        "  \u001b[32mplain code\u001b[39m                            ",
+        "\u001b[2m```\u001b[22m                                     "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-code-indented",
+      "width": 40,
+      "lines": [
+        "\u001b[2m```\u001b[22m                                     ",
+        "  \u001b[32mindented code\u001b[39m                         ",
+        "\u001b[2m```\u001b[22m                                     "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-code-then-paragraph",
+      "width": 40,
+      "lines": [
+        "\u001b[2m```js\u001b[22m                                   ",
+        "  \u001b[32mcode()\u001b[39m                                ",
+        "\u001b[2m```\u001b[22m                                     ",
+        "                                        ",
+        "after the code                          "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-code-last-block",
+      "width": 40,
+      "lines": [
+        "before                                  ",
+        "                                        ",
+        "\u001b[2m```js\u001b[22m                                   ",
+        "  \u001b[32mcode()\u001b[39m                                ",
+        "\u001b[2m```\u001b[22m                                     "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-code-long-line",
+      "width": 30,
+      "lines": [
+        "\u001b[2m```js\u001b[22m                         ",
+        "  \u001b[32mconst value = compute(alpha,",
+        "\u001b[32mbeta, gamma, delta);\u001b[39m          ",
+        "\u001b[2m```\u001b[22m                           "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-code-highlighted",
+      "width": 40,
+      "lines": [
+        "\u001b[2m```python\u001b[22m                               ",
+        "  \u001b[95mpython|print('hi')\u001b[39m                    ",
+        "  \u001b[95mpython|x = 1\u001b[39m                          ",
+        "\u001b[2m```\u001b[22m                                     "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-code-highlighted-no-lang",
+      "width": 40,
+      "lines": [
+        "\u001b[2m```\u001b[22m                                     ",
+        "  \u001b[95m|plain code\u001b[39m                           ",
+        "\u001b[2m```\u001b[22m                                     "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-code-custom-indent",
+      "width": 40,
+      "lines": [
+        "\u001b[2m```sh\u001b[22m                                   ",
+        "|   \u001b[32mls -la\u001b[39m                              ",
+        "\u001b[2m```\u001b[22m                                     "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-code-empty-indent",
+      "width": 40,
+      "lines": [
+        "\u001b[2m```sh\u001b[22m                                   ",
+        "\u001b[32mls -la\u001b[39m                                  ",
+        "\u001b[2m```\u001b[22m                                     "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-simple",
+      "width": 40,
+      "lines": [
+        "\u001b[36m- \u001b[39mone                                   ",
+        "\u001b[36m- \u001b[39mtwo                                   ",
+        "\u001b[36m- \u001b[39mthree                                 "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-nested",
+      "width": 40,
+      "lines": [
+        "\u001b[36m- \u001b[39mItem 1                                ",
+        "    \u001b[36m- \u001b[39mNested 1.1                        ",
+        "    \u001b[36m- \u001b[39mNested 1.2                        ",
+        "\u001b[36m- \u001b[39mItem 2                                "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-deep",
+      "width": 40,
+      "lines": [
+        "\u001b[36m- \u001b[39mL1                                    ",
+        "    \u001b[36m- \u001b[39mL2                                ",
+        "        \u001b[36m- \u001b[39mL3                            ",
+        "            \u001b[36m- \u001b[39mL4                        "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-ordered",
+      "width": 40,
+      "lines": [
+        "\u001b[36m1. \u001b[39mFirst                                ",
+        "    \u001b[36m1. \u001b[39mNested first                     ",
+        "    \u001b[36m2. \u001b[39mNested second                    ",
+        "\u001b[36m2. \u001b[39mSecond                               "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-ordered-start",
+      "width": 40,
+      "lines": [
+        "\u001b[36m5. \u001b[39mfive                                 ",
+        "\u001b[36m6. \u001b[39msix                                  "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-mixed",
+      "width": 40,
+      "lines": [
+        "\u001b[36m1. \u001b[39mOrdered                              ",
+        "    \u001b[36m- \u001b[39mUnordered nested                  ",
+        "\u001b[36m2. \u001b[39mSecond                               ",
+        "    \u001b[36m- \u001b[39mMore nested                       "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-wrap-unordered",
+      "width": 20,
+      "lines": [
+        "\u001b[36m- \u001b[39malpha beta gamma  ",
+        "  delta epsilon     "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-wrap-ordered",
+      "width": 20,
+      "lines": [
+        "\u001b[36m1. \u001b[39malpha beta gamma ",
+        "   delta epsilon    "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-wrap-multi-digit",
+      "width": 20,
+      "lines": [
+        "\u001b[36m10. \u001b[39malpha beta gamma",
+        "    delta epsilon   "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-wrap-nested",
+      "width": 20,
+      "lines": [
+        "\u001b[36m- \u001b[39mparent            ",
+        "    \u001b[36m- \u001b[39malpha beta    ",
+        "      gamma delta   ",
+        "      epsilon       "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-wrap-nested-ordered",
+      "width": 20,
+      "lines": [
+        "\u001b[36m1. \u001b[39mparent           ",
+        "    \u001b[36m- \u001b[39malpha beta    ",
+        "      gamma delta   ",
+        "      epsilon       "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-quote-inside",
+      "width": 20,
+      "lines": [
+        "\u001b[36m- \u001b[39m\u001b[2m│ \u001b[22m\u001b[35m\u001b[3malpha beta gamma",
+        "  \u001b[2m│ \u001b[22m\u001b[3;35mdelta epsilon   ",
+        "  \u001b[2m│ \u001b[22m\u001b[3;35mzeta\u001b[23m\u001b[39m            "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-code-inside",
+      "width": 40,
+      "lines": [
+        "\u001b[36m- \u001b[39mitem                                  ",
+        "                                        ",
+        "  \u001b[2m```sh\u001b[22m                                 ",
+        "    \u001b[32mls -la\u001b[39m                              ",
+        "  \u001b[2m```\u001b[22m                                   "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-task",
+      "width": 40,
+      "lines": [
+        "\u001b[36m- \u001b[39mtodo                                  ",
+        "\u001b[36m- \u001b[39mdone                                  "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-loose",
+      "width": 40,
+      "lines": [
+        "\u001b[36m- \u001b[39mfirst                                 ",
+        "\u001b[36m- \u001b[39msecond                                "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-multi-block",
+      "width": 40,
+      "lines": [
+        "\u001b[36m- \u001b[39mpara one                              ",
+        "                                        ",
+        "  para two                              ",
+        "\u001b[36m- \u001b[39mnext                                  "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-then-text",
+      "width": 40,
+      "lines": [
+        "\u001b[36m- \u001b[39ma list                                ",
+        "                                        ",
+        "then more text.                         "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-unindented-code",
+      "width": 40,
+      "lines": [
+        "\u001b[36m1. \u001b[39mfirst                                ",
+        "                                        ",
+        "\u001b[2m```js\u001b[22m                                   ",
+        "  \u001b[32mcode()\u001b[39m                                ",
+        "\u001b[2m```\u001b[22m                                     ",
+        "                                        ",
+        "\u001b[36m2. \u001b[39msecond                               "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-inline-styles",
+      "width": 40,
+      "lines": [
+        "\u001b[36m- \u001b[39m\u001b[1mbold\u001b[22m item                             ",
+        "\u001b[36m- \u001b[39m\u001b[33mcode\u001b[39m item                             "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-quote-simple",
+      "width": 40,
+      "lines": [
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3mquoted text                           ",
+        "\u001b[2m│ \u001b[22m\u001b[3;35mmore quote\u001b[23m\u001b[39m                            "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-quote-lazy",
+      "width": 40,
+      "lines": [
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3mlazy quote                            ",
+        "\u001b[2m│ \u001b[22m\u001b[3;35mcontinuation line\u001b[23m\u001b[39m                     "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-quote-wrap",
+      "width": 24,
+      "lines": [
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3malpha beta gamma delta",
+        "\u001b[2m│ \u001b[22m\u001b[3;35mepsilon zeta eta theta\u001b[23m\u001b[39m"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-quote-rich",
+      "width": 40,
+      "lines": [
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3mquote with \u001b[1mbold\u001b[22m\u001b[23m\u001b[39m                       ",
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3m\u001b[23m\u001b[39m                                      ",
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3msecond para\u001b[23m\u001b[39m                           "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-quote-list",
+      "width": 40,
+      "lines": [
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3m\u001b[36m- \u001b[39ma\u001b[23m\u001b[39m                                   ",
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3m\u001b[36m- \u001b[39mb\u001b[23m\u001b[39m                                   "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-quote-code",
+      "width": 40,
+      "lines": [
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3m\u001b[2m```sh\u001b[22m\u001b[23m\u001b[39m                                 ",
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3m  \u001b[32mls\u001b[39m\u001b[23m\u001b[39m                                  ",
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3m\u001b[2m```\u001b[22m\u001b[23m\u001b[39m                                   "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-quote-then-paragraph",
+      "width": 40,
+      "lines": [
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3ma note\u001b[23m\u001b[39m                                ",
+        "                                        ",
+        "after the quote                         "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-quote-last-block",
+      "width": 40,
+      "lines": [
+        "before                                  ",
+        "                                        ",
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3ma note\u001b[23m\u001b[39m                                "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-quote-inline-code",
+      "width": 30,
+      "lines": [
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3mquote with \u001b[33mcode\u001b[39m\u001b[35m\u001b[3m inside and  ",
+        "\u001b[2m│ \u001b[22m\u001b[3;35mmore text\u001b[23m\u001b[39m                   "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-quote-reset-theme",
+      "width": 30,
+      "lines": [
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3mquote with \u001b[1mbold\u001b[0m\u001b[35m\u001b[3m\u001b[35m\u001b[3m and \u001b[33mcode\u001b[0m\u001b[35m\u001b[3m\u001b[0m\u001b[0m    "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-table-simple",
+      "width": 40,
+      "lines": [
+        "┌───────┬──────────────┐                ",
+        "│ \u001b[1mname \u001b[22m │ \u001b[1mdescription \u001b[22m │                ",
+        "├───────┼──────────────┤                ",
+        "│ alpha │ first entry  │                ",
+        "├───────┼──────────────┤                ",
+        "│ beta  │ second entry │                ",
+        "└───────┴──────────────┘                "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-table-natural-fit",
+      "width": 40,
+      "lines": [
+        "┌───┬───┐                               ",
+        "│ \u001b[1ma\u001b[22m │ \u001b[1mb\u001b[22m │                               ",
+        "├───┼───┤                               ",
+        "│ 1 │ 2 │                               ",
+        "└───┴───┘                               "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-table-aligned",
+      "width": 40,
+      "lines": [
+        "┌──────┬────────┬───────┐               ",
+        "│ \u001b[1mleft\u001b[22m │ \u001b[1mcenter\u001b[22m │ \u001b[1mright\u001b[22m │               ",
+        "├──────┼────────┼───────┤               ",
+        "│ 1    │ 2      │ 3     │               ",
+        "└──────┴────────┴───────┘               "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-table-wrap-cells",
+      "width": 26,
+      "lines": [
+        "┌───────┬──────────────┐  ",
+        "│ \u001b[1mname \u001b[22m │ \u001b[1mdescription \u001b[22m │  ",
+        "├───────┼──────────────┤  ",
+        "│ alpha │ first entry  │  ",
+        "├───────┼──────────────┤  ",
+        "│ beta  │ second entry │  ",
+        "└───────┴──────────────┘  "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-table-long-word",
+      "width": 30,
+      "lines": [
+        "┌─────┬──────────────────────┐",
+        "│ \u001b[1mkey\u001b[22m │ \u001b[1mvalue               \u001b[22m │",
+        "├─────┼──────────────────────┤",
+        "│ a   │ supercalifragilistic │",
+        "│     │ expialidociousandthe │",
+        "│     │ nsome                │",
+        "└─────┴──────────────────────┘"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-table-narrow-fallback",
+      "width": 10,
+      "lines": [
+        "┌────┬───┐",
+        "│ \u001b[1mna\u001b[22m │ \u001b[1md\u001b[22m │",
+        "│ \u001b[1mme\u001b[22m │ \u001b[1me\u001b[22m │",
+        "│ \u001b[1m  \u001b[22m │ \u001b[1ms\u001b[22m │",
+        "│ \u001b[1m  \u001b[22m │ \u001b[1mc\u001b[22m │",
+        "│ \u001b[1m  \u001b[22m │ \u001b[1mr\u001b[22m │",
+        "│ \u001b[1m  \u001b[22m │ \u001b[1mi\u001b[22m │",
+        "│ \u001b[1m  \u001b[22m │ \u001b[1mp\u001b[22m │",
+        "│ \u001b[1m  \u001b[22m │ \u001b[1mt\u001b[22m │",
+        "│ \u001b[1m  \u001b[22m │ \u001b[1mi\u001b[22m │",
+        "│ \u001b[1m  \u001b[22m │ \u001b[1mo\u001b[22m │",
+        "│ \u001b[1m  \u001b[22m │ \u001b[1mn\u001b[22m │",
+        "├────┼───┤",
+        "│ al │ f │",
+        "│ ph │ i │",
+        "│ a  │ r │",
+        "│    │ s │",
+        "│    │ t │",
+        "│    │ e │",
+        "│    │ n │",
+        "│    │ t │",
+        "│    │ r │",
+        "│    │ y │",
+        "├────┼───┤",
+        "│ be │ s │",
+        "│ ta │ e │",
+        "│    │ c │",
+        "│    │ o │",
+        "│    │ n │",
+        "│    │ d │",
+        "│    │ e │",
+        "│    │ n │",
+        "│    │ t │",
+        "│    │ r │",
+        "│    │ y │",
+        "└────┴───┘"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-table-inline-code",
+      "width": 30,
+      "lines": [
+        "┌──────┬───┐                  ",
+        "│ \u001b[1mx   \u001b[22m │ \u001b[1my\u001b[22m │                  ",
+        "├──────┼───┤                  ",
+        "│ \u001b[33mcode\u001b[39m │ \u001b[1mb\u001b[22m │                  ",
+        "└──────┴───┘                  "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-table-padding",
+      "width": 40,
+      "lines": [
+        "  ┌───────┬──────────────┐              ",
+        "  │ \u001b[1mname \u001b[22m │ \u001b[1mdescription \u001b[22m │              ",
+        "  ├───────┼──────────────┤              ",
+        "  │ alpha │ first entry  │              ",
+        "  ├───────┼──────────────┤              ",
+        "  │ beta  │ second entry │              ",
+        "  └───────┴──────────────┘              "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-table-last-block",
+      "width": 40,
+      "lines": [
+        "before                                  ",
+        "                                        ",
+        "┌───────┬──────────────┐                ",
+        "│ \u001b[1mname \u001b[22m │ \u001b[1mdescription \u001b[22m │                ",
+        "├───────┼──────────────┤                ",
+        "│ alpha │ first entry  │                ",
+        "├───────┼──────────────┤                ",
+        "│ beta  │ second entry │                ",
+        "└───────┴──────────────┘                "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-table-then-paragraph",
+      "width": 40,
+      "lines": [
+        "┌───────┬──────────────┐                ",
+        "│ \u001b[1mname \u001b[22m │ \u001b[1mdescription \u001b[22m │                ",
+        "├───────┼──────────────┤                ",
+        "│ alpha │ first entry  │                ",
+        "├───────┼──────────────┤                ",
+        "│ beta  │ second entry │                ",
+        "└───────┴──────────────┘                ",
+        "                                        ",
+        "after the table                         "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-table-no-leading-pipe",
+      "width": 40,
+      "lines": [
+        "┌───┬───┐                               ",
+        "│ \u001b[1ma\u001b[22m │ \u001b[1mb\u001b[22m │                               ",
+        "├───┼───┤                               ",
+        "│ 1 │ 2 │                               ",
+        "└───┴───┘                               "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-hr",
+      "width": 40,
+      "lines": [
+        "above                                   ",
+        "                                        ",
+        "\u001b[2m────────────────────────────────────────\u001b[22m",
+        "                                        ",
+        "below                                   "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-hr-capped-at-80",
+      "width": 100,
+      "lines": [
+        "\u001b[2m────────────────────────────────────────────────────────────────────────────────\u001b[22m                    "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-hr-last-block",
+      "width": 40,
+      "lines": [
+        "above                                   ",
+        "                                        ",
+        "\u001b[2m────────────────────────────────────────\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-empty",
+      "width": 40,
+      "lines": [],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-whitespace-only",
+      "width": 40,
+      "lines": [],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-tabs-normalized",
+      "width": 40,
+      "lines": [
+        "para   with   tabs                      "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-padded",
+      "width": 30,
+      "lines": [
+        "                              ",
+        "  \u001b[1m\u001b[36m\u001b[1m\u001b[4mTitle\u001b[24m\u001b[22m\u001b[39m\u001b[22m                       ",
+        "                              ",
+        "  Body text                   ",
+        "                              "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-wide-chars",
+      "width": 30,
+      "lines": [
+        "日本語 text with \u001b[1mbold\u001b[22m 文字    "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-mixed-document",
+      "width": 44,
+      "lines": [
+        "\u001b[1m\u001b[36m\u001b[1m\u001b[4mTitle\u001b[24m\u001b[22m\u001b[39m\u001b[22m                                       ",
+        "                                            ",
+        "Intro paragraph with \u001b[1mbold\u001b[22m and \u001b[33mcode\u001b[39m.         ",
+        "                                            ",
+        "\u001b[36m- \u001b[39mpoint one                                 ",
+        "\u001b[36m- \u001b[39mpoint two                                 ",
+        "                                            ",
+        "\u001b[2m```sh\u001b[22m                                       ",
+        "  \u001b[32mls -la\u001b[39m                                    ",
+        "\u001b[2m```\u001b[22m                                         ",
+        "                                            ",
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3mA note.\u001b[23m\u001b[39m                                   ",
+        "                                            ",
+        "\u001b[2m────────────────────────────────────────────\u001b[22m",
+        "                                            ",
+        "Done.                                       "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-default-style-colour",
+      "width": 40,
+      "lines": [
+        "\u001b[3m\u001b[90mgray text with \u001b[39m\u001b[23m\u001b[33mcode\u001b[39m\u001b[3m\u001b[90m\u001b[3m\u001b[90m and more\u001b[39m\u001b[23m            "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-default-style-bold-after",
+      "width": 40,
+      "lines": [
+        "\u001b[3m\u001b[90mgray text with \u001b[39m\u001b[23m\u001b[1m\u001b[3m\u001b[90mbold\u001b[39m\u001b[23m\u001b[22m\u001b[3m\u001b[90m\u001b[3m\u001b[90m and more\u001b[39m\u001b[23m            "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-default-style-bg",
+      "width": 30,
+      "lines": [
+        "\u001b[44m                              \u001b[49m",
+        "\u001b[44m text on a background         \u001b[49m",
+        "\u001b[44m                              \u001b[49m"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-default-style-all",
+      "width": 30,
+      "lines": [
+        "\u001b[4m\u001b[9m\u001b[3m\u001b[1m\u001b[90meverything at once\u001b[39m\u001b[22m\u001b[23m\u001b[29m\u001b[24m            "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-default-style-quote",
+      "width": 30,
+      "lines": [
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3mquoted under a default style\u001b[23m\u001b[39m"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-default-style-html",
+      "width": 30,
+      "lines": [
+        "\u001b[90m<div>raw html</div>\u001b[39m           "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-paragraph-tight-list",
+      "width": 40,
+      "lines": [
+        "intro text                              ",
+        "\u001b[36m- \u001b[39mone                                   ",
+        "\u001b[36m- \u001b[39mtwo                                   "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-table-fallback-narrow",
+      "width": 10,
+      "lines": [
+        "| id | a  ",
+        "much      ",
+        "longer    ",
+        "heading | ",
+        "mid |     ",
+        "|---|---|-",
+        "--|       ",
+        "| 1 | some",
+        "fairly    ",
+        "long cell ",
+        "content   ",
+        "here |    ",
+        "middle    ",
+        "value |   "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-table-fallback-two-col",
+      "width": 8,
+      "lines": [
+        "| a | b ",
+        "|       ",
+        "|---|---",
+        "|       ",
+        "| 1 | 2 ",
+        "|       "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-table-shrink-uneven",
+      "width": 34,
+      "lines": [
+        "┌────┬─────────────────┬─────────┐",
+        "│ \u001b[1mid\u001b[22m │ \u001b[1ma much longer  \u001b[22m │ \u001b[1mmid    \u001b[22m │",
+        "│ \u001b[1m  \u001b[22m │ \u001b[1mheading        \u001b[22m │ \u001b[1m       \u001b[22m │",
+        "├────┼─────────────────┼─────────┤",
+        "│ 1  │ some fairly     │ middle  │",
+        "│    │ long cell       │ value   │",
+        "│    │ content here    │         │",
+        "└────┴─────────────────┴─────────┘"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-table-shrink-tight",
+      "width": 22,
+      "lines": [
+        "┌────┬────────┬──────┐",
+        "│ \u001b[1mid\u001b[22m │ \u001b[1ma much\u001b[22m │ \u001b[1mmid \u001b[22m │",
+        "│ \u001b[1m  \u001b[22m │ \u001b[1mlonger\u001b[22m │ \u001b[1m    \u001b[22m │",
+        "│ \u001b[1m  \u001b[22m │ \u001b[1mheadin\u001b[22m │ \u001b[1m    \u001b[22m │",
+        "│ \u001b[1m  \u001b[22m │ \u001b[1mg     \u001b[22m │ \u001b[1m    \u001b[22m │",
+        "├────┼────────┼──────┤",
+        "│ 1  │ some   │ midd │",
+        "│    │ fairly │ le   │",
+        "│    │ long   │ valu │",
+        "│    │ cell   │ e    │",
+        "│    │ conten │      │",
+        "│    │ t here │      │",
+        "└────┴────────┴──────┘"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-quote-reset-theme-list",
+      "width": 30,
+      "lines": [
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3m\u001b[36m- \u001b[0m\u001b[35m\u001b[3m\u001b[1ma\u001b[0m\u001b[35m\u001b[3m\u001b[35m\u001b[3m item\u001b[0m\u001b[0m                    ",
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3m\u001b[36m- \u001b[0m\u001b[35m\u001b[3msecond\u001b[0m\u001b[0m                    "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-quote-reset-theme-code",
+      "width": 30,
+      "lines": [
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3m\u001b[2m```sh\u001b[0m\u001b[35m\u001b[3m\u001b[0m\u001b[0m                       ",
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3m  \u001b[32mls -la\u001b[0m\u001b[35m\u001b[3m\u001b[0m\u001b[0m                    ",
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3m\u001b[2m```\u001b[0m\u001b[35m\u001b[3m\u001b[0m\u001b[0m                         "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-heading-code-then-bold",
+      "width": 40,
+      "lines": [
+        "\u001b[1m\u001b[36m\u001b[1mHead \u001b[22m\u001b[39m\u001b[22m\u001b[33mcode\u001b[39m\u001b[1m\u001b[36m\u001b[1m\u001b[1m\u001b[36m\u001b[1m \u001b[22m\u001b[39m\u001b[22m\u001b[1m\u001b[1m\u001b[36m\u001b[1mbold\u001b[22m\u001b[39m\u001b[22m\u001b[22m\u001b[1m\u001b[36m\u001b[1m\u001b[1m\u001b[36m\u001b[1m tail\u001b[22m\u001b[39m\u001b[22m                     "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-default-style-code-then-bold",
+      "width": 40,
+      "lines": [
+        "\u001b[3m\u001b[90mgray \u001b[39m\u001b[23m\u001b[33mcode\u001b[39m\u001b[3m\u001b[90m\u001b[3m\u001b[90m \u001b[39m\u001b[23m\u001b[1m\u001b[3m\u001b[90mbold\u001b[39m\u001b[23m\u001b[22m\u001b[3m\u001b[90m\u001b[3m\u001b[90m tail\u001b[39m\u001b[23m                     "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-default-style-trailing-code",
+      "width": 30,
+      "lines": [
+        "                              ",
+        " \u001b[4m\u001b[90mgray text with \u001b[39m\u001b[24m\u001b[33mcode\u001b[39m          ",
+        "                              "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-paragraph-trailing-blank",
+      "width": 40,
+      "lines": [
+        "para                                    ",
+        "                                        "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-list-trailing-blank",
+      "width": 40,
+      "lines": [
+        "\u001b[36m- \u001b[39ma                                     ",
+        "\u001b[36m- \u001b[39mb                                     ",
+        "                                        "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-quote-inner-trailing-blank",
+      "width": 40,
+      "lines": [
+        "\u001b[2m│ \u001b[22m\u001b[35m\u001b[3mpara\u001b[23m\u001b[39m                                  "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-html-trailing-blank",
+      "width": 40,
+      "lines": [
+        "<div>x</div>                            ",
+        "after                                   "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-padded-paragraph-wrap",
+      "width": 30,
+      "lines": [
+        "   The quick brown fox        ",
+        "   jumps over the lazy dog    ",
+        "   while the terminal         ",
+        "   reflows every single       ",
+        "   word of this paragraph.    "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-padded-hr",
+      "width": 30,
+      "lines": [
+        "    above                     ",
+        "                              ",
+        "    \u001b[2m──────────────────────\u001b[22m    ",
+        "                              ",
+        "    below                     "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-padded-list-wrap",
+      "width": 24,
+      "lines": [
+        "                        ",
+        "  \u001b[36m- \u001b[39malpha beta gamma    ",
+        "    delta epsilon       ",
+        "                        "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-table-styled-header",
+      "width": 30,
+      "lines": [
+        "┌──────┬────────┐             ",
+        "│ \u001b[1m\u001b[33mcode\u001b[39m\u001b[22m │ \u001b[1m日本語\u001b[22m │             ",
+        "├──────┼────────┤             ",
+        "│ 1    │ 2      │             ",
+        "└──────┴────────┘             "
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-table-styled-header-wrap",
+      "width": 26,
+      "lines": [
+        "┌──────────────────┬─────┐",
+        "│ \u001b[1m\u001b[1ma long bold     \u001b[22m │ \u001b[1mb  \u001b[22m │",
+        "│ \u001b[1m\u001b[1mheading\u001b[22m         \u001b[22m │ \u001b[1m   \u001b[22m │",
+        "├──────────────────┼─────┤",
+        "│ one              │ two │",
+        "└──────────────────┴─────┘"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/markdown-table-wide-cells",
+      "width": 30,
+      "lines": [
+        "┌────────┬──────────┐         ",
+        "│ \u001b[1m名前  \u001b[22m │ \u001b[1m説明    \u001b[22m │         ",
+        "├────────┼──────────┤         ",
+        "│ 日本語 │ テキスト │         ",
+        "└────────┴──────────┘         "
+      ],
+      "stable": true,
+      "referenceIdentical": true
     }
   ]
 }

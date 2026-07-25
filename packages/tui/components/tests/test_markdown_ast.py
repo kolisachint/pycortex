@@ -18,6 +18,18 @@ from cortex.tui.components._markdown_ast import lex_markdown
 # this keeps working regardless of where pytest is invoked from.
 from cortex.tui.testkit._scene import GOLDENS_DIR as GOLDENS
 
+# Samples where mistune cannot be made to agree with marked, each with the
+# reason the difference cannot reach the screen. Strict xfail: if a sample here
+# starts matching, the entry is stale and the test says so.
+KNOWN_DIVERGENCES = {
+    "quote-inner-trailing-blank": (
+        "mistune emits a trailing blank line inside a blockquote where marked's "
+        "inner source ends at the paragraph. `markdown.ts` pops trailing blank "
+        "lines off a blockquote before drawing its borders, so both render the "
+        "same screen — pinned by component/markdown-quote-inner-trailing-blank."
+    ),
+}
+
 CORPUS = json.loads((GOLDENS / "markdown-corpus.json").read_text())
 MARKED = {s["id"]: s for s in json.loads((GOLDENS / "marked-ast.json").read_text())["scenarios"]}
 SAMPLES = [(s["id"], s["source"]) for s in CORPUS["samples"]]
@@ -33,7 +45,9 @@ def strip_undefined(node: Any) -> Any:
 
 
 @pytest.mark.parametrize(("sample_id", "source"), SAMPLES, ids=[s[0] for s in SAMPLES])
-def test_matches_marked(sample_id: str, source: str) -> None:
+def test_matches_marked(sample_id: str, source: str, request: pytest.FixtureRequest) -> None:
+    if sample_id in KNOWN_DIVERGENCES:
+        request.node.add_marker(pytest.mark.xfail(strict=True, reason=KNOWN_DIVERGENCES[sample_id]))
     golden = MARKED.get(sample_id)
     assert golden is not None, (
         f"no marked AST for {sample_id} — run `uv run scripts/tui_goldens.py --refresh`"
