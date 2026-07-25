@@ -200,3 +200,91 @@ class TestLegacyEscapeSequences:
         assert kb.matches("\x1bf", "tui.editor.cursorWordRight")
         assert kb.matches("\x1bd", "tui.editor.deleteWordForward")
         assert kb.matches("\x1by", "tui.editor.yankPop")
+
+
+class TestCsiModifierSequences:
+    """Step 1.19 — `parseKittySequence`'s other three branches.
+
+    Every value below was diffed against the TS `parseKey` under bun rather than
+    reasoned about; `\x1b[1;3D` returning `None` is what made
+    `component/editor-word-motion` diverge.
+    """
+
+    def test_modified_arrows(self) -> None:
+        assert parse_key("\x1b[1;3D") == "alt+left"
+        assert parse_key("\x1b[1;3C") == "alt+right"
+        assert parse_key("\x1b[1;3A") == "alt+up"
+        assert parse_key("\x1b[1;3B") == "alt+down"
+        assert parse_key("\x1b[1;5D") == "ctrl+left"
+        assert parse_key("\x1b[1;5C") == "ctrl+right"
+        assert parse_key("\x1b[1;2A") == "shift+up"
+
+    def test_unmodified_arrow_form_still_parses(self) -> None:
+        assert parse_key("\x1b[1;1D") == "left"
+
+    def test_modified_functional_keys(self) -> None:
+        assert parse_key("\x1b[3;3~") == "alt+delete"
+        assert parse_key("\x1b[3;5~") == "ctrl+delete"
+        assert parse_key("\x1b[2;2~") == "shift+insert"
+        assert parse_key("\x1b[5;3~") == "alt+pageUp"
+        assert parse_key("\x1b[6;3~") == "alt+pageDown"
+        assert parse_key("\x1b[7;3~") == "alt+home"
+        assert parse_key("\x1b[8;3~") == "alt+end"
+
+    def test_unknown_functional_number_is_not_a_key(self) -> None:
+        # `\x1b[13;2~` is one of the shift+enter encodings, and the TS does not
+        # claim it here either — editor.ts matches the literal sequence.
+        assert parse_key("\x1b[13;2~") is None
+
+    def test_modified_home_end(self) -> None:
+        assert parse_key("\x1b[1;2H") == "shift+home"
+        assert parse_key("\x1b[1;2F") == "shift+end"
+        assert parse_key("\x1b[1;5H") == "ctrl+home"
+
+    def test_event_type_suffix_is_accepted(self) -> None:
+        # Kitty flag 2 appends `:<event>`; the key is the same key.
+        assert parse_key("\x1b[1;3:1D") == "alt+left"
+        assert parse_key("\x1b[3;3:2~") == "alt+delete"
+        assert parse_key("\x1b[1;2:3H") == "shift+home"
+
+    def test_kitty_functional_codepoints_map_to_real_keys(self) -> None:
+        # The port had invented numbers here: arrows at 57352-57355 (which kitty
+        # never sends) and delete at 57399 (which is kitty's KP_0).
+        assert parse_key("\x1b[57417u") == "left"
+        assert parse_key("\x1b[57418u") == "right"
+        assert parse_key("\x1b[57419;3u") == "alt+up"
+        assert parse_key("\x1b[57420u") == "down"
+        assert parse_key("\x1b[57421u") == "pageUp"
+        assert parse_key("\x1b[57422u") == "pageDown"
+        assert parse_key("\x1b[57423u") == "home"
+        assert parse_key("\x1b[57424u") == "end"
+        assert parse_key("\x1b[57425u") == "insert"
+        assert parse_key("\x1b[57426u") == "delete"
+
+    def test_keypad_keys_fold_onto_their_characters(self) -> None:
+        assert parse_key("\x1b[57399u") == "0"
+        assert parse_key("\x1b[57408u") == "9"
+        assert parse_key("\x1b[57410u") == "/"
+        assert parse_key("\x1b[57414u") == "enter"  # KP_Enter
+
+    def test_letter_l_is_not_enter(self) -> None:
+        # `kpEnter` was 108 — the codepoint of "l".
+        assert parse_key("\x1b[108u") == "l"
+
+    def test_modifier_order_and_lock_masking(self) -> None:
+        # The TS emits shift, ctrl, alt, super in that order…
+        assert parse_key("\x1b[97;6u") == "shift+ctrl+a"
+        assert parse_key("\x1b[97;7u") == "ctrl+alt+a"
+        # …masks Caps/Num Lock off entirely (ctrl|caps = 68, encoded +1)…
+        assert parse_key("\x1b[97;69u") == "ctrl+a"
+        # …and refuses to name a chord it has no name for (hyper = 16).
+        assert parse_key("\x1b[97;17u") is None
+
+    def test_the_bindings_this_unblocks_now_match(self) -> None:
+        kb = get_keybindings()
+        assert kb.matches("\x1b[1;3D", "tui.editor.cursorWordLeft")
+        assert kb.matches("\x1b[1;5D", "tui.editor.cursorWordLeft")
+        assert kb.matches("\x1b[1;3C", "tui.editor.cursorWordRight")
+        assert kb.matches("\x1b[1;5C", "tui.editor.cursorWordRight")
+        assert kb.matches("\x1b[3;3~", "tui.editor.deleteWordForward")
+        assert matches_key("\x1b[1;2H", "shift+home")

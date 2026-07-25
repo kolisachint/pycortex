@@ -26,32 +26,90 @@ MODIFIERS = {
     "num_lock": 128,
 }
 
+LOCK_MASK = MODIFIERS["caps_lock"] | MODIFIERS["num_lock"]
+
 KITTY_CSI_U_REGEX = re.compile(r"^\x1b\[(\d+)(?::(\d*))?(?::(\d+))?(?:;(\d+))?(?::(\d+))?u$")
+# The other three shapes `parseKittySequence` accepts. Legacy terminals send
+# these for modified arrows / functional keys, and they are how every word-motion
+# binding (`alt+left`, `ctrl+right`) actually arrives.
+KITTY_ARROW_REGEX = re.compile(r"^\x1b\[1;(\d+)(?::(\d+))?([ABCD])$")
+KITTY_FUNCTIONAL_REGEX = re.compile(r"^\x1b\[(\d+)(?:;(\d+))?(?::(\d+))?~$")
+KITTY_HOME_END_REGEX = re.compile(r"^\x1b\[1;(\d+)(?::(\d+))?([HF])$")
 
 # Common special-key codepoints used by formatParsedKey / decodeKittyPrintable.
 CODEPOINTS = {
     "escape": 27,
     "tab": 9,
     "enter": 13,
-    "kpEnter": 108,
     "space": 32,
     "backspace": 127,
+    "kpEnter": 57414,  # Numpad Enter (Kitty protocol)
 }
 
+# Negative sentinels, exactly as in the TS: these keys have no Unicode codepoint,
+# and the real kitty numbers reach them through
+# `KITTY_FUNCTIONAL_KEY_EQUIVALENTS` below.
 FUNCTIONAL_CODEPOINTS = {
-    "delete": 57399,
-    "insert": 57427,
-    "home": 57423,
-    "end": 57424,
-    "pageUp": 57421,
-    "pageDown": 57422,
+    "delete": -10,
+    "insert": -11,
+    "pageUp": -12,
+    "pageDown": -13,
+    "home": -14,
+    "end": -15,
 }
 
 ARROW_CODEPOINTS = {
-    "up": 57352,
-    "down": 57353,
-    "left": 57354,
-    "right": 57355,
+    "up": -1,
+    "down": -2,
+    "right": -3,
+    "left": -4,
+}
+
+KITTY_FUNCTIONAL_KEY_EQUIVALENTS: dict[int, int] = {
+    57399: 48,  # KP_0 -> 0
+    57400: 49,  # KP_1 -> 1
+    57401: 50,  # KP_2 -> 2
+    57402: 51,  # KP_3 -> 3
+    57403: 52,  # KP_4 -> 4
+    57404: 53,  # KP_5 -> 5
+    57405: 54,  # KP_6 -> 6
+    57406: 55,  # KP_7 -> 7
+    57407: 56,  # KP_8 -> 8
+    57408: 57,  # KP_9 -> 9
+    57409: 46,  # KP_DECIMAL -> .
+    57410: 47,  # KP_DIVIDE -> /
+    57411: 42,  # KP_MULTIPLY -> *
+    57412: 45,  # KP_SUBTRACT -> -
+    57413: 43,  # KP_ADD -> +
+    57415: 61,  # KP_EQUAL -> =
+    57416: 44,  # KP_SEPARATOR -> ,
+    57417: ARROW_CODEPOINTS["left"],
+    57418: ARROW_CODEPOINTS["right"],
+    57419: ARROW_CODEPOINTS["up"],
+    57420: ARROW_CODEPOINTS["down"],
+    57421: FUNCTIONAL_CODEPOINTS["pageUp"],
+    57422: FUNCTIONAL_CODEPOINTS["pageDown"],
+    57423: FUNCTIONAL_CODEPOINTS["home"],
+    57424: FUNCTIONAL_CODEPOINTS["end"],
+    57425: FUNCTIONAL_CODEPOINTS["insert"],
+    57426: FUNCTIONAL_CODEPOINTS["delete"],
+}
+
+# `\x1b[<n>;<mod>~` numbers, as `parseKittySequence` maps them.
+KITTY_FUNCTIONAL_KEY_NUMBERS: dict[int, int] = {
+    2: FUNCTIONAL_CODEPOINTS["insert"],
+    3: FUNCTIONAL_CODEPOINTS["delete"],
+    5: FUNCTIONAL_CODEPOINTS["pageUp"],
+    6: FUNCTIONAL_CODEPOINTS["pageDown"],
+    7: FUNCTIONAL_CODEPOINTS["home"],
+    8: FUNCTIONAL_CODEPOINTS["end"],
+}
+
+KITTY_ARROW_LETTERS: dict[str, int] = {
+    "A": ARROW_CODEPOINTS["up"],
+    "B": ARROW_CODEPOINTS["down"],
+    "C": ARROW_CODEPOINTS["right"],
+    "D": ARROW_CODEPOINTS["left"],
 }
 
 SYMBOL_KEYS = set("`~!@#$%^&*()-_=+[]{}\\|;:'\",<.>/?")
@@ -154,35 +212,32 @@ def matches_key(data: str, key_id: str) -> bool:
     return False
 
 
-def _format_key_name_with_modifiers(key_name: str, modifier: int) -> str:
-    parts: list[str] = []
-    if modifier & MODIFIERS["ctrl"]:
-        parts.append("ctrl")
-    if modifier & MODIFIERS["alt"]:
-        parts.append("alt")
-    if modifier & MODIFIERS["shift"]:
-        parts.append("shift")
-    if modifier & MODIFIERS["super"]:
-        parts.append("super")
-    if modifier & MODIFIERS["meta"]:
-        parts.append("meta")
-    if modifier & MODIFIERS["hyper"]:
-        parts.append("hyper")
-    parts.append(key_name)
-    return "+".join(parts)
+def _format_key_name_with_modifiers(key_name: str, modifier: int) -> str | None:
+    """The TS `formatKeyNameWithModifiers`: fixed order, and no invented names.
+
+    Caps/Num Lock are masked off (they are state, not a chord), and a chord
+    carrying a modifier hoocode has no name for — hyper, meta — has no key id at
+    all rather than a made-up one.
+    """
+    effective_mod = modifier & ~LOCK_MASK
+    supported = MODIFIERS["shift"] | MODIFIERS["ctrl"] | MODIFIERS["alt"] | MODIFIERS["super"]
+    if effective_mod & ~supported:
+        return None
+    mods: list[str] = []
+    if effective_mod & MODIFIERS["shift"]:
+        mods.append("shift")
+    if effective_mod & MODIFIERS["ctrl"]:
+        mods.append("ctrl")
+    if effective_mod & MODIFIERS["alt"]:
+        mods.append("alt")
+    if effective_mod & MODIFIERS["super"]:
+        mods.append("super")
+    return f"{'+'.join(mods)}+{key_name}" if mods else key_name
 
 
 def _normalize_kitty_functional_codepoint(codepoint: int) -> int:
-    # Map legacy functional codepoints to modern ones used by hoocode
-    if codepoint == 57353:
-        return ARROW_CODEPOINTS["down"]
-    if codepoint == 57352:
-        return ARROW_CODEPOINTS["up"]
-    if codepoint == 57354:
-        return ARROW_CODEPOINTS["left"]
-    if codepoint == 57355:
-        return ARROW_CODEPOINTS["right"]
-    return codepoint
+    """Map kitty's functional codepoints onto hoocode's sentinels."""
+    return KITTY_FUNCTIONAL_KEY_EQUIVALENTS.get(codepoint, codepoint)
 
 
 def _format_parsed_key(codepoint: int, modifier: int) -> str | None:
@@ -221,7 +276,7 @@ def _format_parsed_key(codepoint: int, modifier: int) -> str | None:
         key_name = chr(cp)
     elif 97 <= cp <= 122:
         key_name = chr(cp)
-    elif chr(cp) in SYMBOL_KEYS:
+    elif cp >= 0 and chr(cp) in SYMBOL_KEYS:
         key_name = chr(cp)
     else:
         return None
@@ -229,14 +284,38 @@ def _format_parsed_key(codepoint: int, modifier: int) -> str | None:
 
 
 def _parse_kitty_sequence(data: str) -> tuple[int, int, int | None] | None:
+    """Port of `parseKittySequence` — all four sequence shapes it accepts."""
     m = KITTY_CSI_U_REGEX.match(data)
-    if not m:
-        return None
-    codepoint = int(m.group(1))
-    mod_value = int(m.group(4)) if m.group(4) else 1
-    modifier = mod_value - 1
-    base_layout = int(m.group(3)) if m.group(3) else None
-    return codepoint, modifier, base_layout
+    if m:
+        codepoint = int(m.group(1))
+        mod_value = int(m.group(4)) if m.group(4) else 1
+        base_layout = int(m.group(3)) if m.group(3) else None
+        return codepoint, mod_value - 1, base_layout
+
+    # Arrow keys with modifier: \x1b[1;<mod>A/B/C/D (optionally :<event>)
+    arrow = KITTY_ARROW_REGEX.match(data)
+    if arrow:
+        return KITTY_ARROW_LETTERS[arrow.group(3)], int(arrow.group(1)) - 1, None
+
+    # Functional keys: \x1b[<num>~ or \x1b[<num>;<mod>~ (optionally :<event>)
+    func = KITTY_FUNCTIONAL_REGEX.match(data)
+    if func:
+        codepoint = KITTY_FUNCTIONAL_KEY_NUMBERS.get(int(func.group(1)))
+        if codepoint is not None:
+            mod_value = int(func.group(2)) if func.group(2) else 1
+            return codepoint, mod_value - 1, None
+
+    # Home/End with modifier: \x1b[1;<mod>H/F (optionally :<event>)
+    home_end = KITTY_HOME_END_REGEX.match(data)
+    if home_end:
+        codepoint = (
+            FUNCTIONAL_CODEPOINTS["home"]
+            if home_end.group(3) == "H"
+            else FUNCTIONAL_CODEPOINTS["end"]
+        )
+        return codepoint, int(home_end.group(1)) - 1, None
+
+    return None
 
 
 def _parse_modify_other_keys_sequence(data: str) -> tuple[int, int] | None:

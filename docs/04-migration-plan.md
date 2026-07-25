@@ -138,7 +138,7 @@ Parallelizable across these leaves; dependencies flow upward from util.
 - [x] **1.12 components — markdown** — `packages/tui/src/components/markdown.ts` (808 lines,
       `marked` AST → styled lines) → `components/markdown.py` + parity goldens. Depends
       on 1.18. Gate: `pytest packages/tui/components`.
-- [ ] **1.19 keys — CSI modifier sequences + kitty functional codepoints**
+- [x] **1.19 keys — CSI modifier sequences + kitty functional codepoints**
       *(prerequisite for 1.13; out of numeric order on purpose)* — the third gap behind
       1.3's "minimal" `keys.ts`. `parseKittySequence` has four branches; the port has
       **one**. Missing: modified arrows (`\x1b[1;<mod>A-D`, i.e. every `alt+left` /
