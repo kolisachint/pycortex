@@ -1,0 +1,1125 @@
+{
+  "source": "marked (hoocode's StrictStrikethroughTokenizer)",
+  "scenarios": [
+    {
+      "id": "heading-h1",
+      "source": "# Heading one",
+      "tokens": [
+        {
+          "type": "heading",
+          "depth": 1,
+          "tokens": [
+            {
+              "type": "text",
+              "text": "Heading one"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "heading-levels",
+      "source": "# H1\n## H2\n### H3\n#### H4",
+      "tokens": [
+        {
+          "type": "heading",
+          "depth": 1,
+          "tokens": [
+            {
+              "type": "text",
+              "text": "H1"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "depth": 2,
+          "tokens": [
+            {
+              "type": "text",
+              "text": "H2"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "depth": 3,
+          "tokens": [
+            {
+              "type": "text",
+              "text": "H3"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "depth": 4,
+          "tokens": [
+            {
+              "type": "text",
+              "text": "H4"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "heading-inline",
+      "source": "## Head with **bold** and `code`",
+      "tokens": [
+        {
+          "type": "heading",
+          "depth": 2,
+          "tokens": [
+            {
+              "type": "text",
+              "text": "Head with "
+            },
+            {
+              "type": "strong",
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "bold"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": " and "
+            },
+            {
+              "type": "codespan",
+              "text": "code"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "paragraph",
+      "source": "A simple paragraph.",
+      "tokens": [
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "A simple paragraph."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "paragraph-multi",
+      "source": "Para one\n\nPara two\n\nPara three",
+      "tokens": [
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "Para one"
+            }
+          ]
+        },
+        {
+          "type": "space"
+        },
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "Para two"
+            }
+          ]
+        },
+        {
+          "type": "space"
+        },
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "Para three"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "paragraph-softbreak",
+      "source": "A paragraph\nthat continues.",
+      "tokens": [
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "A paragraph\nthat continues."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hard-break",
+      "source": "text with  \nhard break",
+      "tokens": [
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "text with"
+            },
+            {
+              "type": "br"
+            },
+            {
+              "type": "text",
+              "text": "hard break"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inline-all",
+      "source": "text **b** *i* `c` ~~s~~ [l](http://u.com)",
+      "tokens": [
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "text "
+            },
+            {
+              "type": "strong",
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "b"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "em",
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "i"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "codespan",
+              "text": "c"
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "del",
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "s"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": " "
+            },
+            {
+              "type": "link",
+              "href": "http://u.com",
+              "text": "l",
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "l"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inline-nested",
+      "source": "**bold with *italic* inside**",
+      "tokens": [
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "strong",
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "bold with "
+                },
+                {
+                  "type": "em",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "italic"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": " inside"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "strike-strict-rejects-spaces",
+      "source": "~~ not struck ~~ but ~~this is~~",
+      "tokens": [
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "~~ not struck ~~ but "
+            },
+            {
+              "type": "del",
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "this is"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "link-bare",
+      "source": "see [docs](https://example.com/a/b) here",
+      "tokens": [
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "see "
+            },
+            {
+              "type": "link",
+              "href": "https://example.com/a/b",
+              "text": "docs",
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "docs"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": " here"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "code-fenced-lang",
+      "source": "```python\nprint('hi')\nx = 1\n```",
+      "tokens": [
+        {
+          "type": "code",
+          "lang": "python",
+          "text": "print('hi')\nx = 1"
+        }
+      ]
+    },
+    {
+      "id": "code-fenced-nolang",
+      "source": "```\nplain code\n```",
+      "tokens": [
+        {
+          "type": "code",
+          "lang": "",
+          "text": "plain code"
+        }
+      ]
+    },
+    {
+      "id": "code-indented",
+      "source": "    indented code",
+      "tokens": [
+        {
+          "type": "code",
+          "lang": "",
+          "text": "indented code"
+        }
+      ]
+    },
+    {
+      "id": "list-bullet",
+      "source": "- one\n- two\n- three",
+      "tokens": [
+        {
+          "type": "list",
+          "ordered": false,
+          "start": "",
+          "items": [
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "one",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "one"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "two",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "two"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "three",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "three"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "list-ordered",
+      "source": "1. first\n2. second",
+      "tokens": [
+        {
+          "type": "list",
+          "ordered": true,
+          "start": 1,
+          "items": [
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "first",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "first"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "second",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "second"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "list-ordered-start",
+      "source": "5. five\n6. six",
+      "tokens": [
+        {
+          "type": "list",
+          "ordered": true,
+          "start": 5,
+          "items": [
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "five",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "five"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "six",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "six"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "list-task",
+      "source": "- [ ] todo\n- [x] done",
+      "tokens": [
+        {
+          "type": "list",
+          "ordered": false,
+          "start": "",
+          "items": [
+            {
+              "type": "list_item",
+              "task": true,
+              "checked": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "todo",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "todo"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "list_item",
+              "task": true,
+              "checked": true,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "done",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "done"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "list-nested",
+      "source": "- outer\n  - inner\n    - deepest",
+      "tokens": [
+        {
+          "type": "list",
+          "ordered": false,
+          "start": "",
+          "items": [
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "outer",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "outer"
+                    }
+                  ]
+                },
+                {
+                  "type": "list",
+                  "ordered": false,
+                  "start": "",
+                  "items": [
+                    {
+                      "type": "list_item",
+                      "task": false,
+                      "tokens": [
+                        {
+                          "type": "text",
+                          "text": "inner",
+                          "tokens": [
+                            {
+                              "type": "text",
+                              "text": "inner"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "list",
+                          "ordered": false,
+                          "start": "",
+                          "items": [
+                            {
+                              "type": "list_item",
+                              "task": false,
+                              "tokens": [
+                                {
+                                  "type": "text",
+                                  "text": "deepest",
+                                  "tokens": [
+                                    {
+                                      "type": "text",
+                                      "text": "deepest"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "list-then-text",
+      "source": "- a list\n\nthen more text.",
+      "tokens": [
+        {
+          "type": "list",
+          "ordered": false,
+          "start": "",
+          "items": [
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "a list",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "a list"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "space"
+        },
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "then more text."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blockquote",
+      "source": "> quoted text\n> more quote",
+      "tokens": [
+        {
+          "type": "blockquote",
+          "tokens": [
+            {
+              "type": "paragraph",
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "quoted text\nmore quote"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blockquote-rich",
+      "source": "> quote with **bold**\n>\n> second para",
+      "tokens": [
+        {
+          "type": "blockquote",
+          "tokens": [
+            {
+              "type": "paragraph",
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "quote with "
+                },
+                {
+                  "type": "strong",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "bold"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "space"
+            },
+            {
+              "type": "paragraph",
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "second para"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blockquote-list",
+      "source": "> - a\n> - b",
+      "tokens": [
+        {
+          "type": "blockquote",
+          "tokens": [
+            {
+              "type": "list",
+              "ordered": false,
+              "start": "",
+              "items": [
+                {
+                  "type": "list_item",
+                  "task": false,
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "a",
+                      "tokens": [
+                        {
+                          "type": "text",
+                          "text": "a"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "list_item",
+                  "task": false,
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "b",
+                      "tokens": [
+                        {
+                          "type": "text",
+                          "text": "b"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hr",
+      "source": "---",
+      "tokens": [
+        {
+          "type": "hr"
+        }
+      ]
+    },
+    {
+      "id": "table-simple",
+      "source": "| a | b |\n|---|---|\n| 1 | 2 |",
+      "tokens": [
+        {
+          "type": "table",
+          "align": [
+            null,
+            null
+          ],
+          "header": [
+            {
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "a"
+                }
+              ]
+            },
+            {
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "b"
+                }
+              ]
+            }
+          ],
+          "rows": [
+            [
+              {
+                "tokens": [
+                  {
+                    "type": "text",
+                    "text": "1"
+                  }
+                ]
+              },
+              {
+                "tokens": [
+                  {
+                    "type": "text",
+                    "text": "2"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "table-aligned",
+      "source": "| left | center | right |\n|:--|:-:|--:|\n| 1 | 2 | 3 |",
+      "tokens": [
+        {
+          "type": "table",
+          "align": [
+            "left",
+            "center",
+            "right"
+          ],
+          "header": [
+            {
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "left"
+                }
+              ]
+            },
+            {
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "center"
+                }
+              ]
+            },
+            {
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "right"
+                }
+              ]
+            }
+          ],
+          "rows": [
+            [
+              {
+                "tokens": [
+                  {
+                    "type": "text",
+                    "text": "1"
+                  }
+                ]
+              },
+              {
+                "tokens": [
+                  {
+                    "type": "text",
+                    "text": "2"
+                  }
+                ]
+              },
+              {
+                "tokens": [
+                  {
+                    "type": "text",
+                    "text": "3"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "table-inline",
+      "source": "| x |\n|---|\n| **b** |",
+      "tokens": [
+        {
+          "type": "table",
+          "align": [
+            null
+          ],
+          "header": [
+            {
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "x"
+                }
+              ]
+            }
+          ],
+          "rows": [
+            [
+              {
+                "tokens": [
+                  {
+                    "type": "strong",
+                    "tokens": [
+                      {
+                        "type": "text",
+                        "text": "b"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "html-block",
+      "source": "<div>raw html</div>",
+      "tokens": [
+        {
+          "type": "html",
+          "raw": "<div>raw html</div>"
+        }
+      ]
+    },
+    {
+      "id": "mixed-document",
+      "source": "# Title\n\nIntro paragraph.\n\n- point one\n- point two\n\n```sh\nls -la\n```\n\n> A note.\n\n---\n\nDone.",
+      "tokens": [
+        {
+          "type": "heading",
+          "depth": 1,
+          "tokens": [
+            {
+              "type": "text",
+              "text": "Title"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "Intro paragraph."
+            }
+          ]
+        },
+        {
+          "type": "space"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "start": "",
+          "items": [
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "point one",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "point one"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "list_item",
+              "task": false,
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "point two",
+                  "tokens": [
+                    {
+                      "type": "text",
+                      "text": "point two"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "space"
+        },
+        {
+          "type": "code",
+          "lang": "sh",
+          "text": "ls -la"
+        },
+        {
+          "type": "space"
+        },
+        {
+          "type": "blockquote",
+          "tokens": [
+            {
+              "type": "paragraph",
+              "tokens": [
+                {
+                  "type": "text",
+                  "text": "A note."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "space"
+        },
+        {
+          "type": "hr"
+        },
+        {
+          "type": "space"
+        },
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "Done."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tabs-normalized",
+      "source": "para\twith\ttabs",
+      "tokens": [
+        {
+          "type": "paragraph",
+          "tokens": [
+            {
+              "type": "text",
+              "text": "para   with   tabs"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "empty",
+      "source": "",
+      "tokens": []
+    },
+    {
+      "id": "whitespace-only",
+      "source": "   \n  \n",
+      "tokens": [
+        {
+          "type": "space"
+        }
+      ]
+    }
+  ]
+}

@@ -28,7 +28,7 @@ CORPUS = GOLDENS / "scenarios.json"
 # the source checkout.
 STAGE = REFERENCE / ".hoocode-src"
 
-OUTPUTS = ("ts-components.json", "ts-renderer.json", "xterm-grids.json")
+OUTPUTS = ("ts-components.json", "ts-renderer.json", "xterm-grids.json", "marked-ast.json")
 
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
@@ -66,6 +66,7 @@ def refresh() -> int:
     ).exists() else run(["bun", "install"], cwd=REFERENCE)
     run(["bun", "reference/dump.ts", str(STAGE), str(GOLDENS)], cwd=TESTKIT)
     run(["bun", "reference/xterm_dump.ts", str(GOLDENS)], cwd=TESTKIT)
+    run(["bun", "reference/markdown_ast_dump.ts", str(STAGE), str(GOLDENS)], cwd=TESTKIT)
 
     shutil.rmtree(STAGE)
     print("goldens refreshed")
@@ -84,15 +85,17 @@ def check() -> int:
             print(f"  ✗ {problem}")
         return 1
 
+    markdown_corpus = json.loads((GOLDENS / "markdown-corpus.json").read_text())
     pairs = (
-        ("ts-components.json", "components"),
-        ("ts-renderer.json", "renderer"),
-        ("xterm-grids.json", "ansi"),
+        ("ts-components.json", corpus.get("components", [])),
+        ("ts-renderer.json", corpus.get("renderer", [])),
+        ("xterm-grids.json", corpus.get("ansi", [])),
+        ("marked-ast.json", markdown_corpus.get("samples", [])),
     )
-    for name, key in pairs:
+    for name, specs in pairs:
         golden = json.loads((GOLDENS / name).read_text())
         captured = {s["id"] for s in golden["scenarios"]}
-        expected = {s["id"] for s in corpus.get(key, [])}
+        expected = {s["id"] for s in specs}
         missing = expected - captured
         extra = captured - expected
         if missing:

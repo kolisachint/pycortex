@@ -159,6 +159,37 @@ TS `packages/ai/src/` is split across MULTIPLE python packages:
   their own leaf.
 
 ## Step log
+- 1.18 markdown AST adapter — DONE (prerequisite for 1.12).
+  PARSER CHOICE, MEASURED NOT GUESSED: lexed a 20-sample corpus with real `marked`
+  under bun, then compared. `markdown-it-py` emits a flat `_open`/`_close` stream
+  needing tree reconstruction; `mistune` gives a nested AST with every field
+  markdown.ts reads and agreed on 19/20 block-type sequences. Chose mistune.
+  New harness, same shape as the surface one: `reference/markdown_ast_dump.ts`
+  captures marked's tokens for `goldens/markdown-corpus.json` (32 samples) into
+  `goldens/marked-ast.json`; `test_markdown_ast.py` asserts the adapter reproduces
+  them token-for-token. Only the fields markdown.ts reads are recorded — pinning
+  marked's `raw`/offsets would fail the port over things nobody can see.
+  Divergences the goldens caught (all would have been invisible by reading):
+  1. `space` TOKENS. mistune DOES emit `blank_line`; my first attempt threw them
+     away and re-derived spacing from a rule I invented, which was wrong. Correct
+     handling: keep mistune's, collapse runs to one, DROP the one after a heading
+     (marked's heading rule eats its own trailing blanks — every other block leaves
+     them), ADD one after a `list` (mistune omits it), drop a trailing one.
+     This is not cosmetic: `markdown.ts` keys spacing off `nextToken.type ===
+     "space"`, and `list` is the ONE block that never adds its own trailing blank,
+     so a missing space after a list silently loses a line on screen.
+  2. SOFT BREAKS. marked yields one text token per contiguous run with `\n` inside;
+     mistune splits at every soft break and leaves empty text tokens around
+     emphasis. `_inlines` merges adjacent text and drops empties.
+  3. `start` is a NUMBER for every ordered list (1 when it starts at 1) and `""`
+     for unordered. Not "empty unless non-1".
+  4. marked trims the trailing newline off `html` raw; mistune keeps it.
+  5. mistune's strikethrough plugin already rejects the loose `~~ spaced ~~` forms
+     that markdown.ts installs a custom tokenizer for — pinned by a golden, so no
+     override was needed. Verified rather than assumed.
+  Mutation-tested the AST goldens: dropping the list-space, the heading
+  suppression, or the ordered `start` each trips 2-3 samples.
+
 - 1.11 components — lists — DONE. `select-list.ts` (229) + `settings-list.ts` (250) →
   `components/{select_list,settings_list}.py`, 33 parity scenarios, 50 unit tests
   (the first five ported from `select-list.test.ts`). All 91 component scenarios match.

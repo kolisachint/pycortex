@@ -119,7 +119,7 @@ Parallelizable across these leaves; dependencies flow upward from util.
 - [x] **1.11 components — lists** — `packages/tui/src/components/{select-list,settings-list}.ts`
       → `components/{select_list,settings_list}.py` + parity goldens. Gate:
       `pytest packages/tui/components`.
-- [ ] **1.18 markdown AST adapter** *(prerequisite for 1.12; out of numeric order on
+- [x] **1.18 markdown AST adapter** *(prerequisite for 1.12; out of numeric order on
       purpose)* — `markdown.ts` is written against `marked`'s token tree, and Python has
       no `marked`. Measured both candidates against real `marked` output before
       choosing: **markdown-it-py** emits a flat `_open`/`_close` stream that would need
