@@ -1,0 +1,2448 @@
+{
+	"note": "Captured from the real hoocode autocomplete.ts by reference/autocomplete_dump.ts. Do not edit.",
+	"scenarios": [
+		{
+			"id": "slash/all-commands",
+			"suggestions": {
+				"prefix": "/",
+				"items": [
+					{
+						"value": "delete",
+						"label": "delete",
+						"description": "Delete the last message"
+					},
+					{
+						"value": "clear",
+						"label": "clear",
+						"description": "Clear all messages"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "delete",
+					"lines": [
+						"/delete "
+					],
+					"cursorLine": 0,
+					"cursorCol": 8
+				},
+				{
+					"value": "clear",
+					"lines": [
+						"/clear "
+					],
+					"cursorLine": 0,
+					"cursorCol": 7
+				}
+			],
+			"shouldTriggerFileCompletion": false,
+			"scoreCalls": []
+		},
+		{
+			"id": "slash/fuzzy-prefix",
+			"suggestions": {
+				"prefix": "/mo",
+				"items": [
+					{
+						"value": "model",
+						"label": "model",
+						"description": "Switch model"
+					},
+					{
+						"value": "mode",
+						"label": "mode",
+						"description": "Switch mode"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "model",
+					"lines": [
+						"/model "
+					],
+					"cursorLine": 0,
+					"cursorCol": 7
+				},
+				{
+					"value": "mode",
+					"lines": [
+						"/mode "
+					],
+					"cursorLine": 0,
+					"cursorCol": 6
+				}
+			],
+			"shouldTriggerFileCompletion": false,
+			"scoreCalls": []
+		},
+		{
+			"id": "slash/no-match",
+			"suggestions": null,
+			"applied": [],
+			"shouldTriggerFileCompletion": false,
+			"scoreCalls": []
+		},
+		{
+			"id": "slash/hint-and-description",
+			"suggestions": {
+				"prefix": "/mo",
+				"items": [
+					{
+						"value": "model",
+						"label": "model",
+						"description": "<model-id> — Switch model"
+					},
+					{
+						"value": "mode",
+						"label": "mode",
+						"description": "<name>"
+					},
+					{
+						"value": "modal",
+						"label": "modal",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "model",
+					"lines": [
+						"/model "
+					],
+					"cursorLine": 0,
+					"cursorCol": 7
+				},
+				{
+					"value": "mode",
+					"lines": [
+						"/mode "
+					],
+					"cursorLine": 0,
+					"cursorCol": 6
+				},
+				{
+					"value": "modal",
+					"lines": [
+						"/modal "
+					],
+					"cursorLine": 0,
+					"cursorCol": 7
+				}
+			],
+			"shouldTriggerFileCompletion": false,
+			"scoreCalls": []
+		},
+		{
+			"id": "slash/item-shaped-commands",
+			"suggestions": {
+				"prefix": "/cl",
+				"items": [
+					{
+						"value": "clear",
+						"label": "clear",
+						"description": "Clear all messages"
+					},
+					{
+						"value": "close",
+						"label": "close",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "clear",
+					"lines": [
+						"/clear "
+					],
+					"cursorLine": 0,
+					"cursorCol": 7
+				},
+				{
+					"value": "close",
+					"lines": [
+						"/close "
+					],
+					"cursorLine": 0,
+					"cursorCol": 7
+				}
+			],
+			"shouldTriggerFileCompletion": false,
+			"scoreCalls": []
+		},
+		{
+			"id": "slash/no-commands",
+			"suggestions": null,
+			"applied": [],
+			"shouldTriggerFileCompletion": false,
+			"scoreCalls": []
+		},
+		{
+			"id": "slash/forced-falls-through-to-paths",
+			"suggestions": null,
+			"applied": [],
+			"shouldTriggerFileCompletion": false,
+			"scoreCalls": []
+		},
+		{
+			"id": "slash/apply-mid-line",
+			"suggestions": {
+				"prefix": "/mo",
+				"items": [
+					{
+						"value": "model",
+						"label": "model",
+						"description": "Switch model"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "model",
+					"lines": [
+						"/model  tail"
+					],
+					"cursorLine": 0,
+					"cursorCol": 7
+				}
+			],
+			"shouldTriggerFileCompletion": false,
+			"scoreCalls": []
+		},
+		{
+			"id": "argument/async",
+			"suggestions": {
+				"prefix": "s",
+				"items": [
+					{
+						"value": "skill-a",
+						"label": "skill-a",
+						"description": null
+					},
+					{
+						"value": "skill-b",
+						"label": "skill-b",
+						"description": "second"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "skill-a",
+					"lines": [
+						"/load-skills skill-a"
+					],
+					"cursorLine": 0,
+					"cursorCol": 20
+				},
+				{
+					"value": "skill-b",
+					"lines": [
+						"/load-skills skill-b"
+					],
+					"cursorLine": 0,
+					"cursorCol": 20
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "argument/sync",
+			"suggestions": {
+				"prefix": "gpt",
+				"items": [
+					{
+						"value": "gpt-4o",
+						"label": "gpt-4o",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "gpt-4o",
+					"lines": [
+						"/model gpt-4o"
+					],
+					"cursorLine": 0,
+					"cursorCol": 13
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "argument/invalid-result",
+			"suggestions": null,
+			"applied": [],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "argument/null-result",
+			"suggestions": null,
+			"applied": [],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "argument/empty-result",
+			"suggestions": null,
+			"applied": [],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "argument/command-without-completer",
+			"suggestions": null,
+			"applied": [],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "argument/unknown-command",
+			"suggestions": null,
+			"applied": [],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "argument/empty-argument-text",
+			"suggestions": {
+				"prefix": "",
+				"items": [
+					{
+						"value": "skill-a",
+						"label": "skill-a",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "skill-a",
+					"lines": [
+						"/load-skills skill-a"
+					],
+					"cursorLine": 0,
+					"cursorCol": 20
+				}
+			],
+			"shouldTriggerFileCompletion": false,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/forced-empty-text",
+			"suggestions": {
+				"prefix": "",
+				"items": [
+					{
+						"value": "src/",
+						"label": "src/",
+						"description": null
+					},
+					{
+						"value": "README.md",
+						"label": "README.md",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "src/",
+					"lines": [
+						"src/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 4
+				},
+				{
+					"value": "README.md",
+					"lines": [
+						"README.md"
+					],
+					"cursorLine": 0,
+					"cursorCol": 9
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/natural-empty-text",
+			"suggestions": null,
+			"applied": [],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/natural-after-space",
+			"suggestions": {
+				"prefix": "",
+				"items": [
+					{
+						"value": "src/",
+						"label": "src/",
+						"description": null
+					},
+					{
+						"value": "README.md",
+						"label": "README.md",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "src/",
+					"lines": [
+						"cat src/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 8
+				},
+				{
+					"value": "README.md",
+					"lines": [
+						"cat README.md"
+					],
+					"cursorLine": 0,
+					"cursorCol": 13
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/natural-bare-word",
+			"suggestions": null,
+			"applied": [],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/forced-bare-word-case-insensitive",
+			"suggestions": {
+				"prefix": "RE",
+				"items": [
+					{
+						"value": "readline.txt",
+						"label": "readline.txt",
+						"description": null
+					},
+					{
+						"value": "README.md",
+						"label": "README.md",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "readline.txt",
+					"lines": [
+						"readline.txt"
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "README.md",
+					"lines": [
+						"README.md"
+					],
+					"cursorLine": 0,
+					"cursorCol": 9
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/dot-slash-file",
+			"suggestions": {
+				"prefix": "./up",
+				"items": [
+					{
+						"value": "./update.sh",
+						"label": "update.sh",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "./update.sh",
+					"lines": [
+						"./update.sh"
+					],
+					"cursorLine": 0,
+					"cursorCol": 11
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/dot-slash-directory",
+			"suggestions": {
+				"prefix": "./sr",
+				"items": [
+					{
+						"value": "./src/",
+						"label": "src/",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "./src/",
+					"lines": [
+						"./src/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 6
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/dot-slash-root",
+			"suggestions": {
+				"prefix": "./",
+				"items": [
+					{
+						"value": "./src/",
+						"label": "src/",
+						"description": null
+					},
+					{
+						"value": "./a.txt",
+						"label": "a.txt",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "./src/",
+					"lines": [
+						"./src/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 6
+				},
+				{
+					"value": "./a.txt",
+					"lines": [
+						"./a.txt"
+					],
+					"cursorLine": 0,
+					"cursorCol": 7
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/nested-directory-listing",
+			"suggestions": {
+				"prefix": "src/",
+				"items": [
+					{
+						"value": "src/index.ts",
+						"label": "index.ts",
+						"description": null
+					},
+					{
+						"value": "src/main.ts",
+						"label": "main.ts",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "src/index.ts",
+					"lines": [
+						"src/index.ts"
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "src/main.ts",
+					"lines": [
+						"src/main.ts"
+					],
+					"cursorLine": 0,
+					"cursorCol": 11
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/nested-partial",
+			"suggestions": {
+				"prefix": "src/in",
+				"items": [
+					{
+						"value": "src/index.ts",
+						"label": "index.ts",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "src/index.ts",
+					"lines": [
+						"src/index.ts"
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/parent-directory",
+			"suggestions": {
+				"prefix": "../",
+				"items": [
+					{
+						"value": "../cwd/",
+						"label": "cwd/",
+						"description": null
+					},
+					{
+						"value": "../home/",
+						"label": "home/",
+						"description": null
+					},
+					{
+						"value": "../outside/",
+						"label": "outside/",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "../cwd/",
+					"lines": [
+						"../cwd/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 7
+				},
+				{
+					"value": "../home/",
+					"lines": [
+						"../home/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 8
+				},
+				{
+					"value": "../outside/",
+					"lines": [
+						"../outside/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 11
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/sorting-dirs-first-then-locale",
+			"suggestions": {
+				"prefix": "",
+				"items": [
+					{
+						"value": "alpha/",
+						"label": "alpha/",
+						"description": null
+					},
+					{
+						"value": "Zed/",
+						"label": "Zed/",
+						"description": null
+					},
+					{
+						"value": "_under.txt",
+						"label": "_under.txt",
+						"description": null
+					},
+					{
+						"value": "aardvark.txt",
+						"label": "aardvark.txt",
+						"description": null
+					},
+					{
+						"value": "beta.txt",
+						"label": "beta.txt",
+						"description": null
+					},
+					{
+						"value": "Beta.txt",
+						"label": "Beta.txt",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "alpha/",
+					"lines": [
+						"alpha/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 6
+				},
+				{
+					"value": "Zed/",
+					"lines": [
+						"Zed/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 4
+				},
+				{
+					"value": "_under.txt",
+					"lines": [
+						"_under.txt"
+					],
+					"cursorLine": 0,
+					"cursorCol": 10
+				},
+				{
+					"value": "aardvark.txt",
+					"lines": [
+						"aardvark.txt"
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "beta.txt",
+					"lines": [
+						"beta.txt"
+					],
+					"cursorLine": 0,
+					"cursorCol": 8
+				},
+				{
+					"value": "Beta.txt",
+					"lines": [
+						"Beta.txt"
+					],
+					"cursorLine": 0,
+					"cursorCol": 8
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/space-needs-quotes",
+			"suggestions": {
+				"prefix": "my",
+				"items": [
+					{
+						"value": "\"my folder/\"",
+						"label": "my folder/",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "\"my folder/\"",
+					"lines": [
+						"\"my folder/\""
+					],
+					"cursorLine": 0,
+					"cursorCol": 11
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/quoted-directory-contents",
+			"suggestions": {
+				"prefix": "\"my folder/",
+				"items": [
+					{
+						"value": "\"my folder/other.txt\"",
+						"label": "other.txt",
+						"description": null
+					},
+					{
+						"value": "\"my folder/test.txt\"",
+						"label": "test.txt",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "\"my folder/other.txt\"",
+					"lines": [
+						"\"my folder/other.txt\""
+					],
+					"cursorLine": 0,
+					"cursorCol": 21
+				},
+				{
+					"value": "\"my folder/test.txt\"",
+					"lines": [
+						"\"my folder/test.txt\""
+					],
+					"cursorLine": 0,
+					"cursorCol": 20
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/quoted-partial",
+			"suggestions": {
+				"prefix": "\"my folder/te",
+				"items": [
+					{
+						"value": "\"my folder/test.txt\"",
+						"label": "test.txt",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "\"my folder/test.txt\"",
+					"lines": [
+						"\"my folder/test.txt\""
+					],
+					"cursorLine": 0,
+					"cursorCol": 20
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/quoted-sorts-directories-with-files",
+			"suggestions": {
+				"prefix": "\"my folder/",
+				"items": [
+					{
+						"value": "\"my folder/a.txt\"",
+						"label": "a.txt",
+						"description": null
+					},
+					{
+						"value": "\"my folder/inner/\"",
+						"label": "inner/",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "\"my folder/a.txt\"",
+					"lines": [
+						"\"my folder/a.txt\""
+					],
+					"cursorLine": 0,
+					"cursorCol": 17
+				},
+				{
+					"value": "\"my folder/inner/\"",
+					"lines": [
+						"\"my folder/inner/\""
+					],
+					"cursorLine": 0,
+					"cursorCol": 17
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/quoted-mid-line-with-trailing-text",
+			"suggestions": {
+				"prefix": "\"my folder/te",
+				"items": [
+					{
+						"value": "\"my folder/test.txt\"",
+						"label": "test.txt",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "\"my folder/test.txt\"",
+					"lines": [
+						"cat \"my folder/test.txt\" > out"
+					],
+					"cursorLine": 0,
+					"cursorCol": 24
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/tilde-root",
+			"suggestions": {
+				"prefix": "~/",
+				"items": [
+					{
+						"value": "~/notes/",
+						"label": "notes/",
+						"description": null
+					},
+					{
+						"value": "~/profile.txt",
+						"label": "profile.txt",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "~/notes/",
+					"lines": [
+						"~/notes/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 8
+				},
+				{
+					"value": "~/profile.txt",
+					"lines": [
+						"~/profile.txt"
+					],
+					"cursorLine": 0,
+					"cursorCol": 13
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/tilde-partial",
+			"suggestions": {
+				"prefix": "~/no",
+				"items": [
+					{
+						"value": "~/notes/",
+						"label": "notes/",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "~/notes/",
+					"lines": [
+						"~/notes/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 8
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/tilde-bare",
+			"suggestions": {
+				"prefix": "~",
+				"items": [
+					{
+						"value": "~/profile.txt",
+						"label": "profile.txt",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "~/profile.txt",
+					"lines": [
+						"~/profile.txt"
+					],
+					"cursorLine": 0,
+					"cursorCol": 13
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/tilde-nested-partial",
+			"suggestions": {
+				"prefix": "~/notes/t",
+				"items": [
+					{
+						"value": "~/notes/talk.md",
+						"label": "talk.md",
+						"description": null
+					},
+					{
+						"value": "~/notes/todo.md",
+						"label": "todo.md",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "~/notes/talk.md",
+					"lines": [
+						"~/notes/talk.md"
+					],
+					"cursorLine": 0,
+					"cursorCol": 15
+				},
+				{
+					"value": "~/notes/todo.md",
+					"lines": [
+						"~/notes/todo.md"
+					],
+					"cursorLine": 0,
+					"cursorCol": 15
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/absolute-partial",
+			"suggestions": {
+				"prefix": "{cwd}/s",
+				"items": [
+					{
+						"value": "{cwd}/src/",
+						"label": "src/",
+						"description": null
+					},
+					{
+						"value": "{cwd}/sample.txt",
+						"label": "sample.txt",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "{cwd}/src/",
+					"lines": [
+						"{cwd}/src/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 10
+				},
+				{
+					"value": "{cwd}/sample.txt",
+					"lines": [
+						"{cwd}/sample.txt"
+					],
+					"cursorLine": 0,
+					"cursorCol": 16
+				}
+			],
+			"shouldTriggerFileCompletion": false,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/absolute-directory-listing",
+			"suggestions": {
+				"prefix": "{cwd}/",
+				"items": [
+					{
+						"value": "{cwd}/src/",
+						"label": "src/",
+						"description": null
+					},
+					{
+						"value": "{cwd}/sample.txt",
+						"label": "sample.txt",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "{cwd}/src/",
+					"lines": [
+						"{cwd}/src/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 10
+				},
+				{
+					"value": "{cwd}/sample.txt",
+					"lines": [
+						"{cwd}/sample.txt"
+					],
+					"cursorLine": 0,
+					"cursorCol": 16
+				}
+			],
+			"shouldTriggerFileCompletion": false,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/symlinked-directory",
+			"suggestions": {
+				"prefix": "lin",
+				"items": [
+					{
+						"value": "linked/",
+						"label": "linked/",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "linked/",
+					"lines": [
+						"linked/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 7
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/broken-symlink",
+			"suggestions": {
+				"prefix": "dan",
+				"items": [
+					{
+						"value": "dangling",
+						"label": "dangling",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "dangling",
+					"lines": [
+						"dangling"
+					],
+					"cursorLine": 0,
+					"cursorCol": 8
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/missing-directory",
+			"suggestions": null,
+			"applied": [],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "at/empty-query",
+			"suggestions": {
+				"prefix": "@",
+				"items": [
+					{
+						"value": "@README.md",
+						"label": "README.md",
+						"description": "README.md"
+					},
+					{
+						"value": "@src/",
+						"label": "src/",
+						"description": "src"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@README.md",
+					"lines": [
+						"@README.md "
+					],
+					"cursorLine": 0,
+					"cursorCol": 11
+				},
+				{
+					"value": "@src/",
+					"lines": [
+						"@src/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 5
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "at/extension-in-query",
+			"suggestions": {
+				"prefix": "@file.txt",
+				"items": [
+					{
+						"value": "@file.txt",
+						"label": "file.txt",
+						"description": "file.txt"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@file.txt",
+					"lines": [
+						"@file.txt "
+					],
+					"cursorLine": 0,
+					"cursorCol": 10
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": [
+				{
+					"path": "file.txt",
+					"query": "file.txt",
+					"isDirectory": false,
+					"score": 100
+				}
+			]
+		},
+		{
+			"id": "at/case-insensitive",
+			"suggestions": {
+				"prefix": "@re",
+				"items": [
+					{
+						"value": "@README.md",
+						"label": "README.md",
+						"description": "README.md"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@README.md",
+					"lines": [
+						"@README.md "
+					],
+					"cursorLine": 0,
+					"cursorCol": 11
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": [
+				{
+					"path": "README.md",
+					"query": "re",
+					"isDirectory": false,
+					"score": 80
+				}
+			]
+		},
+		{
+			"id": "at/directories-rank-first",
+			"suggestions": {
+				"prefix": "@src",
+				"items": [
+					{
+						"value": "@src/",
+						"label": "src/",
+						"description": "src"
+					},
+					{
+						"value": "@src.txt",
+						"label": "src.txt",
+						"description": "src.txt"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@src/",
+					"lines": [
+						"@src/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 5
+				},
+				{
+					"value": "@src.txt",
+					"lines": [
+						"@src.txt "
+					],
+					"cursorLine": 0,
+					"cursorCol": 9
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": [
+				{
+					"path": "src.txt",
+					"query": "src",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "src/",
+					"query": "src",
+					"isDirectory": true,
+					"score": 110
+				}
+			]
+		},
+		{
+			"id": "at/nested-file",
+			"suggestions": {
+				"prefix": "@index",
+				"items": [
+					{
+						"value": "@src/index.ts",
+						"label": "index.ts",
+						"description": "src/index.ts"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@src/index.ts",
+					"lines": [
+						"@src/index.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 14
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": [
+				{
+					"path": "src/index.ts",
+					"query": "index",
+					"isDirectory": false,
+					"score": 80
+				}
+			]
+		},
+		{
+			"id": "at/deeply-nested-path",
+			"suggestions": {
+				"prefix": "@tui/src/auto",
+				"items": [
+					{
+						"value": "@packages/tui/src/autocomplete.ts",
+						"label": "autocomplete.ts",
+						"description": "packages/tui/src/autocomplete.ts"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@packages/tui/src/autocomplete.ts",
+					"lines": [
+						"@packages/tui/src/autocomplete.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 34
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": [
+				{
+					"path": "packages/tui/src/autocomplete.ts",
+					"query": "tui/src/auto",
+					"isDirectory": false,
+					"score": 30
+				}
+			]
+		},
+		{
+			"id": "at/directory-in-middle-of-path",
+			"suggestions": {
+				"prefix": "@components/",
+				"items": [
+					{
+						"value": "@src/components/Button.tsx",
+						"label": "Button.tsx",
+						"description": "src/components/Button.tsx"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@src/components/Button.tsx",
+					"lines": [
+						"@src/components/Button.tsx "
+					],
+					"cursorLine": 0,
+					"cursorCol": 27
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": [
+				{
+					"path": "src/components/Button.tsx",
+					"query": "components/",
+					"isDirectory": false,
+					"score": 30
+				}
+			]
+		},
+		{
+			"id": "at/scoped-relative-directory",
+			"suggestions": {
+				"prefix": "@../outside/a",
+				"items": [
+					{
+						"value": "@../outside/nested/alpha.ts",
+						"label": "alpha.ts",
+						"description": "../outside/nested/alpha.ts"
+					},
+					{
+						"value": "@../outside/nested/deeper/also-alpha.ts",
+						"label": "also-alpha.ts",
+						"description": "../outside/nested/deeper/also-alpha.ts"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@../outside/nested/alpha.ts",
+					"lines": [
+						"@../outside/nested/alpha.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 28
+				},
+				{
+					"value": "@../outside/nested/deeper/also-alpha.ts",
+					"lines": [
+						"@../outside/nested/deeper/also-alpha.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 40
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": [
+				{
+					"path": "nested/alpha.ts",
+					"query": "a",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "nested/deeper/also-alpha.ts",
+					"query": "a",
+					"isDirectory": false,
+					"score": 80
+				}
+			]
+		},
+		{
+			"id": "at/scoped-home-directory",
+			"suggestions": {
+				"prefix": "@~/notes/to",
+				"items": [
+					{
+						"value": "@~/notes/todo.md",
+						"label": "todo.md",
+						"description": "~/notes/todo.md"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@~/notes/todo.md",
+					"lines": [
+						"@~/notes/todo.md "
+					],
+					"cursorLine": 0,
+					"cursorCol": 17
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": [
+				{
+					"path": "todo.md",
+					"query": "to",
+					"isDirectory": false,
+					"score": 80
+				}
+			]
+		},
+		{
+			"id": "at/space-needs-quotes",
+			"suggestions": {
+				"prefix": "@my",
+				"items": [
+					{
+						"value": "@\"my folder/\"",
+						"label": "my folder/",
+						"description": "my folder"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@\"my folder/\"",
+					"lines": [
+						"@\"my folder/\""
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": [
+				{
+					"path": "my folder/",
+					"query": "my",
+					"isDirectory": true,
+					"score": 90
+				}
+			]
+		},
+		{
+			"id": "at/hidden-included-git-excluded",
+			"suggestions": {
+				"prefix": "@",
+				"items": [
+					{
+						"value": "@.github/",
+						"label": ".github/",
+						"description": ".github"
+					},
+					{
+						"value": "@.github/workflows/",
+						"label": "workflows/",
+						"description": ".github/workflows"
+					},
+					{
+						"value": "@.github/workflows/ci.yml",
+						"label": "ci.yml",
+						"description": ".github/workflows/ci.yml"
+					},
+					{
+						"value": "@.hoocode/",
+						"label": ".hoocode/",
+						"description": ".hoocode"
+					},
+					{
+						"value": "@.hoocode/config.json",
+						"label": "config.json",
+						"description": ".hoocode/config.json"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@.github/",
+					"lines": [
+						"@.github/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 9
+				},
+				{
+					"value": "@.github/workflows/",
+					"lines": [
+						"@.github/workflows/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 19
+				},
+				{
+					"value": "@.github/workflows/ci.yml",
+					"lines": [
+						"@.github/workflows/ci.yml "
+					],
+					"cursorLine": 0,
+					"cursorCol": 26
+				},
+				{
+					"value": "@.hoocode/",
+					"lines": [
+						"@.hoocode/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 10
+				},
+				{
+					"value": "@.hoocode/config.json",
+					"lines": [
+						"@.hoocode/config.json "
+					],
+					"cursorLine": 0,
+					"cursorCol": 22
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "at/follows-symlinked-directories",
+			"suggestions": {
+				"prefix": "@some",
+				"items": [
+					{
+						"value": "@dir/some_file.txt",
+						"label": "some_file.txt",
+						"description": "dir/some_file.txt"
+					},
+					{
+						"value": "@symlinked_dir/some_file.txt",
+						"label": "some_file.txt",
+						"description": "symlinked_dir/some_file.txt"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@dir/some_file.txt",
+					"lines": [
+						"@dir/some_file.txt "
+					],
+					"cursorLine": 0,
+					"cursorCol": 19
+				},
+				{
+					"value": "@symlinked_dir/some_file.txt",
+					"lines": [
+						"@symlinked_dir/some_file.txt "
+					],
+					"cursorLine": 0,
+					"cursorCol": 29
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": [
+				{
+					"path": "dir/some_file.txt",
+					"query": "some",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "symlinked_dir/some_file.txt",
+					"query": "some",
+					"isDirectory": false,
+					"score": 80
+				}
+			]
+		},
+		{
+			"id": "at/symlinked-directory-by-name",
+			"suggestions": {
+				"prefix": "@symlinked",
+				"items": [
+					{
+						"value": "@symlinked_dir/",
+						"label": "symlinked_dir/",
+						"description": "symlinked_dir"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@symlinked_dir/",
+					"lines": [
+						"@symlinked_dir/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 15
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": [
+				{
+					"path": "symlinked_dir/",
+					"query": "symlinked",
+					"isDirectory": true,
+					"score": 90
+				}
+			]
+		},
+		{
+			"id": "at/symlinked-file",
+			"suggestions": {
+				"prefix": "@link",
+				"items": [
+					{
+						"value": "@link.txt",
+						"label": "link.txt",
+						"description": "link.txt"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@link.txt",
+					"lines": [
+						"@link.txt "
+					],
+					"cursorLine": 0,
+					"cursorCol": 10
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": [
+				{
+					"path": "link.txt",
+					"query": "link",
+					"isDirectory": false,
+					"score": 80
+				}
+			]
+		},
+		{
+			"id": "at/quoted-directory-contents",
+			"suggestions": {
+				"prefix": "@\"my folder/",
+				"items": [
+					{
+						"value": "@\"my folder/other.txt\"",
+						"label": "other.txt",
+						"description": "my folder/other.txt"
+					},
+					{
+						"value": "@\"my folder/test.txt\"",
+						"label": "test.txt",
+						"description": "my folder/test.txt"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@\"my folder/other.txt\"",
+					"lines": [
+						"@\"my folder/other.txt\" "
+					],
+					"cursorLine": 0,
+					"cursorCol": 23
+				},
+				{
+					"value": "@\"my folder/test.txt\"",
+					"lines": [
+						"@\"my folder/test.txt\" "
+					],
+					"cursorLine": 0,
+					"cursorCol": 22
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "at/quoted-partial",
+			"suggestions": {
+				"prefix": "@\"my folder/te",
+				"items": [
+					{
+						"value": "@\"my folder/test.txt\"",
+						"label": "test.txt",
+						"description": "my folder/test.txt"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@\"my folder/test.txt\"",
+					"lines": [
+						"@\"my folder/test.txt\" "
+					],
+					"cursorLine": 0,
+					"cursorCol": 22
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": [
+				{
+					"path": "test.txt",
+					"query": "te",
+					"isDirectory": false,
+					"score": 80
+				}
+			]
+		},
+		{
+			"id": "at/token-after-space",
+			"suggestions": {
+				"prefix": "@index",
+				"items": [
+					{
+						"value": "@src/index.ts",
+						"label": "index.ts",
+						"description": "src/index.ts"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@src/index.ts",
+					"lines": [
+						"look at @src/index.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 22
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": [
+				{
+					"path": "src/index.ts",
+					"query": "index",
+					"isDirectory": false,
+					"score": 80
+				}
+			]
+		},
+		{
+			"id": "at/substring-match-in-filename",
+			"suggestions": {
+				"prefix": "@alpha",
+				"items": [
+					{
+						"value": "@alpha.ts",
+						"label": "alpha.ts",
+						"description": "alpha.ts"
+					},
+					{
+						"value": "@my-alpha.ts",
+						"label": "my-alpha.ts",
+						"description": "my-alpha.ts"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@alpha.ts",
+					"lines": [
+						"@alpha.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 10
+				},
+				{
+					"value": "@my-alpha.ts",
+					"lines": [
+						"@my-alpha.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 13
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": [
+				{
+					"path": "alpha.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "my-alpha.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 50
+				}
+			]
+		},
+		{
+			"id": "at/regex-metacharacter-query",
+			"suggestions": {
+				"prefix": "@s.c",
+				"items": [
+					{
+						"value": "@s.c.txt",
+						"label": "s.c.txt",
+						"description": "s.c.txt"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@s.c.txt",
+					"lines": [
+						"@s.c.txt "
+					],
+					"cursorLine": 0,
+					"cursorCol": 9
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": [
+				{
+					"path": "s.c.txt",
+					"query": "s.c",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "src/",
+					"query": "s.c",
+					"isDirectory": true,
+					"score": 0
+				}
+			]
+		},
+		{
+			"id": "path/tilde-with-parent-segment",
+			"suggestions": {
+				"prefix": "~/../c",
+				"items": [
+					{
+						"value": "~/../cwd/",
+						"label": "cwd/",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "~/../cwd/",
+					"lines": [
+						"~/../cwd/"
+					],
+					"cursorLine": 0,
+					"cursorCol": 9
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "path/dot-file-natural-trigger",
+			"suggestions": {
+				"prefix": ".env",
+				"items": [
+					{
+						"value": ".env",
+						"label": ".env",
+						"description": null
+					},
+					{
+						"value": ".envrc",
+						"label": ".envrc",
+						"description": null
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": ".env",
+					"lines": [
+						".env"
+					],
+					"cursorLine": 0,
+					"cursorCol": 4
+				},
+				{
+					"value": ".envrc",
+					"lines": [
+						".envrc"
+					],
+					"cursorLine": 0,
+					"cursorCol": 6
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "at/caps-results-at-twenty",
+			"suggestions": {
+				"prefix": "@alpha",
+				"items": [
+					{
+						"value": "@alpha00.ts",
+						"label": "alpha00.ts",
+						"description": "alpha00.ts"
+					},
+					{
+						"value": "@alpha01.ts",
+						"label": "alpha01.ts",
+						"description": "alpha01.ts"
+					},
+					{
+						"value": "@alpha02.ts",
+						"label": "alpha02.ts",
+						"description": "alpha02.ts"
+					},
+					{
+						"value": "@alpha03.ts",
+						"label": "alpha03.ts",
+						"description": "alpha03.ts"
+					},
+					{
+						"value": "@alpha04.ts",
+						"label": "alpha04.ts",
+						"description": "alpha04.ts"
+					},
+					{
+						"value": "@alpha05.ts",
+						"label": "alpha05.ts",
+						"description": "alpha05.ts"
+					},
+					{
+						"value": "@alpha06.ts",
+						"label": "alpha06.ts",
+						"description": "alpha06.ts"
+					},
+					{
+						"value": "@alpha07.ts",
+						"label": "alpha07.ts",
+						"description": "alpha07.ts"
+					},
+					{
+						"value": "@alpha08.ts",
+						"label": "alpha08.ts",
+						"description": "alpha08.ts"
+					},
+					{
+						"value": "@alpha09.ts",
+						"label": "alpha09.ts",
+						"description": "alpha09.ts"
+					},
+					{
+						"value": "@alpha10.ts",
+						"label": "alpha10.ts",
+						"description": "alpha10.ts"
+					},
+					{
+						"value": "@alpha11.ts",
+						"label": "alpha11.ts",
+						"description": "alpha11.ts"
+					},
+					{
+						"value": "@alpha12.ts",
+						"label": "alpha12.ts",
+						"description": "alpha12.ts"
+					},
+					{
+						"value": "@alpha13.ts",
+						"label": "alpha13.ts",
+						"description": "alpha13.ts"
+					},
+					{
+						"value": "@alpha14.ts",
+						"label": "alpha14.ts",
+						"description": "alpha14.ts"
+					},
+					{
+						"value": "@alpha15.ts",
+						"label": "alpha15.ts",
+						"description": "alpha15.ts"
+					},
+					{
+						"value": "@alpha16.ts",
+						"label": "alpha16.ts",
+						"description": "alpha16.ts"
+					},
+					{
+						"value": "@alpha17.ts",
+						"label": "alpha17.ts",
+						"description": "alpha17.ts"
+					},
+					{
+						"value": "@alpha18.ts",
+						"label": "alpha18.ts",
+						"description": "alpha18.ts"
+					},
+					{
+						"value": "@alpha19.ts",
+						"label": "alpha19.ts",
+						"description": "alpha19.ts"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@alpha00.ts",
+					"lines": [
+						"@alpha00.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha01.ts",
+					"lines": [
+						"@alpha01.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha02.ts",
+					"lines": [
+						"@alpha02.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha03.ts",
+					"lines": [
+						"@alpha03.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha04.ts",
+					"lines": [
+						"@alpha04.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha05.ts",
+					"lines": [
+						"@alpha05.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha06.ts",
+					"lines": [
+						"@alpha06.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha07.ts",
+					"lines": [
+						"@alpha07.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha08.ts",
+					"lines": [
+						"@alpha08.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha09.ts",
+					"lines": [
+						"@alpha09.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha10.ts",
+					"lines": [
+						"@alpha10.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha11.ts",
+					"lines": [
+						"@alpha11.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha12.ts",
+					"lines": [
+						"@alpha12.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha13.ts",
+					"lines": [
+						"@alpha13.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha14.ts",
+					"lines": [
+						"@alpha14.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha15.ts",
+					"lines": [
+						"@alpha15.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha16.ts",
+					"lines": [
+						"@alpha16.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha17.ts",
+					"lines": [
+						"@alpha17.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha18.ts",
+					"lines": [
+						"@alpha18.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				},
+				{
+					"value": "@alpha19.ts",
+					"lines": [
+						"@alpha19.ts "
+					],
+					"cursorLine": 0,
+					"cursorCol": 12
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": [
+				{
+					"path": "alpha00.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha01.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha02.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha03.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha04.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha05.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha06.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha07.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha08.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha09.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha10.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha11.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha12.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha13.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha14.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha15.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha16.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha17.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha18.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "alpha19.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 80
+				},
+				{
+					"path": "x-alpha0.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 50
+				},
+				{
+					"path": "x-alpha1.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 50
+				},
+				{
+					"path": "x-alpha2.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 50
+				},
+				{
+					"path": "x-alpha3.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 50
+				},
+				{
+					"path": "x-alpha4.ts",
+					"query": "alpha",
+					"isDirectory": false,
+					"score": 50
+				}
+			]
+		},
+		{
+			"id": "at/no-fd-binary",
+			"suggestions": null,
+			"applied": [],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "at/no-matches",
+			"suggestions": null,
+			"applied": [],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": []
+		},
+		{
+			"id": "at/mid-line-apply-keeps-tail",
+			"suggestions": {
+				"prefix": "@inde",
+				"items": [
+					{
+						"value": "@src/index.ts",
+						"label": "index.ts",
+						"description": "src/index.ts"
+					}
+				]
+			},
+			"applied": [
+				{
+					"value": "@src/index.ts",
+					"lines": [
+						"@src/index.ts x and more"
+					],
+					"cursorLine": 0,
+					"cursorCol": 14
+				}
+			],
+			"shouldTriggerFileCompletion": true,
+			"scoreCalls": [
+				{
+					"path": "src/index.ts",
+					"query": "inde",
+					"isDirectory": false,
+					"score": 80
+				}
+			]
+		}
+	]
+}

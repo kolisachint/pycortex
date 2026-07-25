@@ -155,7 +155,7 @@ Parallelizable across these leaves; dependencies flow upward from util.
 - [x] **1.13 components — editor** — `packages/tui/src/components/editor.ts` (2309 lines) →
       `components/editor.py` + parity goldens. Depends on 1.6 and 1.19. Gate:
       `pytest packages/tui/components`.
-- [ ] **1.14 autocomplete** — `packages/tui/src/autocomplete.ts` (783 lines) →
+- [x] **1.14 autocomplete** — `packages/tui/src/autocomplete.ts` (783 lines) →
       `packages/tui/components/src/cortex/tui/components/autocomplete.py` + tests. Gate:
       `pytest packages/tui/components`.
 - [ ] **1.15 images** — `packages/tui/src/terminal-image.ts` + `components/image.ts` →

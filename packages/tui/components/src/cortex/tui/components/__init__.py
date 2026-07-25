@@ -1,5 +1,12 @@
 """TUI components for the Cortex application."""
 
+from cortex.tui.components.autocomplete import (
+    AutocompleteItem,
+    AutocompleteSuggestions,
+    CombinedAutocompleteProvider,
+    CompletionResult,
+    SlashCommand,
+)
 from cortex.tui.components.box import Box
 from cortex.tui.components.cancellable_loader import (
     AbortController,
@@ -37,8 +44,12 @@ from cortex.tui.components.truncated_text import TruncatedText
 __all__ = [
     "AbortController",
     "AbortSignal",
+    "AutocompleteItem",
+    "AutocompleteSuggestions",
     "Box",
     "CancellableLoader",
+    "CombinedAutocompleteProvider",
+    "CompletionResult",
     "DefaultTextStyle",
     "Editor",
     "EditorOptions",
@@ -59,6 +70,7 @@ __all__ = [
     "SettingsList",
     "SettingsListOptions",
     "SettingsListTheme",
+    "SlashCommand",
     "Spacer",
     "Text",
     "TextChunk",

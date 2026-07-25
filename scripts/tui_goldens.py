@@ -28,7 +28,13 @@ CORPUS = GOLDENS / "scenarios.json"
 # the source checkout.
 STAGE = REFERENCE / ".hoocode-src"
 
-OUTPUTS = ("ts-components.json", "ts-renderer.json", "xterm-grids.json", "marked-ast.json")
+OUTPUTS = (
+    "ts-components.json",
+    "ts-renderer.json",
+    "xterm-grids.json",
+    "marked-ast.json",
+    "ts-autocomplete.json",
+)
 
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
@@ -67,6 +73,7 @@ def refresh() -> int:
     run(["bun", "reference/dump.ts", str(STAGE), str(GOLDENS)], cwd=TESTKIT)
     run(["bun", "reference/xterm_dump.ts", str(GOLDENS)], cwd=TESTKIT)
     run(["bun", "reference/markdown_ast_dump.ts", str(STAGE), str(GOLDENS)], cwd=TESTKIT)
+    run(["bun", "reference/autocomplete_dump.ts", str(STAGE), str(GOLDENS)], cwd=TESTKIT)
 
     shutil.rmtree(STAGE)
     print("goldens refreshed")
@@ -86,11 +93,13 @@ def check() -> int:
         return 1
 
     markdown_corpus = json.loads((GOLDENS / "markdown-corpus.json").read_text())
+    autocomplete_corpus = json.loads((GOLDENS / "autocomplete-corpus.json").read_text())
     pairs = (
         ("ts-components.json", corpus.get("components", [])),
         ("ts-renderer.json", corpus.get("renderer", [])),
         ("xterm-grids.json", corpus.get("ansi", [])),
         ("marked-ast.json", markdown_corpus.get("samples", [])),
+        ("ts-autocomplete.json", autocomplete_corpus.get("scenarios", [])),
     )
     for name, specs in pairs:
         golden = json.loads((GOLDENS / name).read_text())

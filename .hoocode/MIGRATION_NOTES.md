@@ -178,7 +178,89 @@ step log with the reason each is unreachable rather than untested.
 wrong moment leaves the module mutated on disk, and the next green test run is
 lying to you (this happened; `heading_level >= 2` sat in the tree for two runs).
 
+## A non-rendering TUI module still gets an authority, just not the Surface
+`autocomplete.ts` draws nothing, so the parity corpus structurally cannot see
+it — but its output is *data* (a suggestion list, and the text
+`applyCompletion` writes back), which is diffable more exactly than a frame.
+Same authority chain, new harness: `reference/autocomplete_dump.ts` **imports
+the real TS module** and records what it produces for
+`goldens/autocomplete-corpus.json`; `test_autocomplete_parity.py` replays the
+same scenarios in Python and compares. Never write the expectations by hand —
+four of them (the `~/..` display form, a query that scores 0, the 20-item cap,
+the substring bucket) came out differently from what reading the TS suggested.
+- Machine-independence is the whole job for a filesystem module: every scenario
+  builds its own tree under `<tmp>/<id>/{cwd,outside,home}`, and `{root}`,
+  `{cwd}`, `{home}` are substituted into the line and back out of every
+  captured string. Cursor columns are recorded as the length of the
+  *placeholder-rendered* prefix, or a temp path's own length leaks into them.
+- **bun caches `os.homedir()` at startup**, so setting `process.env.HOME`
+  mid-run does nothing (node re-reads it; bun does not). The dumper therefore
+  re-execs itself once per scenario with `HOME` set in the child's env. Without
+  this every `~` scenario silently captured the *author's* home directory.
+- What `fd` reports first among equally-scored entries is not a contract (it
+  walks in parallel), so `@` scenarios compare as multisets. The ranking is
+  pinned directly instead: the dumper wraps the real private `scoreEntry` and
+  records every call and answer, and the test replays those against the port.
+
 ## Step log
+- 1.14 autocomplete — DONE. `autocomplete.ts` (783) →
+  `components/autocomplete.py` (~700), 67 parity scenarios captured from the
+  real TS, 90 unit tests (25 ported from `autocomplete.test.ts`), plus the five
+  editor tests 1.13 had to defer (`TestAutocompleteBlockedOn114` is gone).
+  1. **`posixpath` is not `node:path`, and the difference is load-bearing.**
+     `basename("src/")` is `""` in Python and `"src"` in node — every directory
+     from `fd` arrives with a trailing slash, so scoring would have compared the
+     query against an empty string and un-ranked all of them. `dirname("up")` is
+     `""` vs `"."` likewise. `_join`/`_dirname`/`_basename` are ports of node's
+     posix implementations; `_dirname` is its exact loop.
+  2. `localeCompare` has no Python equivalent. `_locale_compare_key` is an
+     approximation of ICU's default collation covering the two places it
+     disagrees with code-point order on filenames — case-insensitive first,
+     lowercase before uppercase on a tie. `path/sorting-dirs-first-then-locale`
+     pins it against the TS, and both directions are mutation-tested.
+  3. A quoted directory's value ends in `"`, not `/`, so the "directories
+     first" sort — which tests `value`, not `label` — files it with the
+     documents. Faithful, and recorded by `path/quoted-sorts-directories-with-files`.
+  4. NO ABORT EVENT. The port's `AbortSignal` is the convention from the
+     provider leaves (an object with a bool), so there is no
+     `addEventListener("abort")` to hang the `SIGKILL` off; the wait polls the
+     flag every 5ms and kills `fd` the same way. A test drives it with a stub
+     that sleeps — note the stub must `exec` the sleep, or the orphaned
+     grandchild keeps stdout open and both implementations wait for it anyway.
+  5. TYPES: `apply_completion`'s `item` is annotated with the editing leaf's
+     *protocol*, not the dataclass this module defines. TS method parameters
+     are bivariant, Python's are not, so a narrower parameter fails to satisfy
+     `AutocompleteProvider` at all — pyright caught it, and the editor tests
+     were the ones that failed.
+  6. `getArgumentCompletions` is `Awaitable<T>` — a value *or* a promise — so
+     the port awaits only what `inspect.isawaitable` says to. The TS's
+     `Array.isArray` guard is `isinstance(..., list)`, and it is the whole
+     point of the "ignores invalid results" test.
+  7. Commands are discriminated structurally (`_command_name` reads `name`,
+     else `value`), so any object of either shape works, as in the TS — the
+     declared type is the union of the two dataclasses this module exports.
+  8. MUTATION TESTING: 43 mutations, 38 caught on the first honest run. The
+     five misses were all real: the substring score bucket had no scenario that
+     reached it, nothing returned a zero-scored entry (a query with a regex
+     metacharacter does — `fd` gets the pattern unescaped when it has no
+     slash), the 20-item cap was never approached, `.git` filtering is
+     unreachable while `fd` is asked to exclude it (a stub `fd` reaches it), and
+     applying a `/`-prefix away from the line start had no test. All five are
+     now closed by *discriminating* cases rather than more of the same.
+  9. Three mutations stay uncaught, each analysed: dropping the trailing slash
+     in `_expand_home_path` is **equivalent** (the expansion is only ever used
+     as a directory to open); dropping `"./"` from `is_root_prefix` is
+     **equivalent by construction** (the `endswith("/")` branch below it is
+     character-identical — only `"~"` and `""` distinguish the two, and `"~"` is
+     covered); and the `signal.aborted` check in `_get_fuzzy_file_suggestions`
+     is **redundant with** the one at the top of `_walk_directory_with_fd` —
+     dropping either leaves the other, dropping both is caught.
+ 10. FALSE MISSES ARE A THING. Two mutations reported "caught" and two reported
+     "missed" incorrectly until the runner deleted `__pycache__` between
+     mutations: CPython validates a `.pyc` by (mtime, size), and two writes in
+     the same second with the same length hand pytest the *previous* mutant.
+     Any mutation script that rewrites one file in a loop needs this.
+
 - 1.13 components — editor — DONE. `editor.ts` (2309) → `components/editor.py`
   (~1500), 50 parity scenarios, 184 unit tests (175 ported from `editor.test.ts`).
   All 250 component + 39 renderer scenarios match; the one remaining gap is still
