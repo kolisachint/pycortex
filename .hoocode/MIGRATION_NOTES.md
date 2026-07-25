@@ -13,8 +13,11 @@ conventions, gotchas, and the mechanical mappings that recur.
   commits `migrate: <id> <title>`. ≤1 step per session.
 
 ## Repo layout
-- Source (TS, never edit): `/Users/sachinkoli/github/hoocode`
-- Target (Python): `/Users/sachinkoli/github/pycortex`
+- Source (TS, never edit): resolved, in order, from `$CORTEX_MIGRATION_SRC`,
+  `~/github/hoocode`, then a shallow clone cached at
+  `~/.cache/cortex-migration/hoocode`. Do NOT hardcode a laptop path — on CI and in
+  containers only the clone cache exists, and only after the driver has run.
+- Target (Python): this repo.
 - Each leaf = its own package under `packages/<group>/<leaf>/`
   - code: `src/cortex/<group>/<...>/`  (namespace package, no top-level __init__)
   - tests: `<leaf>/tests/test_*.py`
@@ -98,7 +101,38 @@ TS `packages/ai/src/` is split across MULTIPLE python packages:
   bool `.aborted`; faux checks `getattr(signal, "aborted", False)`. StreamOptions has
   NO on_response field → the TS `options.onResponse?.()` call is OMITTED (no-op).
 
+## Status discipline (added after a status audit found 4 false ticks)
+- `uv run scripts/migrate_next.py --status` is the only trustworthy progress view.
+  It re-derives counts from the plan and audits every ticked step against the tree.
+- `--done` now runs that audit too and REFUSES to tick a box the tree can't back up.
+  Gates alone never caught this: an empty leaf passes pytest/ruff/pyright trivially.
+- Reverted ticks and why: **1.8** and **2.10** ("umbrella publishable") were ticked
+  when only 3 leaves had `publish=true`; **1.5 render** was ticked on a 191-line
+  module that is not a port of the 1545-line `tui.ts` at all (different algorithm,
+  no Container/overlays/cursor-marker/kitty bookkeeping) whose tests only agree with
+  themselves; **1.7 components** was ticked with 4 of 12 components ported.
+- Lesson: a step whose evidence is "the file exists" is under-specified. Say in the
+  step body what would prove it, and make the driver able to check it.
+
 ## Step log
+- 2.8 provider-openai — DONE (notes reconstructed after the fact; the step landed
+  without them). `openai-completions.ts` (1168), `openai-responses.ts` (273),
+  `openai-responses-shared.ts` (561), `openai-codex-responses.ts` (1323) and
+  `azure-openai-responses.ts` (281) → `cortex.ai.providers.openai.*` (2181 py lines).
+  Also ported `utils/tool-constraints.ts` → `cortex.ai.util.tool_constraints` as a
+  prerequisite. Decisions and open debts:
+  1. AZURE ABSORBED: `azure-openai-responses.ts` is a thin openai-responses variant,
+     so it lives here rather than in its own leaf. The `packages/ai/provider-azure`
+     placeholder has been deleted and `docs/02` §3.2 updated.
+  2. SDK INCONSISTENCY (debt): this leaf depends on the `openai` SDK, whereas 2.7
+     deliberately dropped `@anthropic-ai/sdk` for raw `httpx`. Pick one convention
+     before 2.9 — google should not introduce a third.
+  3. THIN TESTS (debt): 56 test lines for 2181 lines of module. The TS side has
+     ~15 openai test files. Backfill before the ai umbrella is published.
+  4. VERSION DRIFT (debt): pyproject says `0.0.1` while every other leaf is `0.0.3`.
+  5. Stray `src/cortex/ai/provider-openai/` (hyphen — not a legal module path) was
+     shipped empty alongside the real `providers/openai/`; deleted.
+
 - 2.12 provider-common — DONE. New shared leaf `cortexcode-ai-provider-common`
   (`cortex.ai.providers._common`). Ported 4 helpers from `providers/*.ts`:
   `cache_retention.py` (`resolve_cache_retention`), `simple_options.py`

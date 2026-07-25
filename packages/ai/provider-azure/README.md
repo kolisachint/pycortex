@@ -1,1 +1,0 @@
-# cortexcode-ai-provider-azure

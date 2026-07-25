@@ -19,7 +19,6 @@ members = [
     "cortexcode-ai-models",
     "cortexcode-ai-oauth",
     "cortexcode-ai-provider-anthropic",
-    "cortexcode-ai-provider-azure",
     "cortexcode-ai-provider-common",
     "cortexcode-ai-provider-faux",
     "cortexcode-ai-provider-google",
@@ -211,27 +210,6 @@ requires-dist = [
     { name = "cortexcode-ai-env", editable = "packages/ai/env" },
     { name = "cortexcode-ai-models", editable = "packages/ai/models" },
     { name = "cortexcode-ai-provider-common", editable = "packages/ai/provider-common" },
-    { name = "cortexcode-ai-stream", editable = "packages/ai/stream" },
-    { name = "cortexcode-ai-types", editable = "packages/ai/types" },
-    { name = "cortexcode-ai-util", editable = "packages/ai/util" },
-    { name = "httpx", specifier = ">=0.27" },
-]
-
-[[package]]
-name = "cortexcode-ai-provider-azure"
-version = "0.0.3"
-source = { editable = "packages/ai/provider-azure" }
-dependencies = [
-    { name = "cortexcode-ai-models" },
-    { name = "cortexcode-ai-stream" },
-    { name = "cortexcode-ai-types" },
-    { name = "cortexcode-ai-util" },
-    { name = "httpx" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "cortexcode-ai-models", editable = "packages/ai/models" },
     { name = "cortexcode-ai-stream", editable = "packages/ai/stream" },
     { name = "cortexcode-ai-types", editable = "packages/ai/types" },
     { name = "cortexcode-ai-util", editable = "packages/ai/util" },
