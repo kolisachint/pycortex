@@ -152,7 +152,7 @@ Parallelizable across these leaves; dependencies flow upward from util.
       `formatKeyNameWithModifiers` faithfully: strip `LOCK_MASK`, reject unsupported
       modifier bits, and emit the TS's shift/ctrl/alt/super order. Found by
       `component/editor-word-motion` diverging. Gate: `pytest packages/tui/keys`.
-- [ ] **1.13 components — editor** — `packages/tui/src/components/editor.ts` (2309 lines) →
+- [x] **1.13 components — editor** — `packages/tui/src/components/editor.ts` (2309 lines) →
       `components/editor.py` + parity goldens. Depends on 1.6 and 1.19. Gate:
       `pytest packages/tui/components`.
 - [ ] **1.14 autocomplete** — `packages/tui/src/autocomplete.ts` (783 lines) →

@@ -2216,6 +2216,608 @@
       ],
       "stable": true,
       "referenceIdentical": true
+    },
+    {
+      "id": "component/editor-empty",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "\u001b[7m \u001b[0m                             ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-empty-focused",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "\u001b_pi:c\u0007\u001b[7m \u001b[0m                             ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-typed",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "hello\u001b_pi:c\u0007\u001b[7m \u001b[0m                        ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-preset-text",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "preset value\u001b[7m \u001b[0m                 ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-multiline-text",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "first line                    ",
+        "second line                   ",
+        "third\u001b_pi:c\u0007\u001b[7m \u001b[0m                        ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-cursor-mid-line",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "he\u001b_pi:c\u0007\u001b[7ml\u001b[0mlo world                   ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-cursor-on-emoji",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "ab\u001b_pi:c\u0007\u001b[7m🙂\u001b[0mcd                        ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-cursor-on-wide-cjk",
+      "width": 20,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "あ\u001b_pi:c\u0007\u001b[7mい\u001b[0mうえお          ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-padding",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "  padded\u001b[7m \u001b[0m                     ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-cursor-in-padding",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "  0123456789012345678901234\u001b_pi:c\u0007\u001b[7m \u001b[0m  ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-padding-clamped",
+      "width": 10,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "    hi\u001b_pi:c\u0007\u001b[7m \u001b[0m   ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-prompt-prefix",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "\u001b[35m> \u001b[39mwith a prompt\u001b_pi:c\u0007\u001b[7m \u001b[0m              ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-prompt-prefix-wrapped",
+      "width": 24,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "!! the quick brown fox  ",
+        "jumps over the lazy     ",
+        "dog and keeps on        ",
+        "running past the        ",
+        "fence\u001b_pi:c\u0007\u001b[7m \u001b[0m                  ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-wrap-words",
+      "width": 24,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "the quick brown fox     ",
+        "jumps over the lazy     ",
+        "dog and keeps on        ",
+        "running past the fence\u001b_pi:c\u0007\u001b[7m \u001b[0m ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-wrap-force-break",
+      "width": 16,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "supercalifragil ",
+        "isticexpialidoc ",
+        "ious\u001b_pi:c\u0007\u001b[7m \u001b[0m           ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-wrap-wide-chars",
+      "width": 16,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "日本語のテキス  ",
+        "トが折り返され  ",
+        "る\u001b_pi:c\u0007\u001b[7m \u001b[0m             ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-wrap-runs-of-spaces",
+      "width": 14,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "alpha         ",
+        "beta          ",
+        "gamma delta\u001b_pi:c\u0007\u001b[7m \u001b[0m  ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-narrow-width",
+      "width": 2,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "a ",
+        "b ",
+        "c\u001b_pi:c\u0007\u001b[7m \u001b[0m",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-scroll-down-indicator",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─── ↑ 4 more ─────────────────\u001b[22m",
+        "line 5                        ",
+        "line 6                        ",
+        "line 7                        ",
+        "line 8                        ",
+        "line 9\u001b_pi:c\u0007\u001b[7m \u001b[0m                       ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-scroll-up-indicator",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─── ↑ 4 more ─────────────────\u001b[22m",
+        "line 5                        ",
+        "line 6                        ",
+        "line 7                        ",
+        "line 8                        ",
+        "line 9\u001b_pi:c\u0007\u001b[7m \u001b[0m                       ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-scroll-indicator-truncated",
+      "width": 10,
+      "lines": [
+        "\u001b[2m─── ↑ 4\u001b[0m...\u001b[0m\u001b[22m",
+        "l5        ",
+        "l6        ",
+        "l7        ",
+        "l8        ",
+        "l9\u001b_pi:c\u0007\u001b[7m \u001b[0m       ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-min-visible-lines",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─── ↑ 2 more ─────────────────\u001b[22m",
+        "line 3                        ",
+        "line 4                        ",
+        "line 5                        ",
+        "line 6                        ",
+        "line 7\u001b_pi:c\u0007\u001b[7m \u001b[0m                       ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-page-down",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─── ↑ 22 more ────────────────\u001b[22m",
+        "line 23                       ",
+        "line 24                       ",
+        "line 25                       ",
+        "line 26                       ",
+        "line 27                       ",
+        "line 28                       ",
+        "line 29\u001b_pi:c\u0007\u001b[7m \u001b[0m                      ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-page-up-from-bottom",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─── ↑ 15 more ────────────────\u001b[22m",
+        "line 16                       ",
+        "line 17                       ",
+        "line 18                       ",
+        "line 19                       ",
+        "line 20                       ",
+        "line 21                       ",
+        "line 22\u001b_pi:c\u0007\u001b[7m \u001b[0m                      ",
+        "\u001b[2m─── ↓ 7 more ─────────────────\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-newline",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "one                           ",
+        "two\u001b_pi:c\u0007\u001b[7m \u001b[0m                          ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-backslash-enter",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "one                           ",
+        "two\u001b_pi:c\u0007\u001b[7m \u001b[0m                          ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-backspace-joins-lines",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "one\u001b_pi:c\u0007\u001b[7mt\u001b[0mwo                        ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-forward-delete",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "\u001b_pi:c\u0007\u001b[7ml\u001b[0mlo                           ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-delete-word-backward",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "alpha beta \u001b_pi:c\u0007\u001b[7m \u001b[0m                  ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-word-motion",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "alpha beta\u001b_pi:c\u0007\u001b[7m \u001b[0mgamma              ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-kill-and-yank",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "xalpha beta\u001b_pi:c\u0007\u001b[7m \u001b[0m                  ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-yank-pop",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "alphabeta\u001b_pi:c\u0007\u001b[7m \u001b[0m                    ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-kill-to-start",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "x\u001b_pi:c\u0007\u001b[7m \u001b[0m                            ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-undo-typing",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "hello\u001b_pi:c\u0007\u001b[7m \u001b[0m                        ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-undo-set-text",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "\u001b_pi:c\u0007\u001b[7m \u001b[0m                             ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-jump-to-char",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "alpha beta \u001b_pi:c\u0007\u001b[7mg\u001b[0mamma              ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-submit-clears",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "\u001b_pi:c\u0007\u001b[7m \u001b[0m                             ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-submit-disabled",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "kept\u001b_pi:c\u0007\u001b[7m \u001b[0m                         ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-tab-without-provider",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "/hel\u001b_pi:c\u0007\u001b[7m \u001b[0m                         ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-sticky-column",
+      "width": 40,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "a very long first line                  ",
+        "short                                   ",
+        "another long line here\u001b_pi:c\u0007\u001b[7m \u001b[0m                 ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-up-at-top-goes-to-line-start",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "\u001b_pi:c\u0007\u001b[7mo\u001b[0mnly line                     ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-down-at-bottom-goes-to-line-end",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "only line\u001b_pi:c\u0007\u001b[7m \u001b[0m                    ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-paste-small",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "pasted text\u001b_pi:c\u0007\u001b[7m \u001b[0m                  ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-paste-marker",
+      "width": 34,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "[paste #1 +14 lines]\u001b_pi:c\u0007\u001b[7m \u001b[0m             ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-paste-marker-cursor-atomic",
+      "width": 34,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "\u001b_pi:c\u0007\u001b[7m[paste #1 +14 lines]\u001b[0m              ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-paste-marker-wrapped",
+      "width": 14,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "[paste #1     ",
+        "+14 lines]\u001b_pi:c\u0007\u001b[7m \u001b[0m   ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-paste-marker-word-left",
+      "width": 34,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "\u001b_pi:c\u0007\u001b[7m[paste #1 +14 lines]\u001b[0m tail         ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-paste-path-after-word",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "see /tmp/file.txt\u001b_pi:c\u0007\u001b[7m \u001b[0m            ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-paste-csi-u-newline",
+      "width": 30,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "one                           ",
+        "two\u001b_pi:c\u0007\u001b[7m \u001b[0m                          ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/editor-cursor-at-wrap-boundary",
+      "width": 12,
+      "lines": [
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+        "hello       ",
+        "\u001b_pi:c\u0007\u001b[7mw\u001b[0morld test  ",
+        "\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m"
+      ],
+      "stable": true,
+      "referenceIdentical": false
     }
   ]
 }

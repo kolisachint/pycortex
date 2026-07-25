@@ -179,6 +179,94 @@ wrong moment leaves the module mutated on disk, and the next green test run is
 lying to you (this happened; `heading_level >= 2` sat in the tree for two runs).
 
 ## Step log
+- 1.13 components — editor — DONE. `editor.ts` (2309) → `components/editor.py`
+  (~1500), 50 parity scenarios, 184 unit tests (175 ported from `editor.test.ts`).
+  All 250 component + 39 renderer scenarios match; the one remaining gap is still
+  1.15's OSC 8 link.
+  1. **Two prerequisite gaps in `keys`, both found by driving the component.**
+     `\x1b[1;3D` (alt+left) parsed as `None`, so every word-motion binding was a
+     dead key — that became step **1.19** (`parseKittySequence` had one of its
+     four branches, and the kitty codepoint tables were invented: arrows at
+     57352-57355, which kitty never sends, `delete` at 57399, which is kitty's
+     KP_0, `kpEnter` at 108, which is the letter `l`). Separately,
+     `decode_kitty_printable` was missing `KITTY_PRINTABLE_ALLOWED_MODIFIERS`, so
+     `\x1b[99;9u` (Super+c) typed a "c"; that one is small and lands here, with
+     the ported test that caught it. This is the **third** step to find `keys.ts`
+     under-ported — assume more of it is missing until a test says otherwise.
+  2. COLUMNS ARE CODE POINTS. Every cursor column in the TS is a UTF-16 code unit
+     offset; in Python they are code points. Internal and used consistently, so
+     no screen changes — only a caller reading `get_cursor()` across an astral
+     character would see it. Recorded at the top of `editor.py`; the ported tests
+     assert on ASCII spans, where the two agree.
+  3. `Intl.SegmentData` has `.index`; `grapheme_segments` yields bare clusters, so
+     `_Segment` re-attaches it. It is a **dataclass, not a NamedTuple** — the TS
+     field name `index` shadows `tuple.index` and pyright rejects the override.
+  4. AUTOCOMPLETE IS ASYNC AND THE FRAME IS NOT. `requestAutocomplete` fires a
+     promise chain and `setTimeout`; with no running event loop there is nothing
+     to schedule, so the request is simply not made — the same shape as the
+     loader's animation, and it is what keeps the golden capture deterministic on
+     both sides (the TS suspends at its first `await` before `render` too).
+  5. The `SelectList` the editor builds holds its own `SelectItem`s, so
+     `_source_item()` maps the selected row back to the provider's original
+     object by identity. Without it `apply_completion` would receive a copy and
+     any field a provider attached beyond value/label/description would be lost.
+  6. TYPES GAP (same shape as 2.12's): `AutocompleteProvider.get_suggestions` had
+     no `signal`, which the TS passes so a provider can drop a superseded
+     request. Added, with an `AbortSignal` **Protocol** in the editing leaf
+     (`cortex.tui.components.AbortController`'s signal satisfies it structurally)
+     — editing cannot import components. `AutocompleteSuggestions.items` became a
+     `Sequence`: `list` is invariant, so no provider with its own item type could
+     satisfy the protocol at all. The optional `shouldTriggerFileCompletion` has
+     no Protocol equivalent, so it is a runtime-checkable protocol the editor
+     `isinstance`-checks — which is what `!provider.shouldTriggerFileCompletion ||`
+     does in the TS.
+  7. MUTATION TESTING: 34 mutations, 24 caught on the first run. The 10 misses
+     were all real blind spots, and all but one are now closed by a
+     *discriminating* test rather than a bigger corpus:
+     - `CURSOR_MARKER` is a zero-width APC string, so **focus is invisible to the
+       Surface** — the parity harness structurally cannot see it. Pinned on the
+       raw line instead.
+     - `_segment_with_markers`' valid-id check only runs once *some* paste
+       exists; the ported TS test typed a fake marker into an editor with no
+       pastes at all, so the fast path returned first and the check was never
+       reached. Now: paste for real, then type a marker with a different id.
+     - `<` vs `<=` on a non-last chunk's cursor range needs the cursor **exactly**
+       on a wrap boundary; `component/editor-cursor-at-wrap-boundary` is that.
+     - The `@`/`#` debounce test asserted `calls == 0` synchronously, which is
+       true whether or not the timer exists. It now drains the loop first.
+     - `_is_autocomplete_request_current` needed a response that arrives after
+       the cursor moved — moving the cursor invalidates the snapshot without
+       cancelling the request, which is the only way to reach that branch.
+     - Also added: tab expansion, history de-duplication (asserting the text
+       after each Up cannot tell one entry from two — walking back down can),
+       exact-match-beats-earlier-prefix, and first-line-only slash menus.
+  8. One mutation stays uncaught and is an **equivalent mutant**: dropping
+     `len(segment) >= 10` from `_is_paste_marker`. `PASTE_MARKER_SINGLE`'s
+     shortest possible match is `[paste #1]`, which is exactly 10 characters, so
+     the guard can never reject anything the regex accepts. It is a fast path in
+     the TS and is kept as one.
+  9. `\x1b[13;2~` (one shift+enter encoding) parses as `None` in the TS too —
+     `parseKittySequence`'s functional branch has no entry for 13 — which is
+     exactly why `handleInput` matches the literal sequence. Pinned by a test in
+     1.19 so nobody "fixes" the parser into breaking the editor.
+
+- 1.19 keys — CSI modifier sequences + kitty functional codepoints — DONE
+  (prerequisite for 1.13). Ported `parseKittySequence`'s other three branches
+  (modified arrows `\x1b[1;<mod>A-D`, modified functional keys `\x1b[<n>;<mod>~`,
+  modified Home/End `\x1b[1;<mod>H/F`), the real
+  `KITTY_FUNCTIONAL_KEY_EQUIVALENTS` table with the TS's negative sentinels, and
+  `formatKeyNameWithModifiers` (LOCK_MASK stripped, unsupported modifier bits
+  refused, shift/ctrl/alt/super order). Every value was diffed against the TS
+  `parseKey` rather than reasoned about.
+  1. The invented tables were worse than missing: `ARROW_CODEPOINTS` used
+     57352-57355 (kitty sends 57417-57420), `FUNCTIONAL_CODEPOINTS["delete"]` was
+     57399 (kitty's KP_0), and `CODEPOINTS["kpEnter"]` was 108, so `\x1b[108u` —
+     a plain letter `l` — parsed as `enter`.
+  2. `_format_parsed_key` had to grow a `cp >= 0` guard before `chr(cp)`: the
+     sentinels are negative and `chr(-4)` raises.
+  3. The legacy `\x1b[3~`/`\x1b[5~`/`\x1b[6~` forms now match the functional
+     branch *before* `LEGACY_SEQUENCE_KEY_IDS`, and produce the same ids.
+
 - 1.12 components — markdown — DONE. `markdown.ts` (808) → `components/markdown.py`
   (~700), 110 parity scenarios, 57 unit tests (39 ported from `markdown.test.ts`).
   All 200 component + 39 renderer scenarios match; one scenario is unported by

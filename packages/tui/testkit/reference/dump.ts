@@ -33,6 +33,7 @@ const { Input } = await import(join(SRC_DIR, "components/input.ts"));
 const { SelectList } = await import(join(SRC_DIR, "components/select-list.ts"));
 const { SettingsList } = await import(join(SRC_DIR, "components/settings-list.ts"));
 const { Markdown } = await import(join(SRC_DIR, "components/markdown.ts"));
+const { Editor } = await import(join(SRC_DIR, "components/editor.ts"));
 const { setCapabilities } = await import(join(SRC_DIR, "terminal-image.ts"));
 
 type Json = Record<string, any>;
@@ -106,6 +107,21 @@ function makeDefaultTextStyle(spec: Json | undefined): Json | undefined {
 	};
 }
 
+/** The select-list theme, shared by `SelectList` and the editor's autocomplete. */
+function makeSelectListTheme(spec: Json | undefined): Json {
+	const theme: Json = spec ?? {};
+	return {
+		selectedPrefix: makeWrapFn(theme.selectedPrefix),
+		selectedText: makeWrapFn(theme.selectedText),
+		description: makeWrapFn(theme.description),
+		scrollInfo: makeWrapFn(theme.scrollInfo),
+		noMatch: makeWrapFn(theme.noMatch),
+	};
+}
+
+/** `test-themes.ts` builds the editor border from `chalk.dim`. */
+const DEFAULT_EDITOR_BORDER: Json = { open: "\x1b[2m", close: "\x1b[22m" };
+
 /** Theme fn taking (text, selected) — the settings-list label/value shape. */
 function makeThemePairFn(spec: Json | undefined): (text: string, selected: boolean) => string {
 	if (!spec) return (text: string) => text;
@@ -145,13 +161,7 @@ function build(spec: Json): any {
 			const list = new SelectList(
 				args.items ?? [],
 				args.maxVisible ?? 5,
-				{
-					selectedPrefix: makeWrapFn(args.theme?.selectedPrefix),
-					selectedText: makeWrapFn(args.theme?.selectedText),
-					description: makeWrapFn(args.theme?.description),
-					scrollInfo: makeWrapFn(args.theme?.scrollInfo),
-					noMatch: makeWrapFn(args.theme?.noMatch),
-				},
+				makeSelectListTheme(args.theme),
 				args.layout ?? {},
 			);
 			if (args.filter !== undefined) list.setFilter(args.filter);
@@ -174,6 +184,27 @@ function build(spec: Json): any {
 				args.options ?? {},
 			);
 			return list;
+		}
+		case "Editor": {
+			// The editor reads `tui.terminal.rows` (30% of it caps the visible
+			// lines) and calls `requestRender`, so it needs a real TUI. The
+			// terminal is the same recording stub the renderer scenarios use;
+			// nothing it writes is part of a component golden.
+			const terminal = new CaptureTerminal(args.cols ?? spec.width, args.rows ?? 24);
+			const tui = new TUI(terminal as any, false);
+			const editor = new Editor(
+				tui,
+				{
+					borderColor: makeWrapFn(args.theme?.borderColor ?? DEFAULT_EDITOR_BORDER),
+					selectList: makeSelectListTheme(args.theme?.selectList),
+				},
+				{ paddingX: args.paddingX, autocompleteMaxVisible: args.autocompleteMaxVisible },
+			);
+			if (args.text !== undefined) editor.setText(args.text);
+			if (args.promptPrefix !== undefined) editor.promptPrefix = args.promptPrefix;
+			if (args.promptColor !== undefined) editor.promptColor = makeWrapFn(args.promptColor);
+			if (args.disableSubmit) editor.disableSubmit = true;
+			return editor;
 		}
 		case "Input": {
 			const input = new Input();

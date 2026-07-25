@@ -27,6 +27,7 @@ MODIFIERS = {
 }
 
 LOCK_MASK = MODIFIERS["caps_lock"] | MODIFIERS["num_lock"]
+KITTY_PRINTABLE_ALLOWED_MODIFIERS = MODIFIERS["shift"] | LOCK_MASK
 
 KITTY_CSI_U_REGEX = re.compile(r"^\x1b\[(\d+)(?::(\d*))?(?::(\d+))?(?:;(\d+))?(?::(\d+))?u$")
 # The other three shapes `parseKittySequence` accepts. Legacy terminals send
@@ -435,6 +436,11 @@ def decode_kitty_printable(data: str) -> str | None:
     shifted = m.group(2)
     mod_value = int(m.group(4)) if m.group(4) else 1
     modifier = mod_value - 1
+    # Only plain or Shift-modified text keys are printable input. Anything else
+    # — Super, Meta, Hyper — is a modifier-only terminal event, and accepting it
+    # would type a character the user never pressed.
+    if modifier & ~KITTY_PRINTABLE_ALLOWED_MODIFIERS:
+        return None
     if modifier & (MODIFIERS["alt"] | MODIFIERS["ctrl"]):
         return None
     effective = codepoint
