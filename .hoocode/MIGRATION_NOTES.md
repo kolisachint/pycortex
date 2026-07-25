@@ -159,6 +159,35 @@ TS `packages/ai/src/` is split across MULTIPLE python packages:
   their own leaf.
 
 ## Step log
+- 2.9 provider-google — DONE. `google-shared.ts` (350) + `google.ts` (496) →
+  `cortex.ai.providers.google.{shared,google}` + 58 tests.
+  1. NO `@google/genai` SDK — follows 2.7's httpx decision, which also SETTLES the
+     debt 2.8 opened: raw httpx is the convention for provider leaves. The SDK's
+     only contributions here are a base-URL builder and an SSE loop, and
+     `Content`/`Part`/`FinishReason`/`FunctionCallingConfigMode` are just dicts and
+     string constants on the wire. `provider-openai` still carries the `openai`
+     dependency — resolve when its tests get backfilled.
+  2. VERTEX SPLIT OUT to step 2.16 (separate `plan:` commit). Its 564 lines are
+     mostly a second concern — GCP credential resolution — and would have blown
+     the one-session contract.
+  3. `map_stop_reason` RAISES on an unknown FinishReason. The TS has a compile-time
+     `never` exhaustiveness check that throws; Python has no equivalent, so
+     silently mapping unknown → "error" would lose the signal. `map_stop_reason_string`
+     stays lenient, as in the TS.
+  4. OPTIONS: `GoogleOptions` is an open dict (the TS type is an open interface).
+     `stream_simple_google` splits caller dicts into the `SimpleStreamOptions`
+     fields `build_base_options` needs plus extras that are forwarded — that is what
+     lets tests inject `client` without a network.
+  5. BUG CAUGHT BY THE PORTED TESTS: my first `_append_tool_result` returned early
+     after merging a function response into the previous user turn, which swallowed
+     the synthetic "Tool result image:" turn Gemini < 3 needs. Ported test
+     `google-shared-image-tool-result-routing` failed on 3 contents vs 5.
+  6. TESTS: ported `google-shared-convert-tools` (4), `-image-tool-result-routing`
+     (3), `-gemini3-unsigned-tool-call` (4), `google-thinking-signature` (5), plus
+     streaming/request-shaping coverage the TS only has e2e. The two
+     `google-thinking-disable` suites need a real key and are NOT ported; their
+     request-shaping half is covered by `TestThinkingConfig`.
+
 - 2.8 provider-openai — DONE (notes reconstructed after the fact; the step landed
   without them). `openai-completions.ts` (1168), `openai-responses.ts` (273),
   `openai-responses-shared.ts` (561), `openai-codex-responses.ts` (1323) and

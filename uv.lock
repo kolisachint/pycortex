@@ -250,7 +250,9 @@ name = "cortexcode-ai-provider-google"
 version = "0.0.3"
 source = { editable = "packages/ai/provider-google" }
 dependencies = [
+    { name = "cortexcode-ai-env" },
     { name = "cortexcode-ai-models" },
+    { name = "cortexcode-ai-provider-common" },
     { name = "cortexcode-ai-stream" },
     { name = "cortexcode-ai-types" },
     { name = "cortexcode-ai-util" },
@@ -259,7 +261,9 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cortexcode-ai-env", editable = "packages/ai/env" },
     { name = "cortexcode-ai-models", editable = "packages/ai/models" },
+    { name = "cortexcode-ai-provider-common", editable = "packages/ai/provider-common" },
     { name = "cortexcode-ai-stream", editable = "packages/ai/stream" },
     { name = "cortexcode-ai-types", editable = "packages/ai/types" },
     { name = "cortexcode-ai-util", editable = "packages/ai/util" },

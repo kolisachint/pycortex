@@ -160,7 +160,7 @@ providers; faux first).
       `pytest packages/ai/provider-openai`. Also absorbed `azure-openai-responses.ts`
       (it is an openai-responses variant), so the `packages/ai/provider-azure`
       placeholder is dead and gets removed.
-- [ ] **2.9 provider-google** — `packages/ai/src/providers/{google-shared,google}.ts` →
+- [x] **2.9 provider-google** — `packages/ai/src/providers/{google-shared,google}.ts` →
       `packages/ai/provider-google/src/cortex/ai/providers/google/{shared,google}.py` +
       tests. Gate: `pytest packages/ai/provider-google`.
 - [ ] **2.16 provider-google-vertex** — `packages/ai/src/providers/google-vertex.ts`
