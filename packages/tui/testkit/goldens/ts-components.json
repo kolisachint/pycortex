@@ -244,6 +244,99 @@
       ],
       "stable": true,
       "referenceIdentical": true
+    },
+    {
+      "id": "component/loader-default",
+      "width": 24,
+      "lines": [
+        "",
+        " \u001b[36m⠋\u001b[39m \u001b[2mLoading...\u001b[22m           "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/loader-plain-colour-fns",
+      "width": 20,
+      "lines": [
+        "",
+        " ⠋ Working          "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/loader-custom-message",
+      "width": 30,
+      "lines": [
+        "",
+        " \u001b[36m⠋\u001b[39m \u001b[2mThinking about it\u001b[22m          "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/loader-message-wraps",
+      "width": 20,
+      "lines": [
+        "",
+        " ⠋ a rather long    ",
+        " status message     ",
+        " that will not fit  ",
+        " on one line        "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/loader-custom-indicator",
+      "width": 20,
+      "lines": [
+        "",
+        " * \u001b[2mCustom\u001b[22m           "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/loader-no-indicator",
+      "width": 20,
+      "lines": [
+        "",
+        " \u001b[2mSilent\u001b[22m             "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/loader-multi-frame-indicator",
+      "width": 20,
+      "lines": [
+        "",
+        " - Spin             "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/loader-wide-char-message",
+      "width": 20,
+      "lines": [
+        "",
+        " \u001b[36m⠋\u001b[39m \u001b[2m読み込み中\u001b[22m       "
+      ],
+      "stable": true,
+      "referenceIdentical": false
+    },
+    {
+      "id": "component/cancellable-loader-default",
+      "width": 24,
+      "lines": [
+        "",
+        " \u001b[36m⠋\u001b[39m \u001b[2mCancellable\u001b[22m          "
+      ],
+      "stable": true,
+      "referenceIdentical": false
     }
   ]
 }

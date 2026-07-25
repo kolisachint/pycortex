@@ -87,6 +87,15 @@ def _bg_fn(spec: dict[str, Any] | None) -> Callable[[str], str] | None:
     return lambda text: f"{open_seq}{text}{close_seq}"
 
 
+def _wrap_fn(spec: dict[str, Any] | None) -> Callable[[str], str]:
+    """Same idea as `_bg_fn` for the loader's colour functions; identity by default."""
+    if not spec:
+        return lambda text: text
+    open_seq = spec["open"]
+    close_seq = spec["close"]
+    return lambda text: f"{open_seq}{text}{close_seq}"
+
+
 # Component name -> the plan step that ports it. Everything absent from
 # `_BUILDERS` below is reported against this map.
 COMPONENT_STEPS = {
@@ -137,6 +146,34 @@ def build_component(spec: dict[str, Any]) -> Renderable:
 
     if name == "StaticLines":
         return StaticLines(args.get("lines", []))
+    if name in ("Loader", "CancellableLoader"):
+        from cortex.tui.components import (
+            CancellableLoader,
+            Loader,
+            LoaderIndicatorOptions,
+        )
+
+        indicator_spec = args.get("indicator")
+        indicator = (
+            LoaderIndicatorOptions(
+                frames=indicator_spec.get("frames"),
+                interval_ms=indicator_spec.get("intervalMs"),
+            )
+            if indicator_spec is not None
+            else None
+        )
+        loader_cls = Loader if name == "Loader" else CancellableLoader
+        # `ui=None` keeps it out of the render loop — the frame is what is under
+        # test, not the animation timer.
+        loader = loader_cls(
+            None,
+            _wrap_fn(args.get("spinnerColor")),
+            _wrap_fn(args.get("messageColor")),
+            args.get("message", "Loading..."),
+            indicator,
+        )
+        loader.stop()
+        return loader
     if name == "Text":
         from cortex.tui.components import Text
 

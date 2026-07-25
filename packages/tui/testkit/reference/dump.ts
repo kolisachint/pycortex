@@ -27,6 +27,8 @@ if (!SRC_DIR || !GOLDENS_DIR) {
 
 const { Text, TruncatedText, Box, Spacer } = await import(join(SRC_DIR, "index.ts"));
 const { TUI } = await import(join(SRC_DIR, "tui.ts"));
+const { Loader } = await import(join(SRC_DIR, "components/loader.ts"));
+const { CancellableLoader } = await import(join(SRC_DIR, "components/cancellable-loader.ts"));
 
 type Json = Record<string, any>;
 
@@ -35,6 +37,12 @@ const corpus: Json = JSON.parse(readFileSync(join(GOLDENS_DIR, "scenarios.json")
 /** Serialisable background function: `open + text + close`. */
 function makeBgFn(spec: Json | undefined): ((text: string) => string) | undefined {
 	if (!spec) return undefined;
+	return (text: string) => `${spec.open}${text}${spec.close}`;
+}
+
+/** Same idea for the loader's colour functions; identity when unspecified. */
+function makeWrapFn(spec: Json | undefined): (text: string) => string {
+	if (!spec) return (text: string) => text;
 	return (text: string) => `${spec.open}${text}${spec.close}`;
 }
 
@@ -66,6 +74,22 @@ function build(spec: Json): any {
 	switch (spec.component) {
 		case "StaticLines":
 			return new StaticLines(args.lines ?? []);
+		case "Loader":
+		case "CancellableLoader": {
+			// `ui: null` keeps the component out of the render loop — the frame
+			// is what is under test, not the animation timer, and the corpus
+			// pins `currentFrame` at 0 by never letting the interval fire.
+			const Ctor = spec.component === "Loader" ? Loader : CancellableLoader;
+			const loader = new Ctor(
+				null,
+				makeWrapFn(args.spinnerColor),
+				makeWrapFn(args.messageColor),
+				args.message ?? "Loading...",
+				args.indicator,
+			);
+			loader.stop();
+			return loader;
+		}
 		case "Text":
 			return new Text(args.text ?? "", args.paddingX ?? 1, args.paddingY ?? 1, bg);
 		case "TruncatedText":

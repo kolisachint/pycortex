@@ -159,6 +159,30 @@ TS `packages/ai/src/` is split across MULTIPLE python packages:
   their own leaf.
 
 ## Step log
+- 1.7 components (simple) — DONE. Added the two missing leaves: `loader.ts` →
+  `components/loader.py` and `cancellable-loader.ts` → `components/cancellable_loader.py`.
+  text/truncated-text/box/spacer were already correct and now have goldens proving it.
+  1. `Loader` SUBCLASSES `Text` (as in the TS) and prepends a blank line in `render`.
+  2. `setInterval` → `loop.call_later` re-armed per tick, guarded by a GENERATION
+     COUNTER. Without it, `set_indicator` (which stops then restarts) leaves the
+     already-queued tick alive and you get two spinners at once —
+     `test_restarting_does_not_leave_two_timers_running` pins this.
+  3. NO EVENT LOOP → no animation, but the frame still renders. Same shape as the
+     renderer's `_soon`; a spinner is only meaningful inside a loop.
+  4. `AbortController`/`AbortSignal`: the signal reports the CONTROLLER's flag rather
+     than holding its own, so handing a consumer the signal does not hand over the
+     ability to trip it. Matches the notes' "any object with a bool `.aborted`".
+  5. Indicator semantics worth remembering: passing ANY indicator switches the frame
+     to verbatim rendering (the spinner colour fn is skipped); `frames: []` means no
+     indicator AND no trailing space; a non-positive `intervalMs` falls back to 120.
+     All three have their own golden.
+  6. TESTKIT: both dumpers gained a `Loader`/`CancellableLoader` builder constructed
+     with `ui=None` and immediately `stop()`ped, so goldens capture frame 0 rather
+     than racing a timer. Corpus: 25 → 34 component scenarios, all matching.
+  7. A timing test failed first time asserting `_current_frame != 0` after 35ms —
+     three frames on a 10ms tick lands back on 0. Sample over time instead of
+     checking an index at one instant.
+
 - 1.5 render — DONE (re-port). `tui.ts` (1545) → `cortex.tui.render._render` (~1150),
   one module to stay diffable. Replaced the invented 191-line version wholesale.
   Ported in full: `Container` render memo, root flatten + patch tracking, overlay

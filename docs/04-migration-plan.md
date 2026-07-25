@@ -90,9 +90,8 @@ Parallelizable across these leaves; dependencies flow upward from util.
       1.9 parity report.
 - [x] **1.6 editing** — `packages/tui/src/{editor-component,kill-ring,undo-stack}.ts` →
       `packages/tui/editing/src/cortex/tui/editing/` + tests. Gate: `pytest packages/tui/editing`.
-- [ ] **1.7 components (simple)** — `packages/tui/src/components/{text,truncated-text,box,spacer,loader,cancellable-loader}.ts`
-      → `packages/tui/components/src/cortex/tui/components/`. `loader` and
-      `cancellable-loader` are still missing; the four that exist must clear the 1.9
+- [x] **1.7 components (simple)** — `packages/tui/src/components/{text,truncated-text,box,spacer,loader,cancellable-loader}.ts`
+      → `packages/tui/components/src/cortex/tui/components/`, all six clearing the 1.9
       surface goldens. Gate: `pytest packages/tui/components` + zero unported
       `component/*` scenarios in the parity report.
 - [ ] **1.10 components — input** — `packages/tui/src/components/input.ts` →

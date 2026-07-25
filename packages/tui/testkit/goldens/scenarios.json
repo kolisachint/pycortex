@@ -457,6 +457,144 @@
         }
       ],
       "width": 16
+    },
+    {
+      "id": "component/loader-default",
+      "component": "Loader",
+      "args": {
+        "message": "Loading...",
+        "spinnerColor": {
+          "open": "\u001b[36m",
+          "close": "\u001b[39m"
+        },
+        "messageColor": {
+          "open": "\u001b[2m",
+          "close": "\u001b[22m"
+        }
+      },
+      "width": 24
+    },
+    {
+      "id": "component/loader-plain-colour-fns",
+      "component": "Loader",
+      "args": {
+        "message": "Working"
+      },
+      "width": 20
+    },
+    {
+      "id": "component/loader-custom-message",
+      "component": "Loader",
+      "args": {
+        "message": "Thinking about it",
+        "spinnerColor": {
+          "open": "\u001b[36m",
+          "close": "\u001b[39m"
+        },
+        "messageColor": {
+          "open": "\u001b[2m",
+          "close": "\u001b[22m"
+        }
+      },
+      "width": 30
+    },
+    {
+      "id": "component/loader-message-wraps",
+      "component": "Loader",
+      "args": {
+        "message": "a rather long status message that will not fit on one line"
+      },
+      "width": 20
+    },
+    {
+      "id": "component/loader-custom-indicator",
+      "component": "Loader",
+      "args": {
+        "message": "Custom",
+        "spinnerColor": {
+          "open": "\u001b[36m",
+          "close": "\u001b[39m"
+        },
+        "messageColor": {
+          "open": "\u001b[2m",
+          "close": "\u001b[22m"
+        },
+        "indicator": {
+          "frames": [
+            "*"
+          ],
+          "intervalMs": 100
+        }
+      },
+      "width": 20
+    },
+    {
+      "id": "component/loader-no-indicator",
+      "component": "Loader",
+      "args": {
+        "message": "Silent",
+        "spinnerColor": {
+          "open": "\u001b[36m",
+          "close": "\u001b[39m"
+        },
+        "messageColor": {
+          "open": "\u001b[2m",
+          "close": "\u001b[22m"
+        },
+        "indicator": {
+          "frames": []
+        }
+      },
+      "width": 20
+    },
+    {
+      "id": "component/loader-multi-frame-indicator",
+      "component": "Loader",
+      "args": {
+        "message": "Spin",
+        "indicator": {
+          "frames": [
+            "-",
+            "\\",
+            "|",
+            "/"
+          ],
+          "intervalMs": 80
+        }
+      },
+      "width": 20
+    },
+    {
+      "id": "component/loader-wide-char-message",
+      "component": "Loader",
+      "args": {
+        "message": "読み込み中",
+        "spinnerColor": {
+          "open": "\u001b[36m",
+          "close": "\u001b[39m"
+        },
+        "messageColor": {
+          "open": "\u001b[2m",
+          "close": "\u001b[22m"
+        }
+      },
+      "width": 20
+    },
+    {
+      "id": "component/cancellable-loader-default",
+      "component": "CancellableLoader",
+      "args": {
+        "message": "Cancellable",
+        "spinnerColor": {
+          "open": "\u001b[36m",
+          "close": "\u001b[39m"
+        },
+        "messageColor": {
+          "open": "\u001b[2m",
+          "close": "\u001b[22m"
+        }
+      },
+      "width": 24
     }
   ],
   "renderer": [
