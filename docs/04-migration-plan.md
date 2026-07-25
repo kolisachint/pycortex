@@ -138,8 +138,22 @@ Parallelizable across these leaves; dependencies flow upward from util.
 - [x] **1.12 components — markdown** — `packages/tui/src/components/markdown.ts` (808 lines,
       `marked` AST → styled lines) → `components/markdown.py` + parity goldens. Depends
       on 1.18. Gate: `pytest packages/tui/components`.
+- [ ] **1.19 keys — CSI modifier sequences + kitty functional codepoints**
+      *(prerequisite for 1.13; out of numeric order on purpose)* — the third gap behind
+      1.3's "minimal" `keys.ts`. `parseKittySequence` has four branches; the port has
+      **one**. Missing: modified arrows (`\x1b[1;<mod>A-D`, i.e. every `alt+left` /
+      `ctrl+right` word-motion binding), modified functional keys
+      (`\x1b[<n>;<mod>~` — `alt+delete` is `deleteWordForward`) and modified Home/End
+      (`\x1b[1;<mod>H/F`). Separately, the kitty codepoint tables are invented rather
+      than ported: arrows are `57352`-`57355` where the TS uses negative sentinels fed
+      by `KITTY_FUNCTIONAL_KEY_EQUIVALENTS` (`57417`-`57420`), `delete` is `57399`
+      (which is kitty's KP_0) and the whole keypad equivalence table is absent, so a
+      real kitty terminal's functional keys parse as nothing. Also port
+      `formatKeyNameWithModifiers` faithfully: strip `LOCK_MASK`, reject unsupported
+      modifier bits, and emit the TS's shift/ctrl/alt/super order. Found by
+      `component/editor-word-motion` diverging. Gate: `pytest packages/tui/keys`.
 - [ ] **1.13 components — editor** — `packages/tui/src/components/editor.ts` (2309 lines) →
-      `components/editor.py` + parity goldens. Depends on 1.6. Gate:
+      `components/editor.py` + parity goldens. Depends on 1.6 and 1.19. Gate:
       `pytest packages/tui/components`.
 - [ ] **1.14 autocomplete** — `packages/tui/src/autocomplete.ts` (783 lines) →
       `packages/tui/components/src/cortex/tui/components/autocomplete.py` + tests. Gate:
