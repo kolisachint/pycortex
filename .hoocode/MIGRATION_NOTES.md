@@ -993,3 +993,37 @@ not actual GCP authentication.
 - BackgroundToolResult, AgentLoopTurnUpdate
 
 **Note**: CustomAgentMessages was omitted (used for declaration merging in TS, not applicable in Python).
+
+### Step 4.4 — prompts
+
+**Files**: `packages/coding-agent/src/core/{system-prompt,mode-prompts,prompt-templates}.ts`
+**Target**: `packages/code/prompts/src/cortex/code/prompts/`
+
+**What it does**: System prompt construction, built-in mode prompts, and prompt template loading/expansion.
+
+**Key implementation details**:
+- Ported from TypeScript to Python with mechanical translation
+- XML escaping uses custom `_escape_xml` function (Python's `xml.sax.saxutils.escape` doesn't escape quotes by default)
+- PromptTemplate dataclass had to reorder fields (non-default before default)
+- pyright comment added to test file to suppress pytest fixture type warnings
+
+**Files created**:
+- `source_info.py` - SourceInfo types for tracking prompt origins
+- `types.py` - AgentDefinition, Skill, PromptTemplate, and other types
+- `system_prompt.py` - build_system_prompt function
+- `mode_prompts.py` - DEFAULT_MODE and DEFAULT_MODE_PROMPTS
+- `prompt_templates.py` - parse_command_args, substitute_args, load_prompt_templates, try_expand_prompt_template
+- `skills.py` - format_skills_for_prompt function
+- `agents.py` - format_agents_for_prompt function
+- `__init__.py` - Re-exports all public symbols
+- `tests/test_prompt_templates.py` - 89 tests
+- `tests/test_system_prompt.py` - 15 tests
+- `tests/test_mode_prompts.py` - 7 tests
+- `tests/test_skills.py` - 5 tests
+- `tests/test_agents.py` - 5 tests
+
+**Tests**: 121 tests total, all passing.
+
+**Notes**:
+- Gates pass: ruff check, ruff format, pyright all clean for the prompts package
+- Pre-existing failing test in TUI components package (autocomplete parity) unrelated to this step
