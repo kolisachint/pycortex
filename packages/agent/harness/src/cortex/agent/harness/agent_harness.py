@@ -736,9 +736,9 @@ class AgentHarness:
             # Collect entries for branch summary
             from cortex.agent.compaction import collect_entries_for_branch_summary
 
-            entries, common_ancestor_id = await collect_entries_for_branch_summary(
-                self.session, old_leaf_id, target_id
-            )
+            result = await collect_entries_for_branch_summary(self.session, old_leaf_id, target_id)
+            entries = result.entries
+            common_ancestor_id = result.common_ancestor_id
 
             preparation = TreePreparation(
                 target_id=target_id,

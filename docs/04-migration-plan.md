@@ -251,7 +251,7 @@ providers; faux first).
 - [x] **3.5 session** — `packages/agent/src/harness/session/*` + `execution-env*` →
       `packages/agent/session/src/cortex/agent/session/` + tests. Gate:
       `pytest packages/agent/session`.
-- [ ] **3.6 compaction** — `packages/agent/src/harness/compaction/*` →
+- [x] **3.6 compaction** — `packages/agent/src/harness/compaction/*` →
       `packages/agent/compaction/src/cortex/agent/compaction/` + tests. Gate:
       `pytest packages/agent/compaction`.
 - [ ] **3.7 tools** — `packages/agent/src/tools/default-tools.ts` →

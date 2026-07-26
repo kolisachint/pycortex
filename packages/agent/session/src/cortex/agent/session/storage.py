@@ -166,7 +166,8 @@ class JsonlSessionStorage(SessionStorage):
             header = json.loads(lines[0])
         except json.JSONDecodeError as err:
             raise ValueError(
-                f"Invalid JSONL session file {resolved_path}: first line is not a valid session header"
+                f"Invalid JSONL session file {resolved_path}:"
+                " first line is not a valid session header"
             ) from err
 
         entries: list[SessionTreeEntry] = []
