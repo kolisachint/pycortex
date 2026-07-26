@@ -417,6 +417,16 @@ source = { editable = "packages/code/subagents" }
 name = "cortexcode-cli-tools"
 version = "0.0.3"
 source = { editable = "packages/code/tools" }
+dependencies = [
+    { name = "cortexcode-agent-types" },
+    { name = "cortexcode-ai-types" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-agent-types", editable = "packages/agent/types" },
+    { name = "cortexcode-ai-types", editable = "packages/ai/types" },
+]
 
 [[package]]
 name = "cortexcode-code"
