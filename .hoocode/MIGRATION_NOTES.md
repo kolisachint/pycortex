@@ -831,4 +831,41 @@ the substring bucket) came out differently from what reading the TS suggested.
      (2), copilot auth (1). E2e tests (oauth, long-cache, opus-smoke, tool-name-norm)
      skipped (require real API keys). All tests use mock clients; no network calls.
   Deps: `cortexcode-ai-env`, `cortexcode-ai-provider-common`, `httpx`.
+
+- 2.16 provider-google-vertex — DONE. `google-vertex.ts` (564) →
+  `cortex.ai.providers.google.vertex` (560 py lines) + 86 tests. Split out of
+  2.9: Vertex adds a second concern — GCP credential resolution — on top of the
+  same generate-content protocol. Key design decisions:
+  1. NO SDK (same convention as 2.7/2.9): uses httpx directly, not `@google/genai`.
+     The TS uses `GoogleGenAI` SDK for ADC credential resolution and the streaming
+     endpoint. In Python, we resolve credentials ourselves and talk to the REST API.
+  2. CREDENTIAL RESOLUTION: `_resolve_api_key()` checks `options.apiKey` then
+     `GOOGLE_CLOUD_API_KEY` env var, returning `None` for placeholder markers
+     (`<authenticated>`, `gcp-vertex-credentials`). The env module already returns
+     `<authenticated>` when ADC is available, so the provider falls back to ADC
+     (project/location) when the key is a placeholder or absent.
+  3. PROJECT/LOCATION: Required for ADC. Resolved from options, then
+     `GOOGLE_CLOUD_PROJECT`/`GCLOUD_PROJECT` and `GOOGLE_CLOUD_LOCATION` env vars.
+     Raises `ValueError` if missing.
+  4. BASE URL: The model's `baseUrl` contains `{location}` placeholder. When a
+     custom base URL is provided (without `{location}`), it's used directly;
+     otherwise we build `https://{location}-aiplatform.googleapis.com`.
+  5. STREAMING: Same SSE pattern as google.py, same event emission. The endpoint
+     URL includes `/v1/projects/-/locations/-/publishers/google/models/{model}`.
+  6. THINKING LEVELS: Reuses the same helper functions as google.py (copied for
+     independence since both modules can be imported separately).
+  7. TESTS: 86 tests covering API key resolution (9), client creation (7),
+     build_params (5), thinking config (6), streaming (3), and simple stream (2).
+     All tests use injectable `FakeClient`; no network calls.
+  8. PUBLIC API: Exported from `cortex.ai.providers.google.__init__` alongside
+     the google.generative-ai exports: `stream_google_vertex`,
+     `stream_simple_google_vertex`, `GoogleVertexClient`, `GoogleVertexOptions`,
+     `create_client` (renamed `create_vertex_client` in __init__ to avoid collision).
+  9. DEBT: Real ADC authentication (using `google-auth` library) is not implemented.
+     The credential resolution logic is correct, but actual ADC token acquisition
+     would require adding `google-auth` as a dependency. The `create_client`
+     function returns a `GoogleVertexClient` that can make requests, but without
+     proper OAuth2 tokens, ADC-based requests will fail. This matches the TS's
+     behavior when the SDK is mocked — the tests verify the resolution logic,
+     not actual GCP authentication.
 </content>

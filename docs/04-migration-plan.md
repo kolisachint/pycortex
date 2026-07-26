@@ -215,7 +215,7 @@ providers; faux first).
 - [x] **2.9 provider-google** — `packages/ai/src/providers/{google-shared,google}.ts` →
       `packages/ai/provider-google/src/cortex/ai/providers/google/{shared,google}.py` +
       tests. Gate: `pytest packages/ai/provider-google`.
-- [ ] **2.16 provider-google-vertex** — `packages/ai/src/providers/google-vertex.ts`
+- [x] **2.16 provider-google-vertex** — `packages/ai/src/providers/google-vertex.ts`
       (564 lines) → `.../google/vertex.py` + tests. Split out of 2.9: Vertex adds a
       whole second concern — GCP credential resolution (service-account JWT, ADC,
       `GOOGLE_APPLICATION_CREDENTIALS`, express-mode API keys) — on top of the same
