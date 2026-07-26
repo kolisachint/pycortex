@@ -29,7 +29,6 @@ from .compaction import (
     collect_messages_for_compaction,
     compact,
     compute_compaction_result,
-    compute_file_lists,
     estimate_context_tokens,
     estimate_message_tokens,
     estimate_tokens,
@@ -49,6 +48,7 @@ from .compaction import (
 from .utils import (
     SUMMARIZATION_SYSTEM_PROMPT,
     FileOperations,
+    compute_file_lists,
     create_file_ops,
     extract_file_ops_from_message,
     format_file_operations,
