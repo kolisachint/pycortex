@@ -1,5 +1,4 @@
-# pyright: reportAttributeAccessIssue=false, reportArgumentType=false
-"""Session management for the agent harness.
+"""Session management.
 
 Mechanical port of hoocode's ``packages/agent/src/harness/session/session.ts``.
 """
@@ -8,6 +7,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from cortex.agent.harness.messages import (
+    create_branch_summary_message,
+    create_compaction_summary_message,
+    create_custom_message,
+)
 from cortex.agent.harness.types import (
     BranchSummaryEntry,
     CompactionEntry,
@@ -17,38 +21,23 @@ from cortex.agent.harness.types import (
     MessageEntry,
     ModelChangeEntry,
     SessionContext,
+    SessionInfoEntry,
     SessionMetadata,
     SessionStorage,
     SessionTreeEntry,
     ThinkingLevelChangeEntry,
 )
 from cortex.agent.types import AgentMessage
-from cortex.ai.types import ImageContent, TextContent
-
-from .repo import InMemorySessionRepo, JsonlSessionRepo, load_jsonl_session_metadata
-from .storage import InMemorySessionStorage, JsonlSessionStorage
 
 __all__ = [
-    # Session
     "Session",
     "build_session_context",
-    # Storage
-    "InMemorySessionStorage",
-    "JsonlSessionStorage",
-    # Repo
-    "InMemorySessionRepo",
-    "JsonlSessionRepo",
-    "load_jsonl_session_metadata",
 ]
 
 
 def build_session_context(path_entries: list[SessionTreeEntry]) -> SessionContext:
-    """Build session context from path entries.
-
-    Extracts thinking level, model, compaction info, and messages from
-    the path entries to create a session context.
-    """
-    thinking_level = "off"
+    """Build session context from path entries."""
+    thinking_level: str = "off"
     model: dict[str, str] | None = None
     compaction: CompactionEntry | None = None
 
@@ -57,10 +46,11 @@ def build_session_context(path_entries: list[SessionTreeEntry]) -> SessionContex
             thinking_level = entry.thinking_level
         elif isinstance(entry, ModelChangeEntry):
             model = {"provider": entry.provider, "model_id": entry.model_id}
-        elif isinstance(entry, MessageEntry) and hasattr(entry.message, "role"):
-            msg = entry.message
-            if hasattr(msg, "provider") and hasattr(msg, "model"):
-                model = {"provider": msg.provider, "model_id": msg.model}
+        elif isinstance(entry, MessageEntry) and entry.message.role == "assistant":
+            model = {
+                "provider": getattr(entry.message, "provider", ""),
+                "model_id": getattr(entry.message, "model", ""),
+            }
         elif isinstance(entry, CompactionEntry):
             compaction = entry
 
@@ -68,10 +58,10 @@ def build_session_context(path_entries: list[SessionTreeEntry]) -> SessionContex
 
     def append_message(entry: SessionTreeEntry) -> None:
         if isinstance(entry, MessageEntry):
-            messages.append(entry.message)  # type: ignore[arg-type]
+            messages.append(entry.message)
         elif isinstance(entry, CustomMessageEntry):
             messages.append(
-                _create_custom_message(
+                create_custom_message(
                     entry.custom_type,
                     entry.content,
                     entry.display,
@@ -81,12 +71,12 @@ def build_session_context(path_entries: list[SessionTreeEntry]) -> SessionContex
             )
         elif isinstance(entry, BranchSummaryEntry) and entry.summary:
             messages.append(
-                _create_branch_summary_message(entry.summary, entry.from_id, entry.timestamp)
+                create_branch_summary_message(entry.summary, entry.from_id, entry.timestamp)
             )
 
     if compaction:
         messages.append(
-            _create_compaction_summary_message(
+            create_compaction_summary_message(
                 compaction.summary,
                 compaction.tokens_before,
                 compaction.timestamp,
@@ -117,44 +107,8 @@ def build_session_context(path_entries: list[SessionTreeEntry]) -> SessionContex
     return SessionContext(messages=messages, thinking_level=thinking_level, model=model)
 
 
-def _create_custom_message(
-    custom_type: str,
-    content: str | list[TextContent | ImageContent],
-    display: bool,
-    details: Any,
-    timestamp: str,
-) -> AgentMessage:
-    """Create a custom message."""
-    from cortex.agent.harness.messages import create_custom_message
-
-    return create_custom_message(custom_type, content, display, details, timestamp)
-
-
-def _create_branch_summary_message(summary: str, from_id: str, timestamp: str) -> AgentMessage:
-    """Create a branch summary message."""
-    from cortex.agent.harness.messages import create_branch_summary_message
-
-    return create_branch_summary_message(summary, from_id, timestamp)
-
-
-def _create_compaction_summary_message(
-    summary: str,
-    tokens_before: int | None,
-    timestamp: str,
-    tokens_after: int | None = None,
-) -> AgentMessage:
-    """Create a compaction summary message."""
-    from cortex.agent.harness.messages import create_compaction_summary_message
-
-    return create_compaction_summary_message(summary, tokens_before, timestamp, tokens_after)
-
-
 class Session:
-    """Session that wraps SessionStorage.
-
-    Provides methods to interact with session data including
-    retrieving metadata, entries, and building context.
-    """
+    """Session class for managing conversation history."""
 
     def __init__(self, storage: SessionStorage) -> None:
         self._storage = storage
@@ -168,7 +122,7 @@ class Session:
         return self._storage
 
     async def get_leaf_id(self) -> str | None:
-        """Get the current leaf entry ID."""
+        """Get the current leaf ID."""
         return await self._storage.get_leaf_id()
 
     async def get_entry(self, entry_id: str) -> SessionTreeEntry | None:
@@ -180,62 +134,65 @@ class Session:
         return await self._storage.get_entries()
 
     async def get_branch(self, from_id: str | None = None) -> list[SessionTreeEntry]:
-        """Get the branch path to root."""
+        """Get the branch from a given ID (or current leaf)."""
         leaf_id = from_id if from_id is not None else await self._storage.get_leaf_id()
         return await self._storage.get_path_to_root(leaf_id)
 
     async def build_context(self) -> SessionContext:
-        """Build session context from current branch."""
+        """Build the session context."""
         return build_session_context(await self.get_branch())
 
     async def get_label(self, entry_id: str) -> str | None:
-        """Get label for an entry."""
+        """Get the label for an entry."""
         return await self._storage.get_label(entry_id)
 
     async def get_session_name(self) -> str | None:
-        """Get the session name from session_info entries."""
+        """Get the session name."""
         entries = await self._storage.find_entries("session_info")
-        if entries:
-            last_entry = entries[-1]
-            if hasattr(last_entry, "name") and last_entry.name:
-                return last_entry.name.strip() or None
+        if entries and isinstance(entries[-1], SessionInfoEntry):
+            name = entries[-1].name
+            if name:
+                return name.strip()
         return None
 
     async def _append_typed_entry(self, entry: SessionTreeEntry) -> str:
-        """Append an entry and return its ID."""
+        """Append a typed entry and return its ID."""
         await self._storage.append_entry(entry)
         return entry.id
 
     async def append_message(self, message: AgentMessage) -> str:
         """Append a message entry."""
-        entry = MessageEntry(
-            id=await self._storage.create_entry_id(),
-            parent_id=await self._storage.get_leaf_id(),
-            timestamp=0,
-            message=message,
+        return await self._append_typed_entry(
+            MessageEntry(
+                id=await self._storage.create_entry_id(),
+                parent_id=await self._storage.get_leaf_id(),
+                timestamp="",
+                message=message,
+            )
         )
-        return await self._append_typed_entry(entry)
 
     async def append_thinking_level_change(self, thinking_level: str) -> str:
         """Append a thinking level change entry."""
-        entry = ThinkingLevelChangeEntry(
-            id=await self._storage.create_entry_id(),
-            parent_id=await self._storage.get_leaf_id(),
-            timestamp=0,
-            thinking_level=thinking_level,
+        return await self._append_typed_entry(
+            ThinkingLevelChangeEntry(
+                id=await self._storage.create_entry_id(),
+                parent_id=await self._storage.get_leaf_id(),
+                timestamp="",
+                thinking_level=thinking_level,
+            )
         )
-        return await self._append_typed_entry(entry)
 
     async def append_model_change(self, provider: str, model_id: str) -> str:
         """Append a model change entry."""
-        entry = ModelChangeEntry(
-            id=await self._storage.create_entry_id(),
-            parent_id=await self._storage.get_leaf_id(),
-            timestamp=0,
-            provider=provider,
-            model_id=model_id,
+        return await self._append_typed_entry(
+            ModelChangeEntry(
+                id=await self._storage.create_entry_id(),
+                parent_id=await self._storage.get_leaf_id(),
+                timestamp="",
+                provider=provider,
+                model_id=model_id,
+            )
         )
-        return await self._append_typed_entry(entry)
 
     async def append_compaction(
         self,
@@ -247,93 +204,99 @@ class Session:
         tokens_after: int | None = None,
     ) -> str:
         """Append a compaction entry."""
-        entry = CompactionEntry(
-            id=await self._storage.create_entry_id(),
-            parent_id=await self._storage.get_leaf_id(),
-            timestamp=0,
-            summary=summary,
-            first_kept_entry_id=first_kept_entry_id,
-            tokens_before=tokens_before,
-            tokens_after=tokens_after,
-            details=details,
-            from_hook=from_hook,
+        return await self._append_typed_entry(
+            CompactionEntry(
+                id=await self._storage.create_entry_id(),
+                parent_id=await self._storage.get_leaf_id(),
+                timestamp="",
+                summary=summary,
+                first_kept_entry_id=first_kept_entry_id,
+                tokens_before=tokens_before,
+                tokens_after=tokens_after,
+                details=details,
+                from_hook=from_hook,
+            )
         )
-        return await self._append_typed_entry(entry)
 
     async def append_custom_entry(self, custom_type: str, details: Any = None) -> str:
         """Append a custom entry."""
-        entry = CustomEntry(
-            id=await self._storage.create_entry_id(),
-            parent_id=await self._storage.get_leaf_id(),
-            timestamp="",
-            custom_type=custom_type,
-            details=details,
+        return await self._append_typed_entry(
+            CustomEntry(
+                id=await self._storage.create_entry_id(),
+                parent_id=await self._storage.get_leaf_id(),
+                timestamp="",
+                custom_type=custom_type,
+                details=details,
+            )
         )
-        return await self._append_typed_entry(entry)
 
     async def append_custom_message_entry(
         self,
         custom_type: str,
-        content: str | list[TextContent | ImageContent],
+        content: str | list[Any],
         display: bool,
         details: Any = None,
     ) -> str:
         """Append a custom message entry."""
-        entry = CustomMessageEntry(
-            id=await self._storage.create_entry_id(),
-            parent_id=await self._storage.get_leaf_id(),
-            timestamp=0,
-            custom_type=custom_type,
-            content=content,
-            display=display,
-            details=details,
+        return await self._append_typed_entry(
+            CustomMessageEntry(
+                id=await self._storage.create_entry_id(),
+                parent_id=await self._storage.get_leaf_id(),
+                timestamp="",
+                custom_type=custom_type,
+                content=content,
+                display=display,
+                details=details,
+            )
         )
-        return await self._append_typed_entry(entry)
 
     async def append_label(self, target_id: str, label: str | None) -> str:
         """Append a label entry."""
-        if await self._storage.get_entry(target_id) is None:
+        entry = await self._storage.get_entry(target_id)
+        if entry is None:
             raise ValueError(f"Entry {target_id} not found")
-        entry = LabelEntry(
-            id=await self._storage.create_entry_id(),
-            parent_id=await self._storage.get_leaf_id(),
-            timestamp=0,
-            target_id=target_id,
-            label=label,
+        return await self._append_typed_entry(
+            LabelEntry(
+                id=await self._storage.create_entry_id(),
+                parent_id=await self._storage.get_leaf_id(),
+                timestamp="",
+                target_id=target_id,
+                label=label,
+            )
         )
-        return await self._append_typed_entry(entry)
 
     async def append_session_name(self, name: str) -> str:
-        """Append a session name entry."""
-        from cortex.agent.harness.types import SessionInfoEntry
-
-        entry = SessionInfoEntry(
-            id=await self._storage.create_entry_id(),
-            parent_id=await self._storage.get_leaf_id(),
-            timestamp=0,
-            name=name.strip(),
+        """Append a session info entry with name."""
+        return await self._append_typed_entry(
+            SessionInfoEntry(
+                id=await self._storage.create_entry_id(),
+                parent_id=await self._storage.get_leaf_id(),
+                timestamp="",
+                name=name.strip(),
+            )
         )
-        return await self._append_typed_entry(entry)
 
     async def move_to(
         self,
         entry_id: str | None,
         summary: dict[str, Any] | None = None,
     ) -> str | None:
-        """Move to a different entry."""
-        if entry_id is not None and await self._storage.get_entry(entry_id) is None:
-            raise ValueError(f"Entry {entry_id} not found")
+        """Move the leaf to a given entry ID."""
+        if entry_id is not None:
+            entry = await self._storage.get_entry(entry_id)
+            if entry is None:
+                raise ValueError(f"Entry {entry_id} not found")
         await self._storage.set_leaf_id(entry_id)
-        if not summary:
+        if summary is None:
             return None
         return await self._append_typed_entry(
             BranchSummaryEntry(
                 id=await self._storage.create_entry_id(),
                 parent_id=entry_id,
-                timestamp=0,
+                timestamp="",
                 from_id=entry_id or "root",
                 summary=summary.get("summary", ""),
                 details=summary.get("details"),
-                from_hook=summary.get("from_hook", False),
+                from_hook=bool(summary.get("from_hook")),
             )
         )

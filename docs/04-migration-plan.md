@@ -248,7 +248,7 @@ providers; faux first).
 - [x] **3.4 harness** — `packages/agent/src/harness/{messages,system-prompt,prompt-templates,skills,types,agent-harness}.ts` →
       `packages/agent/harness/src/cortex/agent/harness/` + tests. Gate:
       `pytest packages/agent/harness`.
-- [ ] **3.5 session** — `packages/agent/src/harness/session/*` + `execution-env*` →
+- [x] **3.5 session** — `packages/agent/src/harness/session/*` + `execution-env*` →
       `packages/agent/session/src/cortex/agent/session/` + tests. Gate:
       `pytest packages/agent/session`.
 - [ ] **3.6 compaction** — `packages/agent/src/harness/compaction/*` →
