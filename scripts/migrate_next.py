@@ -156,11 +156,25 @@ def leaf_dirs() -> list[Path]:
     )
 
 
-def leaf_publishes(leaf: Path) -> bool:
+def leaf_cortex_table(leaf: Path) -> dict[str, object]:
     data = tomllib.loads((leaf / "pyproject.toml").read_text())
     tool = data.get("tool", {})
     cortex = tool.get("cortex", {}) if isinstance(tool, dict) else {}
-    return bool(cortex.get("publish", False)) if isinstance(cortex, dict) else False
+    return cortex if isinstance(cortex, dict) else {}
+
+
+def leaf_publishes(leaf: Path) -> bool:
+    return bool(leaf_cortex_table(leaf).get("publish", False))
+
+
+def leaf_never_publishes(leaf: Path) -> bool:
+    """Leaves that ship to nobody by design, e.g. `tui/testkit` (test infra).
+
+    `publish = false` means "not yet"; an umbrella step is entitled to demand it
+    be flipped. `never_publish = true` means "not ever", so the group-published
+    audit skips the leaf instead of demanding the impossible.
+    """
+    return bool(leaf_cortex_table(leaf).get("never_publish", False))
 
 
 def leaf_is_populated(leaf: Path) -> bool:
@@ -227,7 +241,9 @@ def audit(steps: list[Step]) -> list[str]:
             unpublished: list[str] = []
             for group in sorted(groups):
                 for leaf in leaf_dirs():
-                    if leaf.parent.name == group and not leaf_publishes(leaf):
+                    if leaf.parent.name != group or leaf_never_publishes(leaf):
+                        continue
+                    if not leaf_publishes(leaf):
                         unpublished.append(f"{group}/{leaf.name}")
             if unpublished:
                 problems.append(

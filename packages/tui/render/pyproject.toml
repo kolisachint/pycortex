@@ -5,9 +5,9 @@ description = "Cortex TUI leaf: render"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "cortexcode-tui-util",
-    "cortexcode-tui-keys",
-    "cortexcode-tui-images",
+    "cortexcode-tui-util>=0.0.3,<0.1.0",
+    "cortexcode-tui-keys>=0.0.3,<0.1.0",
+    "cortexcode-tui-images>=0.0.3,<0.1.0",
 ]
 
 [dependency-groups]
@@ -23,7 +23,7 @@ cortexcode-tui-images = { workspace = true }
 cortexcode-tui-testkit = { workspace = true }
 
 [tool.cortex]
-publish = false
+publish = true
 
 [tool.hatch.build.targets.wheel]
 packages = [

@@ -5,11 +5,11 @@ description = "Cortex TUI leaf: editing"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "cortexcode-tui-render",
+    "cortexcode-tui-render>=0.0.3,<0.1.0",
 ]
 
 [tool.cortex]
-publish = false
+publish = true
 
 [tool.hatch.build.targets.wheel]
 packages = [

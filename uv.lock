@@ -395,6 +395,28 @@ source = { editable = "packages/code/_meta" }
 name = "cortexcode-tui"
 version = "0.0.3"
 source = { editable = "packages/tui/_meta" }
+dependencies = [
+    { name = "cortexcode-tui-components" },
+    { name = "cortexcode-tui-editing" },
+    { name = "cortexcode-tui-fuzzy" },
+    { name = "cortexcode-tui-images" },
+    { name = "cortexcode-tui-keys" },
+    { name = "cortexcode-tui-render" },
+    { name = "cortexcode-tui-terminal" },
+    { name = "cortexcode-tui-util" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-tui-components", editable = "packages/tui/components" },
+    { name = "cortexcode-tui-editing", editable = "packages/tui/editing" },
+    { name = "cortexcode-tui-fuzzy", editable = "packages/tui/fuzzy" },
+    { name = "cortexcode-tui-images", editable = "packages/tui/images" },
+    { name = "cortexcode-tui-keys", editable = "packages/tui/keys" },
+    { name = "cortexcode-tui-render", editable = "packages/tui/render" },
+    { name = "cortexcode-tui-terminal", editable = "packages/tui/terminal" },
+    { name = "cortexcode-tui-util", editable = "packages/tui/util" },
+]
 
 [[package]]
 name = "cortexcode-tui-components"

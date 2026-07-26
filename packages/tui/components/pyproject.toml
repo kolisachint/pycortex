@@ -5,17 +5,17 @@ description = "Cortex TUI leaf: components"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "cortexcode-tui-render",
-    "cortexcode-tui-util",
-    "cortexcode-tui-editing",
-    "cortexcode-tui-keys",
-    "cortexcode-tui-fuzzy",
-    "cortexcode-tui-images",
+    "cortexcode-tui-render>=0.0.3,<0.1.0",
+    "cortexcode-tui-util>=0.0.3,<0.1.0",
+    "cortexcode-tui-editing>=0.0.3,<0.1.0",
+    "cortexcode-tui-keys>=0.0.3,<0.1.0",
+    "cortexcode-tui-fuzzy>=0.0.3,<0.1.0",
+    "cortexcode-tui-images>=0.0.3,<0.1.0",
     "mistune>=3.0",
 ]
 
 [tool.cortex]
-publish = false
+publish = true
 
 [tool.hatch.build.targets.wheel]
 packages = [
