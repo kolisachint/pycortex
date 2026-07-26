@@ -269,7 +269,7 @@ providers; faux first).
 
 Coarser leaves until the code stabilizes.
 
-- [ ] **4.1 config** — `packages/coding-agent/src/config.ts`, `core/settings-*` →
+- [x] **4.1 config** — `packages/coding-agent/src/config.ts`, `core/settings-*` →
       `packages/code/config/src/cortex/code/config/` + tests.
 - [ ] **4.2 tools** — `packages/coding-agent/src/core/tools/{read,bash,edit,write,grep,find,ls}.ts`
       → `packages/code/tools/src/cortex/code/tools/` + tests.
