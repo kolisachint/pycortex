@@ -257,7 +257,7 @@ providers; faux first).
 - [x] **3.7 tools** — `packages/agent/src/tools/default-tools.ts` →
       `packages/agent/tools/src/cortex/agent/tools/` + tests. Gate:
       `pytest packages/agent/tools`.
-- [ ] **3.8 mcp** — `packages/agent/src/tools/mcp-*.ts` →
+- [x] **3.8 mcp** — `packages/agent/src/tools/mcp-*.ts` →
       `packages/agent/mcp/src/cortex/agent/mcp.py` + tests. Gate:
       `pytest packages/agent/mcp`.
 - [ ] **3.9 agent umbrella publishable** — READMEs, strict, flip T0/T1 leaves to
