@@ -19,9 +19,18 @@ a renderer that had invented its own algorithm, and passed.
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+from cortex.tui.images import (
+    CellDimensions,
+    TerminalCapabilities,
+    get_cell_dimensions,
+    reset_capabilities_cache,
+    set_capabilities,
+    set_cell_dimensions,
+)
 from cortex.tui.render import CURSOR_MARKER, TUI, Container, is_focusable
 from cortex.tui.render._render import (
     OverlayOptions,
@@ -29,6 +38,30 @@ from cortex.tui.render._render import (
     _parse_size_value,
 )
 from cortex.tui.testkit import CaptureTerminal, Surface
+
+
+@pytest.fixture(autouse=True)
+def _reset_image_capabilities() -> Iterator[None]:  # pyright: ignore[reportUnusedFunction]
+    """Capabilities and cell size are process-global in `terminal-image.ts`."""
+    yield
+    reset_capabilities_cache()
+    set_cell_dimensions(CellDimensions(width_px=9, height_px=18))
+
+
+class InputRecorder:
+    """Records every key it is handed — the TS test's own stub."""
+
+    def __init__(self) -> None:
+        self.inputs: list[str] = []
+
+    def render(self, width: int) -> list[str]:
+        return [""]
+
+    def handle_input(self, data: str) -> None:
+        self.inputs.append(data)
+
+    def invalidate(self) -> None:
+        pass
 
 
 class Static:
@@ -432,3 +465,69 @@ class TestFocusable:
         tui.set_focus(second)
         assert first.focused is False
         assert second.focused is True
+
+
+class TestCellSizeQuery:
+    """Ports `test/tui-cell-size-input.test.ts`.
+
+    The renderer asks the terminal for its cell size at `start()` and swallows
+    the reply, which only matters because `terminal-image.ts` measures images
+    against it. Before step 1.15 the capability lookup was a soft dependency
+    that always answered "no images", so neither half of this ran.
+    """
+
+    def test_no_query_without_an_image_protocol(self) -> None:
+        set_capabilities(TerminalCapabilities(images=None, true_color=True, hyperlinks=False))
+        tui, terminal = make_tui()
+        tui.start()
+        assert "\x1b[16t" not in terminal.stream
+        tui.stop()
+
+    def test_queries_the_cell_size_on_an_image_capable_terminal(self) -> None:
+        set_capabilities(TerminalCapabilities(images="kitty", true_color=True, hyperlinks=True))
+        tui, terminal = make_tui()
+        tui.start()
+        assert "\x1b[16t" in terminal.stream
+        tui.stop()
+
+    def test_forwards_a_bare_escape_even_though_a_query_was_sent(self) -> None:
+        set_capabilities(TerminalCapabilities(images="kitty", true_color=True, hyperlinks=True))
+        tui, terminal = make_tui()
+        recorder = InputRecorder()
+        tui.set_focus(recorder)
+        tui.start()
+
+        terminal.send_input("\x1b")
+
+        assert recorder.inputs == ["\x1b"]
+        tui.stop()
+
+    def test_consumes_cell_size_responses_and_still_forwards_later_input(self) -> None:
+        set_capabilities(TerminalCapabilities(images="kitty", true_color=True, hyperlinks=True))
+        set_cell_dimensions(CellDimensions(width_px=9, height_px=18))
+        tui, terminal = make_tui()
+        recorder = InputRecorder()
+        tui.set_focus(recorder)
+        tui.start()
+
+        # CSI 6 ; height ; width t
+        terminal.send_input("\x1b[6;20;10t")
+        assert recorder.inputs == []
+        assert get_cell_dimensions() == CellDimensions(width_px=10, height_px=20)
+
+        terminal.send_input("q")
+        assert recorder.inputs == ["q"]
+        tui.stop()
+
+    def test_a_zero_sized_reply_is_consumed_but_ignored(self) -> None:
+        set_capabilities(TerminalCapabilities(images="kitty", true_color=True, hyperlinks=True))
+        set_cell_dimensions(CellDimensions(width_px=9, height_px=18))
+        tui, terminal = make_tui()
+        recorder = InputRecorder()
+        tui.set_focus(recorder)
+        tui.start()
+
+        terminal.send_input("\x1b[6;0;10t")
+        assert recorder.inputs == []
+        assert get_cell_dimensions() == CellDimensions(width_px=9, height_px=18)
+        tui.stop()

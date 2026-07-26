@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "cortexcode-tui-util",
+    "cortexcode-tui-images",
 ]
 
 [tool.cortex]
@@ -19,6 +20,7 @@ packages = [
 
 [tool.uv.sources]
 cortexcode-tui-util = { workspace = true }
+cortexcode-tui-images = { workspace = true }
 
 [build-system]
 requires = [

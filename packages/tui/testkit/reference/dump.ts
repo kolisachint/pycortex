@@ -34,7 +34,8 @@ const { SelectList } = await import(join(SRC_DIR, "components/select-list.ts"));
 const { SettingsList } = await import(join(SRC_DIR, "components/settings-list.ts"));
 const { Markdown } = await import(join(SRC_DIR, "components/markdown.ts"));
 const { Editor } = await import(join(SRC_DIR, "components/editor.ts"));
-const { setCapabilities } = await import(join(SRC_DIR, "terminal-image.ts"));
+const { Image } = await import(join(SRC_DIR, "components/image.ts"));
+const { setCapabilities, setCellDimensions } = await import(join(SRC_DIR, "terminal-image.ts"));
 
 type Json = Record<string, any>;
 
@@ -79,6 +80,19 @@ const DEFAULT_MARKDOWN_THEME: Json = {
 /** Capabilities the goldens are captured under, so the capture machine's
  * TERM_PROGRAM cannot change what is recorded. */
 const DEFAULT_CAPABILITIES: Json = { images: null, trueColor: true, hyperlinks: false };
+
+/** The cell size images are measured against. `terminal-image.ts` starts here
+ * and only the TUI's cell-size query moves it; pinning it per scenario keeps a
+ * stray setCellDimensions out of the goldens. */
+const DEFAULT_CELL_DIMENSIONS: Json = { widthPx: 9, heightPx: 18 };
+
+/** Terminal capabilities and cell size are process-global and read at render
+ * time, so state them per scenario. The Python side applies the identical
+ * merge in `_scene.apply_scenario_capabilities`. */
+function applyScenarioCapabilities(spec: Json): void {
+	setCapabilities({ ...DEFAULT_CAPABILITIES, ...(spec.capabilities ?? {}) });
+	setCellDimensions({ ...DEFAULT_CELL_DIMENSIONS, ...(spec.cellDimensions ?? {}) });
+}
 
 function makeMarkdownTheme(args: Json): Json {
 	const spec: Json = { ...DEFAULT_MARKDOWN_THEME, ...(args.theme ?? {}) };
@@ -227,6 +241,19 @@ function build(spec: Json): any {
 			loader.stop();
 			return loader;
 		}
+		case "Image":
+			return new Image(
+				args.data ?? "",
+				args.mimeType ?? "image/png",
+				{ fallbackColor: makeWrapFn(args.fallbackColor) },
+				{
+					maxWidthCells: args.maxWidthCells,
+					maxHeightCells: args.maxHeightCells,
+					filename: args.filename,
+					imageId: args.imageId,
+				},
+				args.dimensions,
+			);
 		case "Markdown":
 			return new Markdown(
 				args.text ?? "",
@@ -299,7 +326,7 @@ for (const spec of corpus.components ?? []) {
 	// Terminal capabilities are read at render time (markdown links pick OSC 8
 	// over `text (url)` from them), so pin them per scenario instead of
 	// inheriting whatever terminal the capture ran in.
-	setCapabilities({ ...DEFAULT_CAPABILITIES, ...(spec.capabilities ?? {}) });
+	applyScenarioCapabilities(spec);
 	const component = build(spec);
 	// Stateful components (Input) are driven to the state under test before the
 	// frame is captured.
@@ -318,8 +345,8 @@ for (const spec of corpus.components ?? []) {
 }
 
 const rendererGoldens: Json[] = [];
-setCapabilities({ ...DEFAULT_CAPABILITIES });
 for (const spec of corpus.renderer ?? []) {
+	applyScenarioCapabilities(spec);
 	const terminal = new CaptureTerminal(spec.cols, spec.rows);
 	const tui = new TUI(terminal as any, false);
 	const children: any[] = [];

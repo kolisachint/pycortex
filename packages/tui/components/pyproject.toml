@@ -10,6 +10,7 @@ dependencies = [
     "cortexcode-tui-editing",
     "cortexcode-tui-keys",
     "cortexcode-tui-fuzzy",
+    "cortexcode-tui-images",
     "mistune>=3.0",
 ]
 
@@ -27,6 +28,7 @@ cortexcode-tui-util = { workspace = true }
 cortexcode-tui-editing = { workspace = true }
 cortexcode-tui-keys = { workspace = true }
 cortexcode-tui-fuzzy = { workspace = true }
+cortexcode-tui-images = { workspace = true }
 
 [build-system]
 requires = [

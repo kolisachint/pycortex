@@ -1,5 +1,5 @@
 {
-  "generated_from": "6bd06e8",
+  "generated_from": "ef78e68",
   "note": "Written by scripts/tui_parity.py. Consumed by scripts/migrate_next.py --status.",
   "matched": [
     "component/box-empty",
@@ -57,6 +57,28 @@
     "component/editor-wrap-wide-chars",
     "component/editor-wrap-words",
     "component/editor-yank-pop",
+    "component/image-fallback-coloured",
+    "component/image-fallback-explicit-dimensions-win",
+    "component/image-fallback-gif-dimensions",
+    "component/image-fallback-jpeg-dimensions",
+    "component/image-fallback-jpeg-marker-inside-segment",
+    "component/image-fallback-png-dimensions",
+    "component/image-fallback-under-vscode-capabilities",
+    "component/image-fallback-unknown-mime-defaults",
+    "component/image-fallback-unparseable-defaults",
+    "component/image-fallback-webp-lossy-dimensions",
+    "component/image-fallback-webp-lossy-scaling-bits",
+    "component/image-fallback-webp-vp8l-dimensions",
+    "component/image-fallback-webp-vp8x-dimensions",
+    "component/image-fallback-with-filename",
+    "component/image-iterm2-multi-row",
+    "component/image-iterm2-single-row",
+    "component/image-kitty-cell-dimensions",
+    "component/image-kitty-chunked-payload",
+    "component/image-kitty-default-max-width",
+    "component/image-kitty-multi-row",
+    "component/image-kitty-single-row",
+    "component/image-kitty-width-minus-two-wins",
     "component/input-backspace",
     "component/input-control-chars-rejected",
     "component/input-cursor-home",
@@ -129,6 +151,7 @@
     "component/markdown-inline-strike-loose",
     "component/markdown-link-autolink-email",
     "component/markdown-link-bare-url",
+    "component/markdown-link-osc8",
     "component/markdown-link-text-equals-href",
     "component/markdown-link-with-url",
     "component/markdown-link-wraps",
@@ -263,6 +286,13 @@
     "renderer/grow-past-viewport",
     "renderer/height-change",
     "renderer/hyperlink-osc8",
+    "renderer/image-component-kitty",
+    "renderer/image-component-removed",
+    "renderer/image-kitty-change-above-expands-range",
+    "renderer/image-kitty-deleted-on-change",
+    "renderer/image-kitty-deleted-on-full-redraw",
+    "renderer/image-kitty-deleted-on-shrink",
+    "renderer/image-line-skips-width-guard",
     "renderer/line-shrinks-in-place",
     "renderer/multiple-children",
     "renderer/multiple-lines-shrink-in-place",
@@ -292,11 +322,5 @@
     "renderer/wide-chars-exact-width",
     "renderer/width-change"
   ],
-  "unported": [
-    {
-      "id": "component/markdown-link-osc8",
-      "kind": "component",
-      "blocked_by": "1.15"
-    }
-  ]
+  "unported": []
 }

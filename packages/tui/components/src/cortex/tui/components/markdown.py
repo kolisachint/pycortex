@@ -9,15 +9,14 @@ reads the same fields the TypeScript does.
 
 from __future__ import annotations
 
-import importlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
 from cortex.tui.components._markdown_ast import lex_markdown
+from cortex.tui.images import get_capabilities, hyperlink, is_image_line
 from cortex.tui.util import (
     apply_background_to_line,
-    is_image_line,
     visible_width,
     wrap_text_with_ansi,
 )
@@ -28,44 +27,6 @@ Token = dict[str, Any]
 
 SENTINEL = "\x00"
 MAX_UNBROKEN_WORD_WIDTH = 30
-
-
-def _images_symbol(name: str) -> Any:
-    """Look up a `cortex.tui.images` symbol, or None while step 1.15 is pending.
-
-    Same soft dependency `cortex.tui.render` takes on the images leaf: the leaf
-    exists but is empty, so a static import of a name it does not export yet
-    would not type-check, and stubbing it here would duplicate 1.15's scope.
-    """
-    try:
-        module = importlib.import_module("cortex.tui.images")
-    except ImportError:
-        return None
-    return getattr(module, name, None)
-
-
-def _hyperlinks_supported() -> bool:
-    """Whether links should be emitted as OSC 8 rather than `text (url)`.
-
-    The TS reads ``getCapabilities().hyperlinks`` from ``terminal-image.ts``,
-    which is step 1.15. Until it lands this reports "no hyperlink support" —
-    a real runtime state (the TS takes the same branch on any terminal it has
-    not positively identified) rather than an invented one.
-    """
-    get_capabilities = _images_symbol("get_capabilities")
-    if get_capabilities is None:
-        return False
-    return bool(get_capabilities().hyperlinks)
-
-
-def _hyperlink(text: str, url: str) -> str:
-    """OSC 8 hyperlink sequence.
-
-    Owned by ``terminal-image.ts`` → the images leaf (step 1.15). Inlined here
-    (one format string) so the link branch is a real port and testable today;
-    1.15 replaces this with an import.
-    """
-    return f"\x1b]8;;{url}\x1b\\{text}\x1b]8;;\x1b\\"
 
 
 @dataclass
@@ -513,11 +474,11 @@ class Markdown:
                     token.get("tokens") or [], resolved_style_context
                 )
                 styled_link = self._theme.link(self._theme.underline(link_text))
-                if _hyperlinks_supported():
+                if get_capabilities().hyperlinks:
                     # OSC 8: render as a clickable hyperlink. The URL is not
                     # printed inline, so we always show only the link text
                     # regardless of whether it matches href.
-                    result += _hyperlink(styled_link, token["href"]) + style_prefix
+                    result += hyperlink(styled_link, token["href"]) + style_prefix
                 else:
                     # Fallback: print URL in parentheses when text differs from
                     # href. Compare raw token.text (not styled) against href for

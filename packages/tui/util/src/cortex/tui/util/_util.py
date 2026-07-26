@@ -939,8 +939,3 @@ def get_segmenter() -> Callable[[str], list[str]]:
     reach for the private helper instead.
     """
     return grapheme_segments
-
-
-def is_image_line(line: str) -> bool:
-    """Placeholder for terminal-image line detection (ported in tui-images leaf)."""
-    return False

@@ -10,14 +10,30 @@ capability behaviour that has no TS counterpart.
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from typing import Any
 
 import pytest
 from cortex.tui.components import DefaultTextStyle, Markdown, MarkdownTheme
-from cortex.tui.components import markdown as markdown_module
+from cortex.tui.images import (
+    TerminalCapabilities,
+    reset_capabilities_cache,
+    set_capabilities,
+)
 
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+@pytest.fixture(autouse=True)
+def _no_hyperlink_capability() -> Iterator[None]:  # pyright: ignore[reportUnusedFunction]
+    """`markdown.ts` reads a process-global capability, so pin it per test.
+
+    Without this the suite would render links differently depending on which
+    terminal it runs in — and on whichever test last called `set_capabilities`.
+    """
+    set_capabilities(TerminalCapabilities(images=None, true_color=True, hyperlinks=False))
+    yield
+    reset_capabilities_cache()
 
 
 def strip_ansi(line: str) -> str:
@@ -445,14 +461,14 @@ def test_mailto_url_is_shown_in_parentheses_without_hyperlink_support() -> None:
 
 
 @pytest.fixture
-def hyperlinks_supported(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Force the capability the images leaf (step 1.15) will answer for real.
+def hyperlinks_supported() -> None:
+    """Report the terminal as OSC 8 capable, as `terminal-image.ts` would.
 
-    Only the *source* of the boolean is stubbed; everything the branch renders is
-    this port's own code. The corpus scenario `component/markdown-link-osc8`
-    stays reported as unported until pycortex can answer the question itself.
+    The screen this branch produces is pinned against the real TS by
+    `component/markdown-link-osc8`, which now runs; these assert on the
+    structure of the sequence rather than on the frame.
     """
-    monkeypatch.setattr(markdown_module, "_hyperlinks_supported", lambda: True)
+    set_capabilities(TerminalCapabilities(images=None, true_color=True, hyperlinks=True))
 
 
 @pytest.mark.usefixtures("hyperlinks_supported")
@@ -481,9 +497,17 @@ def test_uses_osc8_for_bare_urls() -> None:
     assert "(https://example.com)" not in visible
 
 
-def test_hyperlinks_are_off_until_the_images_leaf_lands() -> None:
-    """Soft dependency on step 1.15, matching what `cortex.tui.render` does."""
-    assert markdown_module._hyperlinks_supported() is False  # pyright: ignore[reportPrivateUsage]
+def test_the_capability_is_read_per_render_not_cached_by_the_component() -> None:
+    """`getCapabilities()` is called inside the link branch, every render.
+
+    A component that resolved it once at construction would keep printing
+    `text (url)` on a terminal that had since been identified.
+    """
+    component = md("[click here](https://example.com)")
+    assert "(https://example.com)" in " ".join(plain(component.render(80)))
+    set_capabilities(TerminalCapabilities(images=None, true_color=True, hyperlinks=True))
+    component.invalidate()
+    assert "\x1b]8;;https://example.com\x1b\\" in "".join(component.render(80))
 
 
 # --- HTML -------------------------------------------------------------------

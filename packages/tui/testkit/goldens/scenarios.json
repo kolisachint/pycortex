@@ -4384,6 +4384,306 @@
       ],
       "focused": true,
       "width": 12
+    },
+    {
+      "id": "component/image-kitty-single-row",
+      "component": "Image",
+      "args": {
+        "data": "AAAA",
+        "maxWidthCells": 2,
+        "imageId": 4242,
+        "dimensions": {
+          "widthPx": 20,
+          "heightPx": 9
+        }
+      },
+      "width": 12,
+      "capabilities": {
+        "images": "kitty",
+        "trueColor": true,
+        "hyperlinks": true
+      },
+      "exactLines": true
+    },
+    {
+      "id": "component/image-kitty-multi-row",
+      "component": "Image",
+      "args": {
+        "data": "AAAA",
+        "maxWidthCells": 2,
+        "imageId": 4243,
+        "dimensions": {
+          "widthPx": 20,
+          "heightPx": 60
+        }
+      },
+      "width": 12,
+      "capabilities": {
+        "images": "kitty",
+        "trueColor": true,
+        "hyperlinks": true
+      },
+      "exactLines": true
+    },
+    {
+      "id": "component/image-kitty-chunked-payload",
+      "component": "Image",
+      "args": {
+        "data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "maxWidthCells": 2,
+        "imageId": 4244,
+        "dimensions": {
+          "widthPx": 20,
+          "heightPx": 9
+        }
+      },
+      "width": 12,
+      "capabilities": {
+        "images": "kitty",
+        "trueColor": true,
+        "hyperlinks": true
+      },
+      "exactLines": true
+    },
+    {
+      "id": "component/image-kitty-width-minus-two-wins",
+      "component": "Image",
+      "args": {
+        "data": "AAAA",
+        "imageId": 4245,
+        "dimensions": {
+          "widthPx": 20,
+          "heightPx": 9
+        }
+      },
+      "width": 6,
+      "capabilities": {
+        "images": "kitty",
+        "trueColor": true,
+        "hyperlinks": true
+      },
+      "exactLines": true
+    },
+    {
+      "id": "component/image-kitty-cell-dimensions",
+      "component": "Image",
+      "args": {
+        "data": "AAAA",
+        "maxWidthCells": 2,
+        "imageId": 4246,
+        "dimensions": {
+          "widthPx": 20,
+          "heightPx": 20
+        }
+      },
+      "width": 12,
+      "capabilities": {
+        "images": "kitty",
+        "trueColor": true,
+        "hyperlinks": true
+      },
+      "cellDimensions": {
+        "widthPx": 10,
+        "heightPx": 10
+      },
+      "exactLines": true
+    },
+    {
+      "id": "component/image-iterm2-multi-row",
+      "component": "Image",
+      "args": {
+        "data": "AAAA",
+        "maxWidthCells": 2,
+        "dimensions": {
+          "widthPx": 20,
+          "heightPx": 60
+        }
+      },
+      "width": 12,
+      "capabilities": {
+        "images": "iterm2",
+        "trueColor": true,
+        "hyperlinks": true
+      },
+      "exactLines": true
+    },
+    {
+      "id": "component/image-iterm2-single-row",
+      "component": "Image",
+      "args": {
+        "data": "AAAA",
+        "maxWidthCells": 2,
+        "dimensions": {
+          "widthPx": 20,
+          "heightPx": 9
+        }
+      },
+      "width": 12,
+      "capabilities": {
+        "images": "iterm2",
+        "trueColor": true,
+        "hyperlinks": true
+      },
+      "exactLines": true
+    },
+    {
+      "id": "component/image-fallback-png-dimensions",
+      "component": "Image",
+      "args": {
+        "data": "iVBORw0KGgoAAAANSUhEUgAAABgAAAAMCAYAAAA=",
+        "mimeType": "image/png"
+      },
+      "width": 40
+    },
+    {
+      "id": "component/image-fallback-jpeg-dimensions",
+      "component": "Image",
+      "args": {
+        "data": "/9j/4AAEWFn/wAALCAAUACgBAREAAAAAAAAAAAA=",
+        "mimeType": "image/jpeg"
+      },
+      "width": 40
+    },
+    {
+      "id": "component/image-fallback-gif-dimensions",
+      "component": "Image",
+      "args": {
+        "data": "R0lGODlhIQALAPcA",
+        "mimeType": "image/gif"
+      },
+      "width": 40
+    },
+    {
+      "id": "component/image-fallback-webp-vp8x-dimensions",
+      "component": "Image",
+      "args": {
+        "data": "UklGRmQAAABXRUJQVlA4WAoAAAAAAAAAMQAAGAAAAAAAAA==",
+        "mimeType": "image/webp"
+      },
+      "width": 40
+    },
+    {
+      "id": "component/image-fallback-webp-vp8l-dimensions",
+      "component": "Image",
+      "args": {
+        "data": "UklGRmQAAABXRUJQVlA4TBQAAAAvBoAAAAAAAAAAAAAA",
+        "mimeType": "image/webp"
+      },
+      "width": 40
+    },
+    {
+      "id": "component/image-fallback-webp-lossy-dimensions",
+      "component": "Image",
+      "args": {
+        "data": "UklGRmQAAABXRUJQVlA4IBQAAAAAAAAAAABAACAAAAAAAAAAAAA=",
+        "mimeType": "image/webp"
+      },
+      "width": 40
+    },
+    {
+      "id": "component/image-fallback-unparseable-defaults",
+      "component": "Image",
+      "args": {
+        "data": "AAAA",
+        "mimeType": "image/png"
+      },
+      "width": 40
+    },
+    {
+      "id": "component/image-fallback-unknown-mime-defaults",
+      "component": "Image",
+      "args": {
+        "data": "iVBORw0KGgoAAAANSUhEUgAAABgAAAAMCAYAAAA=",
+        "mimeType": "image/bmp"
+      },
+      "width": 40
+    },
+    {
+      "id": "component/image-fallback-with-filename",
+      "component": "Image",
+      "args": {
+        "data": "R0lGODlhIQALAPcA",
+        "mimeType": "image/gif",
+        "filename": "cat.gif"
+      },
+      "width": 40
+    },
+    {
+      "id": "component/image-fallback-coloured",
+      "component": "Image",
+      "args": {
+        "data": "R0lGODlhIQALAPcA",
+        "mimeType": "image/gif",
+        "fallbackColor": {
+          "open": "\u001b[31m",
+          "close": "\u001b[39m"
+        }
+      },
+      "width": 40
+    },
+    {
+      "id": "component/image-fallback-explicit-dimensions-win",
+      "component": "Image",
+      "args": {
+        "data": "iVBORw0KGgoAAAANSUhEUgAAABgAAAAMCAYAAAA=",
+        "mimeType": "image/png",
+        "dimensions": {
+          "widthPx": 5,
+          "heightPx": 7
+        }
+      },
+      "width": 40
+    },
+    {
+      "id": "component/image-fallback-under-vscode-capabilities",
+      "component": "Image",
+      "args": {
+        "data": "iVBORw0KGgoAAAANSUhEUgAAABgAAAAMCAYAAAA=",
+        "mimeType": "image/png"
+      },
+      "width": 40,
+      "capabilities": {
+        "images": null,
+        "trueColor": true,
+        "hyperlinks": true
+      }
+    },
+    {
+      "id": "component/image-kitty-default-max-width",
+      "component": "Image",
+      "args": {
+        "data": "AAAA",
+        "imageId": 4247,
+        "dimensions": {
+          "widthPx": 20,
+          "heightPx": 9
+        }
+      },
+      "width": 100,
+      "capabilities": {
+        "images": "kitty",
+        "trueColor": true,
+        "hyperlinks": true
+      },
+      "exactLines": true
+    },
+    {
+      "id": "component/image-fallback-jpeg-marker-inside-segment",
+      "component": "Image",
+      "args": {
+        "data": "/9j/4AAKESIzRFVm/8D/wAALCAAUACgBAREAAAAAAAAAAAA=",
+        "mimeType": "image/jpeg"
+      },
+      "width": 40
+    },
+    {
+      "id": "component/image-fallback-webp-lossy-scaling-bits",
+      "component": "Image",
+      "args": {
+        "data": "UklGRmQAAABXRUJQVlA4IBQAAAAAAAAAAABAgCBAAAAAAAAAAAA=",
+        "mimeType": "image/webp"
+      },
+      "width": 40
     }
   ],
   "renderer": [
@@ -5786,6 +6086,244 @@
             "y",
             "zzzz"
           ]
+        },
+        {
+          "op": "render"
+        }
+      ]
+    },
+    {
+      "id": "renderer/image-line-skips-width-guard",
+      "cols": 20,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "header",
+              "\u001b_Ga=T,f=100,q=2,C=1,c=4,r=1,i=99;AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\u001b\\"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        }
+      ],
+      "exactStream": true
+    },
+    {
+      "id": "renderer/image-kitty-deleted-on-change",
+      "cols": 20,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "header",
+              "\u001b_Ga=T,f=100,q=2,C=1,c=4,r=1,i=77;AAAA\u001b\\"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 0,
+          "lines": [
+            "header",
+            "\u001b_Ga=T,f=100,q=2,C=1,c=4,r=1,i=88;BBBB\u001b\\"
+          ]
+        },
+        {
+          "op": "render"
+        }
+      ],
+      "exactStream": true
+    },
+    {
+      "id": "renderer/image-kitty-deleted-on-shrink",
+      "cols": 20,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "header",
+              "\u001b_Ga=T,f=100,q=2,C=1,c=4,r=1,i=77;AAAA\u001b\\"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 0,
+          "lines": [
+            "header"
+          ]
+        },
+        {
+          "op": "render"
+        }
+      ],
+      "exactStream": true
+    },
+    {
+      "id": "renderer/image-kitty-change-above-expands-range",
+      "cols": 20,
+      "rows": 6,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "header",
+              "body",
+              "\u001b_Ga=T,f=100,q=2,C=1,c=4,r=1,i=77;AAAA\u001b\\"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setLines",
+          "target": 0,
+          "lines": [
+            "header!",
+            "body",
+            "\u001b_Ga=T,f=100,q=2,C=1,c=4,r=1,i=77;AAAA\u001b\\"
+          ]
+        },
+        {
+          "op": "render"
+        }
+      ],
+      "exactStream": true
+    },
+    {
+      "id": "renderer/image-component-kitty",
+      "cols": 20,
+      "rows": 8,
+      "capabilities": {
+        "images": "kitty",
+        "trueColor": true,
+        "hyperlinks": true
+      },
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "before",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "add",
+          "component": "Image",
+          "args": {
+            "data": "AAAA",
+            "maxWidthCells": 2,
+            "imageId": 5150,
+            "dimensions": {
+              "widthPx": 20,
+              "heightPx": 60
+            }
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "setText",
+          "target": 0,
+          "text": "after"
+        },
+        {
+          "op": "render"
+        }
+      ],
+      "exactStream": true
+    },
+    {
+      "id": "renderer/image-component-removed",
+      "cols": 20,
+      "rows": 8,
+      "capabilities": {
+        "images": "kitty",
+        "trueColor": true,
+        "hyperlinks": true
+      },
+      "steps": [
+        {
+          "op": "add",
+          "component": "Text",
+          "args": {
+            "text": "before",
+            "paddingX": 0,
+            "paddingY": 0
+          }
+        },
+        {
+          "op": "add",
+          "component": "Image",
+          "args": {
+            "data": "AAAA",
+            "maxWidthCells": 2,
+            "imageId": 5151,
+            "dimensions": {
+              "widthPx": 20,
+              "heightPx": 9
+            }
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "removeChild",
+          "target": 1
+        },
+        {
+          "op": "render"
+        }
+      ],
+      "exactStream": true
+    },
+    {
+      "id": "renderer/image-kitty-deleted-on-full-redraw",
+      "cols": 20,
+      "rows": 6,
+      "exactStream": true,
+      "steps": [
+        {
+          "op": "add",
+          "component": "StaticLines",
+          "args": {
+            "lines": [
+              "header",
+              "\u001b_Ga=T,f=100,q=2,C=1,c=4,r=1,i=77;AAAA\u001b\\"
+            ]
+          }
+        },
+        {
+          "op": "render"
+        },
+        {
+          "op": "resize",
+          "cols": 24,
+          "rows": 6
         },
         {
           "op": "render"

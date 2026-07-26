@@ -203,6 +203,90 @@ the substring bucket) came out differently from what reading the TS suggested.
   records every call and answer, and the test replays those against the port.
 
 ## Step log
+- 1.15 images — DONE. `terminal-image.ts` (423) + `components/image.ts` (112) →
+  `cortex.tui.images.{terminal_image,image}` (~520), 30 parity scenarios
+  (23 component + 7 renderer), 123 unit tests (the whole of
+  `terminal-image.test.ts` and `bug-regression-isimageline-*.test.ts`), plus
+  `tui-cell-size-input.test.ts` ported into the render leaf. All 273 component
+  + 46 renderer scenarios match and the corpus has **no unported scenarios
+  left**.
+  1. **THE SOFT DEPENDENCY IS GONE, AND IT WAS HIDING A DEAD BRANCH.**
+     `cortex.tui.util.is_image_line` was a stub returning `False`, so every
+     caller — `tui.ts`'s width guard, `_saw_image_line`, the whole kitty
+     delete-on-change bookkeeping 1.5 ported, and `markdown.ts`'s two image
+     branches — was unreachable. It is deleted from `util` (it belongs to
+     `terminal-image.ts`, not `utils.ts`) and render/markdown now import the
+     real thing. The renderer scenarios below are the first to run that code.
+  2. LEAF PLACEMENT: `components/image.ts` lives HERE, not in components. It is
+     a `Component`-shaped wrapper around `terminal_image` and nothing else, so
+     images stays dependency-free — which is what lets render and components
+     depend on it. The reverse edge would be a cycle, since `tui.ts` and
+     `markdown.ts` both import `terminal-image.ts` directly. `docs/02` updated,
+     and the leaf moved T1 → **T0**: a T0 leaf cannot depend on a T1 one, so
+     **1.8 must flip `publish = true` here too**.
+  3. CONVENTION, stated once and applied: an exported TS *interface* becomes a
+     dataclass (`TerminalCapabilities`, `CellDimensions`, `ImageDimensions`,
+     `ImageRenderOptions`, `ImageOptions`, `ImageTheme`); an *anonymous inline*
+     options object becomes keyword arguments (`encode_kitty`, `encode_iterm2`).
+     `render_image` returns a `RenderedImage` dataclass because Python has no
+     object literal.
+  4. JS TRUTHINESS IS LOAD-BEARING IN `encode_kitty`: `if (options.columns)`
+     skips `0`, and `if (options.imageId)` skips `0` — kitty has no image 0, so
+     these are not accidents. `encode_iterm2` uses `!== undefined` for width and
+     height instead, so `width=0` IS emitted. Both spellings are mutation-tested.
+  5. `Buffer.from(x, "base64")` IS NOT `base64.b64decode`. Node ignores
+     non-alphabet characters, accepts base64url, stops at the first `=` and
+     needs no padding; Python raises. Every dimension parser decides "is this a
+     PNG?" from the decoded bytes, so a strict decoder turns an unpadded but
+     perfectly readable header into `None`. `_buffer_from_base64` emulates node.
+     `buffer.toString("ascii")` masks each byte to 7 bits — `_ascii` does too.
+  6. THE SURFACE IS STRUCTURALLY BLIND TO IMAGES. A kitty payload is APC and an
+     iTerm2 one is OSC; a terminal paints no cell for either, so `Surface`
+     shows the same screen whether an image was drawn, replaced or deleted.
+     Two opt-in comparisons close that: `exactLines` on a component scenario
+     and `exactStream` on a renderer one compare the captured bytes verbatim.
+     Both were shown to be load-bearing rather than assumed: with `exactLines`
+     off, dropping the `i=` parameter from every kitty sequence passes all 548
+     component parity assertions; with it on, 6 fail.
+     Byte equality is only fair here because the renderer is deterministic and
+     both sides already agree byte for byte — checked before turning it on, and
+     it stays opt-in for that reason.
+  7. The corpus now pins `capabilities` AND `cellDimensions` per scenario, on
+     both sides (`applyScenarioCapabilities` in `dump.ts`,
+     `apply_scenario_capabilities` in `_scene.py`). Both are process-global and
+     read at render time, so without this a golden captured inside Ghostty — or
+     after a test that called `set_cell_dimensions` — records a different frame.
+  8. Kitty scenarios MUST pass an explicit `imageId`: without one the component
+     calls `allocate_image_id()`, which is `Math.random()` in the TS, and the
+     golden would never reproduce. iTerm2 allocates nothing, so those scenarios
+     deliberately leave it out and pin that difference.
+  9. THE PARSERS ARE CROSS-VALIDATED THROUGH THE SCREEN. With no image protocol
+     the component prints `[Image: <file> [<mime>] WxH]`, so a fallback scenario
+     per format (PNG/JPEG/GIF/WebP VP8/VP8L/VP8X) makes the real TS the
+     authority on the header maths rather than a hand-written expectation.
+ 10. MUTATION TESTING, two rounds. Port: 66 mutations, 60 caught on the first
+     honest run. All four real misses are now closed by *discriminating* cases:
+     `max(1, rows)` is only observable on a **zero-height** image (a 100x1 image
+     rounds up to 1 either way); the JPEG segment skip needs a decoy `FF C0`
+     planted inside an APP0 payload, or a scan that advances by `length` instead
+     of past the segment byte-walks its way to the right answer anyway; the
+     lossy-WebP `& 0x3fff` needs the two scaling bits actually set; and the
+     component's 60-cell default needs a scenario with no `maxWidthCells` and a
+     wide terminal. 64/66 now.
+ 11. Two mutants stay uncaught and are **equivalent**, not gaps: deleting
+     `render_image`'s `if not caps.images: return None` leaves the two protocol
+     checks below it, neither of which matches, and the function returns `None`
+     anyway; and `Image`'s `if result.image_id: self._image_id = result.image_id`
+     can only re-assign the value it just passed in, since the kitty branch
+     returns `options.image_id` verbatim.
+ 12. Renderer round: 8 mutations of 1.5's kitty bookkeeping — code that had
+     never run. All 8 caught, but only after two scenarios were added that
+     nothing else reached: `_collect_kitty_image_ids` feeds ONLY the
+     `full_render(clear=True)` path, so it needs a **resize** after an image
+     (`renderer/image-kitty-deleted-on-full-redraw`), and appending
+     `SEGMENT_RESET` to an image line is invisible to the screen, so it needs
+     `exactStream`.
+
 - 1.14 autocomplete — DONE. `autocomplete.ts` (783) →
   `components/autocomplete.py` (~700), 67 parity scenarios captured from the
   real TS, 90 unit tests (25 ported from `autocomplete.test.ts`), plus the five

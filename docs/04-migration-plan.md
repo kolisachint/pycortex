@@ -158,7 +158,7 @@ Parallelizable across these leaves; dependencies flow upward from util.
 - [x] **1.14 autocomplete** — `packages/tui/src/autocomplete.ts` (783 lines) →
       `packages/tui/components/src/cortex/tui/components/autocomplete.py` + tests. Gate:
       `pytest packages/tui/components`.
-- [ ] **1.15 images** — `packages/tui/src/terminal-image.ts` + `components/image.ts` →
+- [x] **1.15 images** — `packages/tui/src/terminal-image.ts` + `components/image.ts` →
       `packages/tui/images/src/cortex/tui/images/` + tests. Unblocks the kitty-image
       bookkeeping in 1.5. Gate: `pytest packages/tui/images`.
 - [ ] **1.8 tui umbrella publishable** — leaf READMEs, pyright strict on every tui leaf,

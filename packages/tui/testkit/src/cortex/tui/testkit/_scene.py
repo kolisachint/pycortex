@@ -18,6 +18,7 @@ from typing import Any, Protocol
 __all__ = [
     "Corpus",
     "Unported",
+    "apply_scenario_capabilities",
     "build_component",
     "load_corpus",
     "load_golden",
@@ -127,6 +128,39 @@ def _highlight_fn(spec: dict[str, Any] | None) -> Callable[[str, str | None], li
 
 #: `test-themes.ts` builds the editor border from `chalk.dim`.
 DEFAULT_EDITOR_BORDER = {"open": "\x1b[2m", "close": "\x1b[22m"}
+
+#: Capabilities the goldens are captured under, so the capture machine's
+#: TERM_PROGRAM cannot change what is recorded. Mirrors `reference/dump.ts`.
+DEFAULT_CAPABILITIES: dict[str, Any] = {"images": None, "trueColor": True, "hyperlinks": False}
+
+#: The cell size images are measured against. `terminal-image.ts` starts here
+#: and only the TUI's cell-size query moves it, so pinning it per scenario keeps
+#: a stray `set_cell_dimensions` in an earlier test out of the goldens.
+DEFAULT_CELL_DIMENSIONS: dict[str, int] = {"widthPx": 9, "heightPx": 18}
+
+
+def apply_scenario_capabilities(spec: dict[str, Any]) -> None:
+    """Pin the terminal capabilities and cell size a scenario renders under.
+
+    Both are process-global in `terminal-image.ts` and read at *render* time
+    (markdown links pick OSC 8 over `text (url)` from the first; an image's row
+    count comes from the second), so the corpus states them per scenario and
+    both interpreters apply them the same way, before building.
+    """
+    from cortex.tui.images import CellDimensions, TerminalCapabilities
+    from cortex.tui.images import set_capabilities as _set_capabilities
+    from cortex.tui.images import set_cell_dimensions as _set_cell_dimensions
+
+    caps = {**DEFAULT_CAPABILITIES, **(spec.get("capabilities") or {})}
+    _set_capabilities(
+        TerminalCapabilities(
+            images=caps["images"],
+            true_color=caps["trueColor"],
+            hyperlinks=caps["hyperlinks"],
+        )
+    )
+    cells = {**DEFAULT_CELL_DIMENSIONS, **(spec.get("cellDimensions") or {})}
+    _set_cell_dimensions(CellDimensions(width_px=cells["widthPx"], height_px=cells["heightPx"]))
 
 
 def _select_list_theme(spec: dict[str, Any] | None) -> Any:
@@ -339,14 +373,29 @@ def build_component(spec: dict[str, Any]) -> Renderable:
         )
         loader.stop()
         return loader
+    if name == "Image":
+        from cortex.tui.images import Image, ImageDimensions, ImageOptions, ImageTheme
+
+        dimensions_spec = args.get("dimensions")
+        return Image(
+            args.get("data", ""),
+            args.get("mimeType", "image/png"),
+            ImageTheme(fallback_color=_wrap_fn(args.get("fallbackColor"))),
+            ImageOptions(
+                max_width_cells=args.get("maxWidthCells"),
+                max_height_cells=args.get("maxHeightCells"),
+                filename=args.get("filename"),
+                image_id=args.get("imageId"),
+            ),
+            ImageDimensions(
+                width_px=dimensions_spec["widthPx"], height_px=dimensions_spec["heightPx"]
+            )
+            if dimensions_spec
+            else None,
+        )
     if name == "Markdown":
         from cortex.tui.components import DefaultTextStyle, Markdown, MarkdownTheme
 
-        if (spec.get("capabilities") or {}).get("hyperlinks"):
-            # `markdown.ts` asks `terminal-image.ts` whether the terminal speaks
-            # OSC 8. pycortex has no capability source until the images leaf
-            # lands, so this scenario is a tracked gap rather than a stand-in.
-            raise Unported("terminal hyperlink capabilities", "1.15")
         theme_spec = {**DEFAULT_MARKDOWN_THEME, **(args.get("theme") or {})}
         style_spec = args.get("defaultTextStyle")
         return Markdown(
