@@ -221,7 +221,7 @@ providers; faux first).
       `GOOGLE_APPLICATION_CREDENTIALS`, express-mode API keys) — on top of the same
       generate-content protocol, and `google-vertex-api-key-resolution.test.ts` is
       223 lines on its own. Depends on 2.9. Gate: `pytest packages/ai/provider-google`.
-- [ ] **2.13 register-builtins** — `packages/ai/src/providers/register-builtins.ts` →
+- [x] **2.13 register-builtins** — `packages/ai/src/providers/register-builtins.ts` →
       `packages/ai/models/src/cortex/ai/models/register_builtins.py` (lazy provider
       registration) + tests. Depends on 2.6–2.9. Gate: `pytest packages/ai/models`.
 - [ ] **2.14 oauth** — `packages/ai/src/oauth.ts` + `utils/oauth/*` →
