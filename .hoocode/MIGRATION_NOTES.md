@@ -948,3 +948,21 @@ not actual GCP authentication.
 **Tests**: 12 tests covering types, registry, and generation.
 
 **Debt**: OpenRouter provider uses httpx directly instead of OpenAI SDK (simplified implementation).
+
+### Step 2.10 — ai umbrella publishable
+
+**What it does**: Makes the cortex.ai umbrella publishable.
+
+**Changes**:
+1. Flipped `publish = true` for T0/T1 leaves:
+   - types, util, models, stream (T0)
+   - provider-faux, provider-common, provider-anthropic, provider-openai, provider-google (T1)
+2. Updated README.md files for all publishable packages with proper documentation.
+
+**Remaining packages with `publish = false`** (T2):
+- oauth, images, _meta, env
+
+**Notes**:
+- Tests pass when run individually per package
+- Running `pytest packages/ai` fails due to known import collection issue (see AGENTS.md)
+- Gates pass: ruff check, ruff format, pyright all clean

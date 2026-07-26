@@ -4,15 +4,40 @@ version = "0.0.3"
 description = "Umbrella meta-package for the cortex ai namespace"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+# Carries no code: installing it pulls in every published `cortex.ai.*` leaf,
+# pinned to the release it was cut with (doc 02 §1).
+dependencies = [
+    "cortexcode-ai-types>=0.0.3,<0.1.0",
+    "cortexcode-ai-util>=0.0.3,<0.1.0",
+    "cortexcode-ai-models>=0.0.3,<0.1.0",
+    "cortexcode-ai-stream>=0.0.3,<0.1.0",
+    "cortexcode-ai-env>=0.0.3,<0.1.0",
+    "cortexcode-ai-provider-faux>=0.0.3,<0.1.0",
+    "cortexcode-ai-provider-common>=0.0.3,<0.1.0",
+    "cortexcode-ai-provider-anthropic>=0.0.3,<0.1.0",
+    "cortexcode-ai-provider-openai>=0.0.3,<0.1.0",
+    "cortexcode-ai-provider-google>=0.0.3,<0.1.0",
+]
 
 [tool.cortex]
-publish = false
+publish = true
+
+[tool.uv.sources]
+cortexcode-ai-types = { workspace = true }
+cortexcode-ai-util = { workspace = true }
+cortexcode-ai-models = { workspace = true }
+cortexcode-ai-stream = { workspace = true }
+cortexcode-ai-env = { workspace = true }
+cortexcode-ai-provider-faux = { workspace = true }
+cortexcode-ai-provider-common = { workspace = true }
+cortexcode-ai-provider-anthropic = { workspace = true }
+cortexcode-ai-provider-openai = { workspace = true }
+cortexcode-ai-provider-google = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
-packages = [
-    "src/cortex",
-]
+# Metadata-only distribution — there is no `cortex/` tree to select here, and
+# selecting an empty one shipped a stray `.gitkeep` into site-packages.
+bypass-selection = true
 
 [build-system]
 requires = [

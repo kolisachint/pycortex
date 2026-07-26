@@ -229,8 +229,8 @@ providers; faux first).
 - [x] **2.15 images** — `packages/ai/src/{images,images-api-registry}.ts` +
       `providers/images/*` → `packages/ai/images/src/cortex/ai/images/` + tests. Gate:
       `pytest packages/ai/images`.
-- [ ] **2.10 ai umbrella publishable** — leaf READMEs, strict types, flip T0/T1 leaves to
-      `publish=true`. Gate: dry-run clean. Runs last in this phase.
+- [x] **2.10 ai umbrella publishable** — leaf READMEs, strict types, flip T0/T1 leaves to
+      `publish=true`. Gate: `pytest packages/ai/types` + dry-run clean. Runs last in this phase.
 
 ---
 

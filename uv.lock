@@ -139,6 +139,32 @@ source = { editable = "packages/agent/types" }
 name = "cortexcode-ai"
 version = "0.0.3"
 source = { editable = "packages/ai/_meta" }
+dependencies = [
+    { name = "cortexcode-ai-env" },
+    { name = "cortexcode-ai-models" },
+    { name = "cortexcode-ai-provider-anthropic" },
+    { name = "cortexcode-ai-provider-common" },
+    { name = "cortexcode-ai-provider-faux" },
+    { name = "cortexcode-ai-provider-google" },
+    { name = "cortexcode-ai-provider-openai" },
+    { name = "cortexcode-ai-stream" },
+    { name = "cortexcode-ai-types" },
+    { name = "cortexcode-ai-util" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-ai-env", editable = "packages/ai/env" },
+    { name = "cortexcode-ai-models", editable = "packages/ai/models" },
+    { name = "cortexcode-ai-provider-anthropic", editable = "packages/ai/provider-anthropic" },
+    { name = "cortexcode-ai-provider-common", editable = "packages/ai/provider-common" },
+    { name = "cortexcode-ai-provider-faux", editable = "packages/ai/provider-faux" },
+    { name = "cortexcode-ai-provider-google", editable = "packages/ai/provider-google" },
+    { name = "cortexcode-ai-provider-openai", editable = "packages/ai/provider-openai" },
+    { name = "cortexcode-ai-stream", editable = "packages/ai/stream" },
+    { name = "cortexcode-ai-types", editable = "packages/ai/types" },
+    { name = "cortexcode-ai-util", editable = "packages/ai/util" },
+]
 
 [[package]]
 name = "cortexcode-ai-env"
