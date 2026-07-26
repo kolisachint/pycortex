@@ -239,7 +239,7 @@ providers; faux first).
 - [x] **3.1 types** — `packages/agent/src/types.ts` →
       `packages/agent/types/src/cortex/agent/types.py` + tests. Gate:
       `pytest packages/agent/types`.
-- [ ] **3.2 loop** — `packages/agent/src/agent-loop.ts` →
+- [x] **3.2 loop** — `packages/agent/src/agent-loop.ts` →
       `packages/agent/loop/src/cortex/agent/loop.py` + tests. Gate:
       `pytest packages/agent/loop`.
 - [ ] **3.3 agent** — `packages/agent/src/agent.ts` →

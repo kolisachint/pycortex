@@ -372,19 +372,21 @@ class AgentState:
 # Agent event
 # ---------------------------------------------------------------------------
 
-AgentEvent = (
-    dict[str, Any]
-    | dict[str, Any]
-    | dict[str, Any]
-    | dict[str, Any]
-    | dict[str, Any]
-    | dict[str, Any]
-    | dict[str, Any]
-    | dict[str, Any]
-    | dict[str, Any]
-    | dict[str, Any]
-)
-"""Events emitted by the Agent for UI updates."""
+AgentEvent = Any  # type: ignore[assignment]
+"""Events emitted by the Agent for UI updates.
+
+In practice, this is a union of event dataclasses:
+- AgentStartEvent
+- AgentEndEvent
+- TurnStartEvent
+- TurnEndEvent
+- MessageStartEvent
+- MessageUpdateEvent
+- MessageEndEvent
+- ToolExecutionStartEvent
+- ToolExecutionUpdateEvent
+- ToolExecutionEndEvent
+"""
 
 
 # ---------------------------------------------------------------------------

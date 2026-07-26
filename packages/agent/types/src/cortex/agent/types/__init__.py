@@ -8,6 +8,8 @@ from cortex.agent.types._types import (
     AfterToolCallResult,
     AgentContext,
     AgentEvent,
+    AgentLoopConfig,
+    AgentLoopTurnUpdate,
     AgentMessage,
     AgentState,
     AgentTool,
@@ -27,6 +29,8 @@ from cortex.agent.types._types import (
 __all__ = [
     "AgentContext",
     "AgentEvent",
+    "AgentLoopConfig",
+    "AgentLoopTurnUpdate",
     "AgentMessage",
     "AgentState",
     "AgentTool",
