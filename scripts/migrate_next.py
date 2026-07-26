@@ -125,9 +125,19 @@ def gates(packages: list[str] | None = None) -> bool:
     `ai/util/tool_constraints.py` while its gate only type-checked
     `ai/provider-openai`, and two errors sat in `main` as a result.
     """
-    pytest_targets = [f"packages/{p}" for p in packages] if packages else None
-    checks: list[list[str]] = [
-        ["uv", "run", "pytest", *pytest_targets] if pytest_targets else ["uv", "run", "pytest"],
+    # Always build targeted pytest commands to avoid whole-repo collection failures
+    if packages:
+        pytest_targets = [f"packages/{p}" for p in packages]
+    else:
+        # Discover all leaf packages for targeted execution
+        pytest_targets = []
+        for group in PACKAGES.iterdir():
+            if group.is_dir():
+                for leaf in group.iterdir():
+                    if leaf.is_dir() and (leaf / "pyproject.toml").is_file():
+                        pytest_targets.append(f"packages/{group.name}/{leaf.name}")
+    # Each package must be tested separately to avoid namespace conflicts
+    checks: list[list[str]] = [["uv", "run", "pytest", t] for t in pytest_targets] + [
         ["uv", "run", "ruff", "check", "."],
         ["uv", "run", "ruff", "format", "--check", "."],
         ["uv", "run", "pyright", "packages"],
@@ -370,10 +380,25 @@ def extract_packages_from_step(step: Step) -> list[str] | None:
     """Extract package names from step body's gate specification.
 
     Looks for patterns like `pytest packages/ai/util` and returns ['ai/util'].
+    For publishable/umbrella steps without explicit targets, discovers leaves
+    in the mentioned group.
     """
     match = re.search(r"pytest packages/([^\s`]+)", step.body)
     if match:
         return [match.group(1)]
+    # For umbrella/publishable steps, discover leaves in the group
+    if "publishable" in step.title.lower():
+        # Extract group from title like "agent umbrella publishable"
+        group_match = re.search(r"(\w+) umbrella", step.title)
+        if group_match:
+            group_name = group_match.group(1)
+            group_dir = PACKAGES / group_name
+            if group_dir.is_dir():
+                leaves = []
+                for leaf in sorted(group_dir.iterdir()):
+                    if leaf.is_dir() and (leaf / "pyproject.toml").is_file():
+                        leaves.append(f"{group_name}/{leaf.name}")
+                return leaves if leaves else None
     return None
 
 
