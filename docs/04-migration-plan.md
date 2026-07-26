@@ -284,7 +284,7 @@ Coarser leaves until the code stabilizes.
 
 ## Phase 5 — `cortex.code` full (T3)
 
-- [ ] **5.1 rpc** — `packages/coding-agent/src/modes/rpc-mode.ts` →
+- [x] **5.1 rpc** — `packages/coding-agent/src/modes/rpc-mode.ts` →
       `packages/code/rpc/src/cortex/code/rpc.py` + protocol tests.
 - [ ] **5.2 interactive** — `packages/coding-agent/src/modes/interactive/**` →
       `packages/code/interactive/src/cortex/code/interactive/` + e2e pty tests.
