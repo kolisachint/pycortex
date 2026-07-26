@@ -161,10 +161,13 @@ Parallelizable across these leaves; dependencies flow upward from util.
 - [x] **1.15 images** — `packages/tui/src/terminal-image.ts` + `components/image.ts` →
       `packages/tui/images/src/cortex/tui/images/` + tests. Unblocks the kitty-image
       bookkeeping in 1.5. Gate: `pytest packages/tui/images`.
-- [ ] **1.8 tui umbrella publishable** — leaf READMEs, pyright strict on every tui leaf,
-      flip `publish = true` for all T0 leaves (`_meta` included), run
-      `uv build --all-packages`. Gate: green release dry-run
-      (`publish_packages.py --dry-run`). Runs last in this phase.
+- [x] **1.8 tui umbrella publishable** — leaf READMEs, pyright strict on every tui leaf,
+      `py.typed` in every published leaf (without it the types are invisible to a
+      consumer, which is what "strict" buys them), the `_meta` umbrella pinned to its
+      leaves, sibling deps pinned, flip `publish = true` for all T0 leaves (`_meta`
+      included; `testkit` is `never_publish`), run `uv build --all-packages`. Gate:
+      `pytest packages/tui` + green release dry-run (`publish_packages.py --dry-run`).
+      Runs last in this phase.
 
 ---
 

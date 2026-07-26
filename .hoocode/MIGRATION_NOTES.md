@@ -203,6 +203,50 @@ the substring bucket) came out differently from what reading the TS suggested.
   records every call and answer, and the test replays those against the port.
 
 ## Step log
+- 1.8 tui umbrella publishable — DONE. Phase 1 closed. No port work; this is the
+  step that turns nine leaves into something a stranger can `pip install`. What it
+  took, and what to reuse when 2.10 does the same for `ai`:
+  1. **`py.typed` was the whole "pyright strict" story.** In-repo, every tui leaf
+     was already type-checked strictly — `[tool.pyright] include = ["packages"]`
+     covers the group and the gate runs it. What was missing was the *consumer*
+     half: with no PEP 561 marker, an installed leaf is untyped, and a downstream
+     strict checker answers `reportMissingTypeStubs` instead of `str | None`.
+     Verified both ways, against wheels installed into a clean venv. Every
+     published leaf now ships `src/cortex/tui/<leaf>/py.typed`; the root
+     `[tool.pyright]` block now says why its four relaxations exist.
+  2. **`never_publish = true`** (new `[tool.cortex]` key, on `tui/testkit`). The
+     group-published audit demands `publish = true` on *every* leaf in the group,
+     which testkit can never satisfy — `publish = false` means "not yet", and the
+     audit is right to keep nagging about that. `never_publish` is the permanent
+     form: `migrate_next.py` skips those leaves, and `publish_packages.py` hard-
+     fails if one is ever also marked `publish = true`.
+  3. **The umbrella was an empty shell.** `cortexcode-tui` had `dependencies = []`,
+     so `pip install cortexcode-tui` would have installed *nothing* — it now pins
+     all eight published leaves (`>=0.0.3,<0.1.0`, the form `bump_versions.py`
+     re-pins). It also shipped a stray `cortex/tui/.gitkeep` into site-packages;
+     `bypass-selection = true` makes it metadata-only, as a meta-package should be.
+  4. **Bare sibling deps do not get re-pinned, ever.** `"cortexcode-tui-render"`
+     with no specifier is invisible to `bump_versions.py`'s re-pin regex (it only
+     rewrites strings that already carry one), so a published components leaf would
+     have accepted render 0.0.1 — which predates half the API it calls. All
+     intra-group deps are now pinned. Check this in the ai group before 2.10.
+  5. Watch the blast radius of a bulk `sed`/`re.sub` over `pyproject.toml`: a
+     naive `"cortexcode-tui-x"` → `"cortexcode-tui-x>=…"` rewrite also hits the
+     `name = ` line and produces an unparseable project name. Anchor on the line.
+  6. `pytest packages/tui` collects cleanly, so that (not whole-repo pytest, which
+     is still broken) is this step's gate — the plan body now says so, since the
+     driver reads the gate command out of it. Deleted the one empty
+     `tests/__init__.py` left in the group (`terminal/`): those files are what
+     makes `pytest packages/ai` fail to collect, and one is enough to break the
+     gate.
+  7. **Two known-red CI legs, neither fixed here — both need someone with rights
+     this session did not have.** The `test` matrix in `ci.yml` lists a
+     `coding-agent` package that has never existed (`pytest` exits 4 → red leg);
+     it should read `code`. The one-line fix is written and verified locally but
+     **cannot be pushed by an agent**: the OAuth app has no `workflow` scope, so
+     any commit touching `.github/workflows/` is rejected at the remote. A human
+     has to land it. The `ai` leg is red too, from the duplicate-`tests`-basename
+     collection failure — pre-existing, and bigger than this step.
 - 1.15 images — DONE. `terminal-image.ts` (423) + `components/image.ts` (112) →
   `cortex.tui.images.{terminal_image,image}` (~520), 30 parity scenarios
   (23 component + 7 renderer), 123 unit tests (the whole of

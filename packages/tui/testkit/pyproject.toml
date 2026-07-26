@@ -11,7 +11,11 @@ dependencies = [
 
 [tool.cortex]
 # Test infrastructure, not a port of anything in hoocode. Never publish.
+# `never_publish` is the permanent form of `publish = false`: it exempts this
+# leaf from the "every leaf in the group publishes" audit that umbrella steps
+# (1.8, 2.10, …) impose, which `publish = false` alone cannot express.
 publish = false
+never_publish = true
 
 [tool.hatch.build.targets.wheel]
 packages = [

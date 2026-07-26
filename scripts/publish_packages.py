@@ -64,7 +64,16 @@ def main() -> int:
         data = tomllib.loads(pyproject.read_text())
         name = data["project"]["name"]
         version = data["project"]["version"]
-        if not data.get("tool", {}).get("cortex", {}).get("publish", False):
+        cortex = data.get("tool", {}).get("cortex", {})
+        if cortex.get("never_publish", False):
+            # Test infrastructure (e.g. cortexcode-tui-testkit). Flipping publish
+            # on one of these is a mistake, not an intent — fail loudly.
+            if cortex.get("publish", False):
+                print(f"{name} is marked never_publish but publish = true", file=sys.stderr)
+                return 1
+            print(f"skip  {name} (never published)")
+            continue
+        if not cortex.get("publish", False):
             print(f"skip  {name} (publish = false)")
             continue
         if on_pypi(name, version):

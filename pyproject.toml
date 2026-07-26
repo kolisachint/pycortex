@@ -30,6 +30,10 @@ select = ["E", "F", "I", "UP", "B"]
 include = ["packages"]
 pythonVersion = "3.11"
 typeCheckingMode = "strict"
+# Strict, minus the four rules that only fire on values crossing an untyped
+# third-party boundary (mistune's AST, json.load, unstubbed deps). They are off
+# repo-wide and on purpose — every leaf is held to the same bar, and published
+# leaves additionally ship `py.typed` so a consumer sees these types at all.
 reportMissingTypeStubs = "none"
 reportUnknownVariableType = "none"
 reportUnknownMemberType = "none"

@@ -4,15 +4,36 @@ version = "0.0.3"
 description = "Umbrella meta-package for the cortex tui namespace"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+# Carries no code: installing it pulls in every published `cortex.tui.*` leaf,
+# pinned to the release it was cut with (doc 02 §1).
+dependencies = [
+    "cortexcode-tui-util>=0.0.3,<0.1.0",
+    "cortexcode-tui-fuzzy>=0.0.3,<0.1.0",
+    "cortexcode-tui-keys>=0.0.3,<0.1.0",
+    "cortexcode-tui-terminal>=0.0.3,<0.1.0",
+    "cortexcode-tui-images>=0.0.3,<0.1.0",
+    "cortexcode-tui-render>=0.0.3,<0.1.0",
+    "cortexcode-tui-editing>=0.0.3,<0.1.0",
+    "cortexcode-tui-components>=0.0.3,<0.1.0",
+]
 
 [tool.cortex]
-publish = false
+publish = true
+
+[tool.uv.sources]
+cortexcode-tui-util = { workspace = true }
+cortexcode-tui-fuzzy = { workspace = true }
+cortexcode-tui-keys = { workspace = true }
+cortexcode-tui-terminal = { workspace = true }
+cortexcode-tui-images = { workspace = true }
+cortexcode-tui-render = { workspace = true }
+cortexcode-tui-editing = { workspace = true }
+cortexcode-tui-components = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
-packages = [
-    "src/cortex",
-]
+# Metadata-only distribution — there is no `cortex/` tree to select here, and
+# selecting an empty one shipped a stray `.gitkeep` into site-packages.
+bypass-selection = true
 
 [build-system]
 requires = [
