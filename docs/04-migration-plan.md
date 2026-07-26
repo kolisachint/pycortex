@@ -292,7 +292,7 @@ Coarser leaves until the code stabilizes.
       `packages/code/resources/src/cortex/code/resources/`.
 - [x] **5.4 subagents** — `packages/coding-agent/src/core/subagent*.ts`,
       `core/tools/subagent.ts` → `packages/code/subagents/src/cortex/code/subagents/`.
-- [ ] **5.5 extensions** — port semantics of `packages/coding-agent/src/core/extensions/**`
+- [x] **5.5 extensions** — port semantics of `packages/coding-agent/src/core/extensions/**`
       into a Python plugin API via importlib; document redesign.
 - [ ] **5.6 cli umbrella publishable** — flip T2 leaves `publish=true`, release first
       public `cortexcode-cli` with `cortex` command.
