@@ -279,7 +279,7 @@ Coarser leaves until the code stabilizes.
       → `packages/code/prompts/src/cortex/code/prompts/` + tests.
 - [x] **4.5 print** — `packages/coding-agent/src/modes/print-mode.ts` →
       `packages/code/print/src/cortex/code/print.py` + e2e test.
-- [ ] **4.6 main** — `packages/coding-agent/src/main.ts`, `cli/args.ts` →
+- [x] **4.6 main** — `packages/coding-agent/src/main.ts`, `cli/args.ts` →
       `packages/code/main/src/cortex/code/main.py` + entry point; first runnable CLI.
 
 ## Phase 5 — `cortex.code` full (T3)
