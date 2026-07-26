@@ -14,7 +14,7 @@ cortexcode-agent-types = { workspace = true }
 cortexcode-ai-types = { workspace = true }
 
 [tool.cortex]
-publish = false
+publish = true
 
 [tool.hatch.build.targets.wheel]
 packages = [

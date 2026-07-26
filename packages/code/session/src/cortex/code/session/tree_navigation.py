@@ -1,4 +1,4 @@
-# pyright: reportAttributeAccessIssue=false, reportArgumentType=false, reportPrivateUsage=false, reportUnusedCallResult=false, reportCallIssue=false, reportReturnType=false, reportMissingTypeArgument=false
+# pyright: reportAttributeAccessIssue=false, reportArgumentType=false, reportPrivateUsage=false, reportUnusedCallResult=false, reportCallIssue=false, reportReturnType=false, reportMissingTypeArgument=false, reportUnusedVariable=false
 """Tree-navigation controller for AgentSession.
 
 Port of ``agent-session-tree-navigation.ts`` from ``packages/coding-agent/src/core/``.

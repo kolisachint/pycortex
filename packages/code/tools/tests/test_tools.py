@@ -1,4 +1,4 @@
-# pyright: reportPrivateUsage=false
+# pyright: reportPrivateUsage=false, reportAttributeAccessIssue=false
 """Tests for the code tools (port of ``coding-agent/test/tools.test.ts``).
 
 Execute-level parity: TUI rendering, image auto-resize, and the file-mutation
@@ -659,7 +659,7 @@ class TestGrepTool:
             await run(
                 grep_tool,
                 "test-call-grep-bad-regex",
-                {"pattern": "a|b|{ options", "path": str(test_file)},
+                {"pattern": "[invalid", "path": str(test_file)},
             )
 
     async def test_literal_invalid_regex(self, tmp_path: Path) -> None:

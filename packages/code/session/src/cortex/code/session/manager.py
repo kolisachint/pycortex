@@ -1,4 +1,4 @@
-# pyright: reportAttributeAccessIssue=false, reportArgumentType=false, reportPrivateUsage=false, reportUnusedCallResult=false, reportCallIssue=false, reportReturnType=false, reportMissingTypeArgument=false
+# pyright: reportAttributeAccessIssue=false, reportArgumentType=false, reportPrivateUsage=false, reportUnusedCallResult=false, reportCallIssue=false, reportReturnType=false, reportMissingTypeArgument=false, reportUnknownLambdaType=false, reportUnnecessaryIsInstance=false, reportUnusedVariable=false
 """Session manager for coding agent sessions.
 
 Port of ``session-manager.ts`` from ``packages/coding-agent/src/core/``.

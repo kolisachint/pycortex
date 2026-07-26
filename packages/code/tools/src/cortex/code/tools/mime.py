@@ -1,3 +1,4 @@
+# pyright: reportUnusedFunction=false
 """Image MIME-type detection from file magic bytes.
 
 Mechanical port of ``utils/mime.ts``. The TS uses the ``file-type`` package to

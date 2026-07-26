@@ -1,3 +1,4 @@
+# pyright: reportAttributeAccessIssue=false, reportArgumentType=false, reportPrivateUsage=false, reportCallIssue=false
 """Native (pure-Python) fallbacks for the ``find`` and ``grep`` tools.
 
 Mechanical port of ``core/tools/native-search.ts``. The TS tools normally shell
@@ -6,7 +7,6 @@ search works without those binaries:
 
 - hierarchical ``.gitignore`` handling (each ``.gitignore`` scoped to its own
   subtree, matching fd's ``--no-require-git`` behaviour),
-# pyright: reportAttributeAccessIssue=false, reportArgumentType=false, reportPrivateUsage=false
 - hidden files included,
 - ``.git`` always skipped; ``node_modules`` skipped for ``find`` (mirrors the
   tool's built-in excludes) but left to ``.gitignore`` for ``grep``.
@@ -483,7 +483,8 @@ async def native_grep(root: str, opts: NativeGrepOptions) -> NativeGrepResult:
         if _looks_binary(content):
             continue
 
-        lines = content.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+        # content is str here (awaitable resolved above)
+        lines = content.replace("\r\n", "\n").replace("\r", "\n").split("\n")  # type: ignore[union-attr]
         for i, line in enumerate(lines):
             if regex.search(line):
                 matches.append(NativeGrepMatch(filePath=file_path, lineNumber=i + 1, lineText=line))

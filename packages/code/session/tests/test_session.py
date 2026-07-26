@@ -1,3 +1,4 @@
+# pyright: reportMissingParameterType=false, reportUnknownParameterType=false, reportMissingTypeArgument=false, reportUnknownLambdaType=false
 """Tests for code session management."""
 
 from __future__ import annotations

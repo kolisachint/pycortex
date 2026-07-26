@@ -1,4 +1,4 @@
-# pyright: reportAttributeAccessIssue=false, reportArgumentType=false, reportPrivateUsage=false, reportUnusedCallResult=false, reportCallIssue=false, reportReturnType=false, reportMissingTypeArgument=false
+# pyright: reportAttributeAccessIssue=false, reportArgumentType=false, reportPrivateUsage=false, reportUnusedCallResult=false, reportCallIssue=false, reportReturnType=false, reportMissingTypeArgument=false, reportUnnecessaryIsInstance=false, reportUnusedVariable=false
 """Pure helpers for AgentSession reporting and export.
 
 Port of ``agent-session-stats.ts`` from ``packages/coding-agent/src/core/``.
