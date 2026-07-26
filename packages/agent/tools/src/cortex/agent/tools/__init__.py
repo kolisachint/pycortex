@@ -29,9 +29,13 @@ from cortex.ai.types import (
     ToolResultMessage,
 )
 
+from .default_tools import DefaultToolsOptions, get_default_tools
+
 __all__ = [
+    "DefaultToolsOptions",
     "ToolExecutor",
     "execute_tool_calls",
+    "get_default_tools",
     "prepare_tool_calls",
     "validate_tool_arguments",
 ]
@@ -235,7 +239,13 @@ class ToolExecutor:
                     "cache_read": 0,
                     "cache_write": 0,
                     "total_tokens": 0,
-                    "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "total": 0},
+                    "cost": {
+                        "input": 0,
+                        "output": 0,
+                        "cacheRead": 0,
+                        "cacheWrite": 0,
+                        "total": 0,
+                    },
                 },
                 stop_reason="stop",
             ),  # type: ignore[call-arg]
@@ -276,7 +286,13 @@ class ToolExecutor:
                     "cache_read": 0,
                     "cache_write": 0,
                     "total_tokens": 0,
-                    "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "total": 0},
+                    "cost": {
+                        "input": 0,
+                        "output": 0,
+                        "cacheRead": 0,
+                        "cacheWrite": 0,
+                        "total": 0,
+                    },
                 },
                 stop_reason="stop",
             ),  # type: ignore[call-arg]

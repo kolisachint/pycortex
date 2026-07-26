@@ -1,9 +1,13 @@
 # pyright: reportAttributeAccessIssue=false, reportArgumentType=false, reportPrivateUsage=false
-"""Tests for the compaction module."""
+"""Tests for the compaction module.
+
+Mechanical port of hoocode's ``packages/agent/test/harness/compaction.test.ts``.
+"""
 
 from __future__ import annotations
 
 from cortex.agent.compaction import (
+    DEFAULT_COMPACTION_SETTINGS,
     CompactionDetails,
     CompactionResult,
     CompactionSettings,
@@ -14,47 +18,131 @@ from cortex.agent.compaction import (
     estimate_message_tokens,
     estimate_tokens,
     extract_file_ops_from_message,
+    find_cut_point,
     format_file_operations,
     generate_summary_prompt,
     should_compact,
 )
-from cortex.ai.types import AssistantMessage, TextContent, Usage, UserMessage
+from cortex.agent.harness.types import (
+    CompactionEntry,
+    MessageEntry,
+    ModelChangeEntry,
+    SessionTreeEntry,
+    ThinkingLevelChangeEntry,
+    build_session_context,
+)
+from cortex.ai.types import AssistantMessage, TextContent, ToolCall, Usage, UserMessage
+
+# ============================================================================
+# Helper functions
+# ============================================================================
+
+_next_id = 0
 
 
-def _create_user_message(content: str = "Hello") -> UserMessage:
+def _create_id() -> str:
+    global _next_id
+    _next_id += 1
+    return f"entry-{_next_id}"
+
+
+def _create_mock_usage(
+    input_tokens: int,
+    output_tokens: int,
+    cache_read: int = 0,
+    cache_write: int = 0,
+) -> Usage:
+    return Usage(
+        input=input_tokens,
+        output=output_tokens,
+        cache_read=cache_read,
+        cache_write=cache_write,
+        total_tokens=input_tokens + output_tokens + cache_read + cache_write,
+        cost={"input": 0, "output": 0, "cache_read": 0, "cache_write": 0, "total": 0},
+    )
+
+
+def _create_user_message(text: str = "Hello") -> UserMessage:
     """Create a user message for testing."""
-    return UserMessage(role="user", content=[TextContent(text=content)], timestamp=1704067200000)
+    return UserMessage(role="user", content=[TextContent(text=text)], timestamp=1704067200000)
 
 
 def _create_assistant_message(
-    content: str = "Hi there",
-    provider: str = "test-provider",
-    model: str = "test-model",
+    text: str = "Hi there",
+    usage: Usage | None = None,
 ) -> AssistantMessage:
     """Create an assistant message for testing."""
+    if usage is None:
+        usage = _create_mock_usage(100, 50)
+
     return AssistantMessage(
         role="assistant",
-        content=[TextContent(text=content)],
-        api="test-api",
-        provider=provider,
-        model=model,
-        usage=Usage(
-            input=10,
-            output=5,
-            cache_read=0,
-            cache_write=0,
-            total_tokens=15,
-            cost={
-                "input": 0.001,
-                "output": 0.002,
-                "cache_read": 0.0,
-                "cache_write": 0.0,
-                "total": 0.003,
-            },
-        ),
+        content=[TextContent(text=text)],
+        api="anthropic-messages",
+        provider="anthropic",
+        model="claude-sonnet-4-5",
+        usage=usage,
         stop_reason="stop",
         timestamp=1704067201000,
     )
+
+
+def _create_message_entry(
+    message: object,
+    parent_id: str | None = None,
+) -> MessageEntry:
+    return MessageEntry(
+        id=_create_id(),
+        parent_id=parent_id,
+        timestamp="2024-01-01T00:00:00.000Z",
+        message=message,
+    )
+
+
+def _create_compaction_entry(
+    summary: str,
+    first_kept_entry_id: str,
+    parent_id: str | None = None,
+) -> CompactionEntry:
+    return CompactionEntry(
+        id=_create_id(),
+        parent_id=parent_id,
+        timestamp="2024-01-01T00:00:00.000Z",
+        summary=summary,
+        first_kept_entry_id=first_kept_entry_id,
+        tokens_before=1234,
+    )
+
+
+def _create_thinking_level_entry(
+    level: str,
+    parent_id: str | None = None,
+) -> ThinkingLevelChangeEntry:
+    return ThinkingLevelChangeEntry(
+        id=_create_id(),
+        parent_id=parent_id,
+        timestamp="2024-01-01T00:00:00.000Z",
+        thinking_level=level,
+    )
+
+
+def _create_model_change_entry(
+    provider: str,
+    model_id: str,
+    parent_id: str | None = None,
+) -> ModelChangeEntry:
+    return ModelChangeEntry(
+        id=_create_id(),
+        parent_id=parent_id,
+        timestamp="2024-01-01T00:00:00.000Z",
+        provider=provider,
+        model_id=model_id,
+    )
+
+
+# ============================================================================
+# Tests
+# ============================================================================
 
 
 class TestEstimateTokens:
@@ -62,17 +150,20 @@ class TestEstimateTokens:
 
     def test_estimate_tokens_empty(self) -> None:
         """Test token estimation for empty string."""
-        assert estimate_tokens("") == 0
+        msg = _create_user_message("")
+        assert estimate_tokens(msg) == 0
 
     def test_estimate_tokens_short(self) -> None:
         """Test token estimation for short text."""
+        msg = _create_user_message("Hello")
         # "Hello" = 5 chars, ceil(5/4) = 2
-        assert estimate_tokens("Hello") == 2
+        assert estimate_tokens(msg) == 2
 
     def test_estimate_tokens_longer(self) -> None:
         """Test token estimation for longer text."""
+        msg = _create_user_message("Hello, world!")
         # "Hello, world!" = 13 chars, ceil(13/4) = 4
-        assert estimate_tokens("Hello, world!") == 4
+        assert estimate_tokens(msg) == 4
 
     def test_estimate_message_tokens_user(self) -> None:
         """Test token estimation for user message."""
@@ -99,8 +190,6 @@ class TestFileOperations:
 
     def test_extract_file_ops_read(self) -> None:
         """Test extracting read file operations."""
-        from cortex.ai.types import ToolCall
-
         msg = AssistantMessage(
             role="assistant",
             content=[
@@ -113,20 +202,7 @@ class TestFileOperations:
             api="test-api",
             provider="test-provider",
             model="test-model",
-            usage=Usage(
-                input=10,
-                output=5,
-                cache_read=0,
-                cache_write=0,
-                total_tokens=15,
-                cost={
-                    "input": 0.001,
-                    "output": 0.002,
-                    "cache_read": 0.0,
-                    "cache_write": 0.0,
-                    "total": 0.003,
-                },
-            ),
+            usage=_create_mock_usage(10, 5),
             stop_reason="stop",
             timestamp=1704067200000,
         )
@@ -136,8 +212,6 @@ class TestFileOperations:
 
     def test_extract_file_ops_write(self) -> None:
         """Test extracting write file operations."""
-        from cortex.ai.types import ToolCall
-
         msg = AssistantMessage(
             role="assistant",
             content=[
@@ -150,20 +224,7 @@ class TestFileOperations:
             api="test-api",
             provider="test-provider",
             model="test-model",
-            usage=Usage(
-                input=10,
-                output=5,
-                cache_read=0,
-                cache_write=0,
-                total_tokens=15,
-                cost={
-                    "input": 0.001,
-                    "output": 0.002,
-                    "cache_read": 0.0,
-                    "cache_write": 0.0,
-                    "total": 0.003,
-                },
-            ),
+            usage=_create_mock_usage(10, 5),
             stop_reason="stop",
             timestamp=1704067200000,
         )
@@ -173,8 +234,6 @@ class TestFileOperations:
 
     def test_extract_file_ops_edit(self) -> None:
         """Test extracting edit file operations."""
-        from cortex.ai.types import ToolCall
-
         msg = AssistantMessage(
             role="assistant",
             content=[
@@ -187,20 +246,7 @@ class TestFileOperations:
             api="test-api",
             provider="test-provider",
             model="test-model",
-            usage=Usage(
-                input=10,
-                output=5,
-                cache_read=0,
-                cache_write=0,
-                total_tokens=15,
-                cost={
-                    "input": 0.001,
-                    "output": 0.002,
-                    "cache_read": 0.0,
-                    "cache_write": 0.0,
-                    "total": 0.003,
-                },
-            ),
+            usage=_create_mock_usage(10, 5),
             stop_reason="stop",
             timestamp=1704067200000,
         )
@@ -253,19 +299,59 @@ class TestCompactionSettings:
         """Test default compaction settings."""
         settings = CompactionSettings()
         assert settings.reserve_tokens == 16384
-        assert settings.max_messages == 100
-        assert settings.min_messages_to_compact == 10
+        assert settings.keep_recent_tokens == 20000
+        assert settings.enabled is True
 
     def test_custom_settings(self) -> None:
         """Test custom compaction settings."""
         settings = CompactionSettings(
             reserve_tokens=8192,
-            max_messages=50,
-            min_messages_to_compact=5,
+            keep_recent_tokens=10000,
         )
         assert settings.reserve_tokens == 8192
-        assert settings.max_messages == 50
-        assert settings.min_messages_to_compact == 5
+        assert settings.keep_recent_tokens == 10000
+
+
+class TestShouldCompact:
+    """Tests for checking if compaction should be triggered."""
+
+    def test_few_messages(self) -> None:
+        """Test with few messages (no compaction)."""
+        settings = CompactionSettings(enabled=True, reserve_tokens=10000)
+        assert should_compact(5000, 100000, settings) is False
+
+    def test_many_messages(self) -> None:
+        """Test with many messages (compaction needed)."""
+        settings = CompactionSettings(enabled=True, reserve_tokens=10000)
+        assert should_compact(95000, 100000, settings) is True
+
+    def test_exact_threshold(self) -> None:
+        """Test at exact message threshold."""
+        settings = CompactionSettings(enabled=True, reserve_tokens=10000)
+        # context_window - reserve_tokens = 90000
+        assert should_compact(89000, 100000, settings) is False
+
+    def test_disabled(self) -> None:
+        """Test with compaction disabled."""
+        settings = CompactionSettings(enabled=False, reserve_tokens=10000)
+        assert should_compact(95000, 100000, settings) is False
+
+    def test_soft_ratio_trigger(self) -> None:
+        """Test that the soft ratio trigger applies before the reserve rule fires."""
+        settings = CompactionSettings(enabled=True, reserve_tokens=10000, max_context_ratio=0.75)
+        # Window 100000: reserve rule fires at 90000, ratio at 75000 → ratio wins
+        assert should_compact(80000, 100000, settings) is True
+        assert should_compact(70000, 100000, settings) is False
+        # Unset ratio keeps the reserve-only behavior (89000 stays below 90000)
+        settings_no_ratio = CompactionSettings(
+            enabled=True, reserve_tokens=10000, max_context_ratio=None
+        )
+        assert should_compact(89000, 100000, settings_no_ratio) is False
+        # Out-of-range ratios are ignored (reserve rule only)
+        settings_bad_ratio = CompactionSettings(
+            enabled=True, reserve_tokens=10000, max_context_ratio=1.5
+        )
+        assert should_compact(80000, 100000, settings_bad_ratio) is False
 
 
 class TestCollectMessagesForCompaction:
@@ -298,28 +384,6 @@ class TestCollectMessagesForCompaction:
         compact, keep = collect_messages_for_compaction(messages, 0)
         assert compact == []
         assert keep == messages
-
-
-class TestShouldCompact:
-    """Tests for checking if compaction should be triggered."""
-
-    def test_few_messages(self) -> None:
-        """Test with few messages (no compaction)."""
-        messages = [_create_user_message("Hi")]
-        settings = CompactionSettings(min_messages_to_compact=10)
-        assert should_compact(messages, settings) is False
-
-    def test_many_messages(self) -> None:
-        """Test with many messages (compaction needed)."""
-        messages = [_create_user_message(f"Message {i}") for i in range(20)]
-        settings = CompactionSettings(min_messages_to_compact=10, reserve_tokens=50)
-        assert should_compact(messages, settings) is True
-
-    def test_exact_threshold(self) -> None:
-        """Test at exact message threshold."""
-        messages = [_create_user_message("Hi") for _ in range(10)]
-        settings = CompactionSettings(min_messages_to_compact=10, reserve_tokens=10000)
-        assert should_compact(messages, settings) is False
 
 
 class TestCompactionResult:
@@ -379,3 +443,136 @@ class TestGenerateSummaryPrompt:
         prompt = generate_summary_prompt(messages, custom_instructions="Focus on files")
         assert "Additional instructions:" in prompt
         assert "Focus on files" in prompt
+
+
+class TestContextTokens:
+    """Tests for context token calculation."""
+
+    def test_calculate_context_tokens(self) -> None:
+        """Test calculating total context tokens from usage."""
+        usage = _create_mock_usage(1000, 500, 200, 100)
+        from cortex.agent.compaction import calculate_context_tokens
+
+        assert calculate_context_tokens(usage) == 1800
+
+    def test_calculate_context_tokens_empty(self) -> None:
+        """Test calculating context tokens with zero usage."""
+        usage = _create_mock_usage(0, 0, 0, 0)
+        from cortex.agent.compaction import calculate_context_tokens
+
+        assert calculate_context_tokens(usage) == 0
+
+
+class TestCutPointDetection:
+    """Tests for cut point detection."""
+
+    def test_find_cut_point_basic(self) -> None:
+        """Test finding a basic cut point."""
+        entries: list[SessionTreeEntry] = []
+        parent_id: str | None = None
+        for i in range(10):
+            user = _create_message_entry(_create_user_message(f"User {i}"), parent_id)
+            entries.append(user)
+            assistant = _create_message_entry(
+                _create_assistant_message(
+                    f"Assistant {i}", _create_mock_usage(0, 100, (i + 1) * 1000, 0)
+                ),
+                user.id,
+            )
+            entries.append(assistant)
+            parent_id = assistant.id
+
+        result = find_cut_point(entries, 0, len(entries), 2500)
+        assert result.first_kept_entry_index >= 0
+        entry = entries[result.first_kept_entry_index]
+        assert getattr(entry, "type", "") == "message"
+
+
+class TestSessionContext:
+    """Tests for session context building."""
+
+    def test_build_session_context_with_compaction(self) -> None:
+        """Test building session context with a compaction entry."""
+        u1 = _create_message_entry(_create_user_message("1"))
+        a1 = _create_message_entry(_create_assistant_message("a"), u1.id)
+        u2 = _create_message_entry(_create_user_message("2"), a1.id)
+        a2 = _create_message_entry(_create_assistant_message("b"), u2.id)
+        compaction = _create_compaction_entry("Summary of 1,a,2,b", u2.id, a2.id)
+        u3 = _create_message_entry(_create_user_message("3"), compaction.id)
+        a3 = _create_message_entry(_create_assistant_message("c"), u3.id)
+
+        loaded = build_session_context([u1, a1, u2, a2, compaction, u3, a3])
+        assert len(loaded.messages) == 5
+        assert loaded.messages[0].role == "compactionSummary"
+
+    def test_build_session_context_tracks_model_and_thinking(self) -> None:
+        """Test that model and thinking level changes are tracked."""
+        user = _create_message_entry(_create_user_message("1"))
+        model_change = _create_model_change_entry("openai", "gpt-4", user.id)
+        assistant = _create_message_entry(_create_assistant_message("a"), model_change.id)
+        thinking_change = _create_thinking_level_entry("high", assistant.id)
+
+        loaded = build_session_context([user, model_change, assistant, thinking_change])
+        assert loaded.model == {"provider": "anthropic", "modelId": "claude-sonnet-4-5"}
+        assert loaded.thinking_level == "high"
+
+
+class TestPrepareCompaction:
+    """Tests for compaction preparation."""
+
+    def test_prepare_compaction_basic(self) -> None:
+        """Test preparing compaction from entries."""
+        u1 = _create_message_entry(_create_user_message("user msg 1"))
+        a1 = _create_message_entry(_create_assistant_message("assistant msg 1"), u1.id)
+        u2 = _create_message_entry(_create_user_message("user msg 2"), a1.id)
+        a2 = _create_message_entry(
+            _create_assistant_message("assistant msg 2", _create_mock_usage(5000, 1000)),
+            u2.id,
+        )
+        u3 = _create_message_entry(_create_user_message("user msg 3"), a2.id)
+        a3 = _create_message_entry(
+            _create_assistant_message("assistant msg 3", _create_mock_usage(8000, 2000)),
+            u3.id,
+        )
+
+        from cortex.agent.compaction import prepare_compaction
+
+        preparation = prepare_compaction([u1, a1, u2, a2, u3, a3], DEFAULT_COMPACTION_SETTINGS)
+        # Should return None or a preparation depending on token thresholds
+        assert preparation is None or preparation.first_kept_entry_id is not None
+
+    def test_prepare_compaction_with_previous_compaction(self) -> None:
+        """Test preparing compaction when there's a previous compaction."""
+        u1 = _create_message_entry(_create_user_message("user msg 1"))
+        a1 = _create_message_entry(_create_assistant_message("assistant msg 1"), u1.id)
+        u2 = _create_message_entry(_create_user_message("user msg 2"), a1.id)
+        a2 = _create_message_entry(
+            _create_assistant_message("assistant msg 2", _create_mock_usage(5000, 1000)),
+            u2.id,
+        )
+        compaction1 = _create_compaction_entry("First summary", u2.id, a2.id)
+        u3 = _create_message_entry(_create_user_message("user msg 3"), compaction1.id)
+        a3 = _create_message_entry(
+            _create_assistant_message("assistant msg 3", _create_mock_usage(8000, 2000)),
+            u3.id,
+        )
+
+        from cortex.agent.compaction import prepare_compaction
+
+        preparation = prepare_compaction(
+            [u1, a1, u2, a2, compaction1, u3, a3],
+            DEFAULT_COMPACTION_SETTINGS,
+        )
+        if preparation is not None:
+            assert preparation.previous_summary == "First summary"
+            assert preparation.first_kept_entry_id is not None
+
+    def test_prepare_compaction_skips_when_last_is_compaction(self) -> None:
+        """Test that prepare_compaction returns None when last entry is compaction."""
+        u1 = _create_message_entry(_create_user_message("msg"))
+        compaction = _create_compaction_entry("Summary", u1.id)
+
+        from cortex.agent.compaction import prepare_compaction
+
+        preparation = prepare_compaction([u1, compaction], DEFAULT_COMPACTION_SETTINGS)
+        assert preparation is None

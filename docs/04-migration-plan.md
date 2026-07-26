@@ -254,7 +254,7 @@ providers; faux first).
 - [x] **3.6 compaction** — `packages/agent/src/harness/compaction/*` →
       `packages/agent/compaction/src/cortex/agent/compaction/` + tests. Gate:
       `pytest packages/agent/compaction`.
-- [ ] **3.7 tools** — `packages/agent/src/tools/default-tools.ts` →
+- [x] **3.7 tools** — `packages/agent/src/tools/default-tools.ts` →
       `packages/agent/tools/src/cortex/agent/tools/` + tests. Gate:
       `pytest packages/agent/tools`.
 - [ ] **3.8 mcp** — `packages/agent/src/tools/mcp-*.ts` →
