@@ -242,7 +242,7 @@ providers; faux first).
 - [x] **3.2 loop** — `packages/agent/src/agent-loop.ts` →
       `packages/agent/loop/src/cortex/agent/loop.py` + tests. Gate:
       `pytest packages/agent/loop`.
-- [ ] **3.3 agent** — `packages/agent/src/agent.ts` →
+- [x] **3.3 agent** — `packages/agent/src/agent.ts` →
       `packages/agent/agent/src/cortex/agent/agent.py` + tests. Gate:
       `pytest packages/agent/agent`.
 - [ ] **3.4 harness** — `packages/agent/src/harness/{messages,system-prompt,prompt-templates,skills,types,agent-harness}.ts` →
