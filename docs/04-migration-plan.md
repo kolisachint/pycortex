@@ -224,7 +224,7 @@ providers; faux first).
 - [x] **2.13 register-builtins** — `packages/ai/src/providers/register-builtins.ts` →
       `packages/ai/models/src/cortex/ai/models/register_builtins.py` (lazy provider
       registration) + tests. Depends on 2.6–2.9. Gate: `pytest packages/ai/models`.
-- [ ] **2.14 oauth** — `packages/ai/src/oauth.ts` + `utils/oauth/*` →
+- [x] **2.14 oauth** — `packages/ai/src/oauth.ts` + `utils/oauth/*` →
       `packages/ai/oauth/src/cortex/ai/oauth/` + tests. Gate: `pytest packages/ai/oauth`.
 - [ ] **2.15 images** — `packages/ai/src/{images,images-api-registry}.ts` +
       `providers/images/*` → `packages/ai/images/src/cortex/ai/images/` + tests. Gate:

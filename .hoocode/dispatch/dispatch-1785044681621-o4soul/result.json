@@ -1,5 +1,5 @@
 {
-  "summary": "Task failed: 401 Model anthropic/claude-opus-4-8 is not supported",
+  "summary": "Task failed: 401 Model anthropic/claude-sonnet-5 is not supported",
   "files_changed": [],
   "confidence": 0.5,
   "status": "failed",

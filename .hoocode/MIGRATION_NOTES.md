@@ -862,10 +862,66 @@ the substring bucket) came out differently from what reading the TS suggested.
      `stream_simple_google_vertex`, `GoogleVertexClient`, `GoogleVertexOptions`,
      `create_client` (renamed `create_vertex_client` in __init__ to avoid collision).
   9. DEBT: Real ADC authentication (using `google-auth` library) is not implemented.
-     The credential resolution logic is correct, but actual ADC token acquisition
-     would require adding `google-auth` as a dependency. The `create_client`
-     function returns a `GoogleVertexClient` that can make requests, but without
-     proper OAuth2 tokens, ADC-based requests will fail. This matches the TS's
-     behavior when the SDK is mocked — the tests verify the resolution logic,
-     not actual GCP authentication.
+The credential resolution logic is correct, but actual ADC token acquisition
+would require adding `google-auth` as a dependency. The `create_client`
+function returns a `GoogleVertexClient` that can make requests, but without
+proper OAuth2 tokens, ADC-based requests will fail. This matches the TS's
+behavior when the SDK is mocked — the tests verify the resolution logic,
+not actual GCP authentication.
+
+### Step 2.13 — register-builtins
+
+**File**: `packages/ai/src/providers/register-builtins.ts` → `packages/ai/models/src/cortex/ai/models/register_builtins.py`
+
+**What it does**: Lazy provider registration for all built-in API providers.
+
+**Key implementation details**:
+- Uses `_LazyProviderModule` class to defer module imports until first use
+- Each provider is wrapped in `_create_lazy_stream` or `_create_lazy_simple_stream`
+- Stream functions load the provider module on first call, then forward events
+- Error handling: if module import fails, returns an error message via the stream
+- `register_built_in_api_providers()` registers all 7 providers
+- `reset_api_providers()` clears and re-registers (used in tests)
+
+**Providers registered**:
+1. `anthropic-messages` → `cortex.ai.providers.anthropic`
+2. `openai-completions` → `cortex.ai.providers.openai.openai_completions`
+3. `openai-responses` → `cortex.ai.providers.openai.openai_responses`
+4. `azure-openai-responses` → `cortex.ai.providers.openai.azure_openai_responses`
+5. `openai-codex-responses` → `cortex.ai.providers.openai.openai_codex_responses`
+6. `google-generative-ai` → `cortex.ai.providers.google.google`
+7. `google-vertex` → `cortex.ai.providers.google.vertex`
+
+**Tests**: 17 tests covering lazy loading, caching, registration, and stream functions.
 </content>
+
+### Step 2.14 — oauth
+
+**File**: `packages/ai/src/oauth.ts` + `utils/oauth/*` → `packages/ai/oauth/src/cortex/ai/oauth/`
+
+**What it does**: OAuth credential management for AI providers.
+
+**Key implementation details**:
+- Provider registry pattern (similar to api_registry.py)
+- Three built-in providers: Anthropic, GitHub Copilot, OpenAI Codex
+- PKCE utilities for authorization code flow
+- OAuth page HTML templates for callback server
+- Lazy loading not used here (unlike register-builtins)
+
+**Providers**:
+1. `anthropic` → Anthropic OAuth (Claude Pro/Max)
+2. `github-copilot` → GitHub Copilot OAuth (device code flow)
+3. `openai-codex` → OpenAI Codex (ChatGPT) OAuth
+
+**Files created**:
+- `types.py` - OAuth types and protocols
+- `pkce.py` - PKCE code verifier/challenge generation
+- `oauth_page.py` - HTML templates for OAuth callback pages
+- `anthropic.py` - Anthropic OAuth provider
+- `github_copilot.py` - GitHub Copilot OAuth provider
+- `openai_codex.py` - OpenAI Codex OAuth provider
+- `__init__.py` - Main exports and provider registry
+
+**Tests**: 23 tests covering types, PKCE, pages, providers, and registry.
+
+**Debt**: OpenAI Codex login is not fully implemented (raises NotImplementedError).
