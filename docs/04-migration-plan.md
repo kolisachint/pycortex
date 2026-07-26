@@ -301,6 +301,6 @@ Coarser leaves until the code stabilizes.
 
 - [x] **6.1 parity checklist** — run hoocode and cortex side-by-side on scripted print
       scenarios; diff transcripts.
-- [ ] **6.2 docs port** — design docs rewritten for Python leaves.
+- [x] **6.2 docs port** — design docs rewritten for Python leaves.
 - [ ] **6.3 release 0.1.0 umbrella train** — lockstep umbrella bumps + all published
       leaves via `release.yml`.
