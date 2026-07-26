@@ -16,7 +16,13 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
 
-from cortex.tui.testkit._scene import Unported, build_component, load_corpus, load_golden
+from cortex.tui.testkit._scene import (
+    Unported,
+    apply_scenario_capabilities,
+    build_component,
+    load_corpus,
+    load_golden,
+)
 from cortex.tui.testkit._snapshot import diff_surfaces, snapshot
 from cortex.tui.testkit._surface import Surface
 
@@ -64,6 +70,7 @@ def evaluate_component(spec: dict[str, Any], golden: dict[str, Any]) -> Result:
     width = golden["width"]
     expected = surface_from_lines(golden["lines"], width)
     try:
+        apply_scenario_capabilities(spec)
         component = build_component(spec)
         # Stateful components (Input) are driven to the state under test before
         # the frame is captured — same order as reference/dump.ts.
@@ -83,6 +90,20 @@ def evaluate_component(spec: dict[str, Any], golden: dict[str, Any]) -> Result:
             f"  TS: {golden['lines']!r}\n  py: {actual_lines!r}"
         )
         return Result(spec["id"], "component", Verdict.MISMATCH, detail, "1.7")
+
+    # An image protocol payload is an APC/OSC string: every terminal — and so
+    # the `Surface` — swallows it without painting a cell, which makes the
+    # screen structurally blind to the bytes that ARE the contract here. Those
+    # scenarios opt into an exact comparison of the captured lines instead. It
+    # is the wrong test for styled text (`\x1b[1m\x1b[31m` and `\x1b[31;1m` are
+    # one screen) and the only right one for a protocol payload.
+    if spec.get("exactLines") and actual_lines != golden["lines"]:
+        detail = "lines differ verbatim\n" + "\n".join(
+            f"  [{i}]\n    TS: {ts!r}\n    py: {py!r}"
+            for i, (ts, py) in enumerate(zip(golden["lines"], actual_lines, strict=True))
+            if ts != py
+        )
+        return Result(spec["id"], "component", Verdict.MISMATCH, detail, "1.15")
 
     diff = diff_surfaces(expected, actual)
     if diff:
@@ -125,6 +146,7 @@ def _drive_python_renderer(spec: dict[str, Any]) -> list[dict[str, Any]]:
     from cortex.tui.render import TUI
     from cortex.tui.testkit._capture import CaptureTerminal
 
+    apply_scenario_capabilities(spec)
     terminal = CaptureTerminal(spec["cols"], spec["rows"])
     tui = TUI(terminal)  # pyright: ignore[reportArgumentType]
     children: list[Any] = []
@@ -221,6 +243,20 @@ def evaluate_renderer(spec: dict[str, Any], golden: dict[str, Any]) -> Result:
         if exp_frame["cols"] != expected_surface.cols or exp_frame["rows"] != expected_surface.rows:
             expected_surface = Surface(cols=exp_frame["cols"], rows=exp_frame["rows"])
             actual_surface = Surface(cols=exp_frame["cols"], rows=exp_frame["rows"])
+        # Image scenarios opt into a verbatim stream comparison. A terminal
+        # paints no cell for a kitty/iTerm2 payload, so `Surface` — correctly —
+        # shows the same screen whether an image was drawn, replaced or
+        # deleted, and the renderer's whole kitty bookkeeping is invisible to
+        # it. Byte equality is only a fair test because the renderer is
+        # deterministic and both sides already agree byte for byte here; it
+        # stays opt-in for exactly that reason.
+        if spec.get("exactStream") and exp_frame["stream"] != act_frame["stream"]:
+            detail = (
+                f"frame {index} stream differs verbatim\n"
+                f"  TS: {exp_frame['stream']!r}\n  py: {act_frame['stream']!r}"
+            )
+            return Result(spec["id"], "renderer", Verdict.MISMATCH, detail, "1.15")
+
         expected_surface.feed(exp_frame["stream"])
         actual_surface.feed(act_frame["stream"])
         diff = diff_surfaces(expected_surface, actual_surface, compare_cursor=False)

@@ -16,7 +16,6 @@ reasonable and produced a different screen.
 from __future__ import annotations
 
 import asyncio
-import importlib
 import json
 import os
 import re
@@ -26,10 +25,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, Protocol, TypeGuard, runtime_checkable
 
+from cortex.tui.images import (
+    CellDimensions,
+    delete_kitty_image,
+    get_capabilities,
+    is_image_line,
+    set_cell_dimensions,
+)
 from cortex.tui.keys import is_key_release, matches_key
 from cortex.tui.util import (
     extract_segments,
-    is_image_line,
     normalize_terminal_output,
     slice_by_column,
     slice_with_width,
@@ -101,52 +106,6 @@ def _extract_kitty_image_ids(line: str) -> list[int]:
         if 0 < image_id <= 0xFFFFFFFF:
             return [image_id]
     return []
-
-
-def _images_symbol(name: str) -> Any:
-    """Look up a `cortex.tui.images` symbol, or None while step 1.15 is pending.
-
-    Resolved dynamically because the leaf exists but is empty: a static import
-    of a name it does not export yet would not type-check, and stubbing the
-    functions here would duplicate 1.15's scope.
-    """
-    try:
-        module = importlib.import_module("cortex.tui.images")
-    except ImportError:
-        return None
-    return getattr(module, name, None)
-
-
-def _delete_kitty_image(image_id: int) -> str:
-    """Escape sequence that frees one kitty image.
-
-    Owned by ``terminal-image.ts`` → the images leaf (step 1.15). Inlined here
-    so the kitty bookkeeping below is a real port rather than a stub, and so it
-    is testable today; 1.15 replaces this with an import.
-    """
-    return f"\x1b_Ga=d,d=I,i={image_id},q=2\x1b\\"
-
-
-def _terminal_supports_images() -> bool:
-    """Whether ``queryCellSize`` should ask the terminal for its cell size.
-
-    The TS calls ``getCapabilities().images`` from ``terminal-image.ts``. That
-    module is step 1.15; until it lands this reports "no image support", which
-    is a real runtime state (the TS takes the same branch on a terminal without
-    an image protocol) rather than an invented one.
-    """
-    get_capabilities = _images_symbol("get_capabilities")
-    if get_capabilities is None:
-        return False
-    return bool(get_capabilities().images)
-
-
-def _set_cell_dimensions(width_px: int, height_px: int) -> None:
-    """Record the terminal's cell size. See ``_terminal_supports_images``."""
-    set_cell_dimensions = _images_symbol("set_cell_dimensions")
-    if set_cell_dimensions is None:
-        return
-    set_cell_dimensions({"widthPx": width_px, "heightPx": height_px})
 
 
 @runtime_checkable
@@ -597,7 +556,7 @@ class TUI(Container):
 
     def _query_cell_size(self) -> None:
         # Cell size is only used for image rendering.
-        if not _terminal_supports_images():
+        if not get_capabilities().images:
             return
         # CSI 16 t — the reply is CSI 6 ; height ; width t
         self.terminal.write("\x1b[16t")
@@ -749,7 +708,7 @@ class TUI(Container):
         width_px = int(match.group(2))
         if height_px <= 0 or width_px <= 0:
             return True
-        _set_cell_dimensions(width_px, height_px)
+        set_cell_dimensions(CellDimensions(width_px=width_px, height_px=height_px))
         # Re-render every component so images pick up the real dimensions.
         self.invalidate()
         self.request_render()
@@ -971,7 +930,7 @@ class TUI(Container):
         return ids
 
     def _delete_kitty_images(self, ids: Iterable[int]) -> str:
-        return "".join(_delete_kitty_image(image_id) for image_id in ids)
+        return "".join(delete_kitty_image(image_id) for image_id in ids)
 
     def _expand_last_changed_for_kitty_images(self, first_changed: int, last_changed: int) -> int:
         # No image ever drawn: nothing to expand over. (Also, on patched frames

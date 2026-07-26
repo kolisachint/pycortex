@@ -2818,6 +2818,222 @@
       ],
       "stable": true,
       "referenceIdentical": false
+    },
+    {
+      "id": "component/image-kitty-single-row",
+      "width": 12,
+      "lines": [
+        "\u001b_Ga=T,f=100,q=2,C=1,c=2,r=1,i=4242;AAAA\u001b\\"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-kitty-multi-row",
+      "width": 12,
+      "lines": [
+        "",
+        "",
+        "\u001b[2A\u001b_Ga=T,f=100,q=2,C=1,c=2,r=3,i=4243;AAAA\u001b\\\u001b[2B"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-kitty-chunked-payload",
+      "width": 12,
+      "lines": [
+        "\u001b_Ga=T,f=100,q=2,C=1,c=2,r=1,i=4244,m=1;AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\u001b\\\u001b_Gm=0;AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\u001b\\"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-kitty-width-minus-two-wins",
+      "width": 6,
+      "lines": [
+        "\u001b_Ga=T,f=100,q=2,C=1,c=4,r=1,i=4245;AAAA\u001b\\"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-kitty-cell-dimensions",
+      "width": 12,
+      "lines": [
+        "",
+        "\u001b[1A\u001b_Ga=T,f=100,q=2,C=1,c=2,r=2,i=4246;AAAA\u001b\\\u001b[1B"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-iterm2-multi-row",
+      "width": 12,
+      "lines": [
+        "",
+        "",
+        "\u001b[2A\u001b]1337;File=inline=1;width=2;height=auto:AAAA\u0007"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-iterm2-single-row",
+      "width": 12,
+      "lines": [
+        "\u001b]1337;File=inline=1;width=2;height=auto:AAAA\u0007"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-fallback-png-dimensions",
+      "width": 40,
+      "lines": [
+        "[Image: [image/png] 24x12]"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-fallback-jpeg-dimensions",
+      "width": 40,
+      "lines": [
+        "[Image: [image/jpeg] 40x20]"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-fallback-gif-dimensions",
+      "width": 40,
+      "lines": [
+        "[Image: [image/gif] 33x11]"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-fallback-webp-vp8x-dimensions",
+      "width": 40,
+      "lines": [
+        "[Image: [image/webp] 50x25]"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-fallback-webp-vp8l-dimensions",
+      "width": 40,
+      "lines": [
+        "[Image: [image/webp] 7x3]"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-fallback-webp-lossy-dimensions",
+      "width": 40,
+      "lines": [
+        "[Image: [image/webp] 64x32]"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-fallback-unparseable-defaults",
+      "width": 40,
+      "lines": [
+        "[Image: [image/png] 800x600]"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-fallback-unknown-mime-defaults",
+      "width": 40,
+      "lines": [
+        "[Image: [image/bmp] 800x600]"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-fallback-with-filename",
+      "width": 40,
+      "lines": [
+        "[Image: cat.gif [image/gif] 33x11]"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-fallback-coloured",
+      "width": 40,
+      "lines": [
+        "\u001b[31m[Image: [image/gif] 33x11]\u001b[39m"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-fallback-explicit-dimensions-win",
+      "width": 40,
+      "lines": [
+        "[Image: [image/png] 5x7]"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-fallback-under-vscode-capabilities",
+      "width": 40,
+      "lines": [
+        "[Image: [image/png] 24x12]"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-kitty-default-max-width",
+      "width": 100,
+      "lines": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "\u001b[13A\u001b_Ga=T,f=100,q=2,C=1,c=60,r=14,i=4247;AAAA\u001b\\\u001b[13B"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-fallback-jpeg-marker-inside-segment",
+      "width": 40,
+      "lines": [
+        "[Image: [image/jpeg] 40x20]"
+      ],
+      "stable": true,
+      "referenceIdentical": true
+    },
+    {
+      "id": "component/image-fallback-webp-lossy-scaling-bits",
+      "width": 40,
+      "lines": [
+        "[Image: [image/webp] 64x32]"
+      ],
+      "stable": true,
+      "referenceIdentical": true
     }
   ]
 }

@@ -403,6 +403,7 @@ source = { editable = "packages/tui/components" }
 dependencies = [
     { name = "cortexcode-tui-editing" },
     { name = "cortexcode-tui-fuzzy" },
+    { name = "cortexcode-tui-images" },
     { name = "cortexcode-tui-keys" },
     { name = "cortexcode-tui-render" },
     { name = "cortexcode-tui-util" },
@@ -413,6 +414,7 @@ dependencies = [
 requires-dist = [
     { name = "cortexcode-tui-editing", editable = "packages/tui/editing" },
     { name = "cortexcode-tui-fuzzy", editable = "packages/tui/fuzzy" },
+    { name = "cortexcode-tui-images", editable = "packages/tui/images" },
     { name = "cortexcode-tui-keys", editable = "packages/tui/keys" },
     { name = "cortexcode-tui-render", editable = "packages/tui/render" },
     { name = "cortexcode-tui-util", editable = "packages/tui/util" },
@@ -456,6 +458,7 @@ name = "cortexcode-tui-render"
 version = "0.0.3"
 source = { editable = "packages/tui/render" }
 dependencies = [
+    { name = "cortexcode-tui-images" },
     { name = "cortexcode-tui-keys" },
     { name = "cortexcode-tui-util" },
 ]
@@ -467,6 +470,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cortexcode-tui-images", editable = "packages/tui/images" },
     { name = "cortexcode-tui-keys", editable = "packages/tui/keys" },
     { name = "cortexcode-tui-util", editable = "packages/tui/util" },
 ]
@@ -484,11 +488,15 @@ name = "cortexcode-tui-testkit"
 version = "0.0.3"
 source = { editable = "packages/tui/testkit" }
 dependencies = [
+    { name = "cortexcode-tui-images" },
     { name = "cortexcode-tui-util" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "cortexcode-tui-util", editable = "packages/tui/util" }]
+requires-dist = [
+    { name = "cortexcode-tui-images", editable = "packages/tui/images" },
+    { name = "cortexcode-tui-util", editable = "packages/tui/util" },
+]
 
 [[package]]
 name = "cortexcode-tui-util"

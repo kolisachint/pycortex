@@ -96,12 +96,19 @@ Umbrellas group leaves by import namespace and install path.
 | `cortexcode-tui-terminal` | `cortex.tui.terminal` | `terminal.ts`, `stdin-buffer.ts` | T0 |
 | `cortexcode-tui-render` | `cortex.tui.render` | `tui.ts` (differential renderer) | T0 |
 | `cortexcode-tui-editing` | `cortex.tui.editing` | `editor-component.ts`, `kill-ring.ts`, `undo-stack.ts` | T0 |
-| `cortexcode-tui-components` | `cortex.tui.components` | `components/*.ts` (text, box, spacer, loader, input, select-list, autocomplete, editor, markdown, image) | T0 |
-| `cortexcode-tui-images` | `cortex.tui.images` | `terminal-image.ts` | T1 (post-core) |
+| `cortexcode-tui-components` | `cortex.tui.components` | `components/*.ts` (text, box, spacer, loader, input, select-list, autocomplete, editor, markdown) | T0 |
+| `cortexcode-tui-images` | `cortex.tui.images` | `terminal-image.ts`, `components/image.ts` | T0 |
 | `cortexcode-tui-testkit` | `cortex.tui.testkit` | *no TS counterpart* — the authoritative rendering surface + parity harness | **never published** |
 
 All leaves depend only on lower / same-tier tui leaves (components → editing → render
 → keys → terminal → util). Fuzzy is a shared leaf used by components.
+
+`components/image.ts` lives in the **images** leaf, not components: it is a
+`Component`-shaped wrapper around `terminal-image.ts` and nothing else, so
+keeping it there leaves images dependency-free. That matters because
+`tui.ts`/`markdown.ts` import `terminal-image.ts` directly (capabilities, cell
+size, `isImageLine`, `hyperlink`), which makes render and components depend on
+images — the reverse edge would be a cycle.
 
 **`cortexcode-tui-testkit` is test infrastructure, not a port.** TUI code is the one
 place where "reads like the TS" is not evidence of correctness: the observable
