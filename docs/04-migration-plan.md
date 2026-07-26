@@ -226,7 +226,7 @@ providers; faux first).
       registration) + tests. Depends on 2.6–2.9. Gate: `pytest packages/ai/models`.
 - [x] **2.14 oauth** — `packages/ai/src/oauth.ts` + `utils/oauth/*` →
       `packages/ai/oauth/src/cortex/ai/oauth/` + tests. Gate: `pytest packages/ai/oauth`.
-- [ ] **2.15 images** — `packages/ai/src/{images,images-api-registry}.ts` +
+- [x] **2.15 images** — `packages/ai/src/{images,images-api-registry}.ts` +
       `providers/images/*` → `packages/ai/images/src/cortex/ai/images/` + tests. Gate:
       `pytest packages/ai/images`.
 - [ ] **2.10 ai umbrella publishable** — leaf READMEs, strict types, flip T0/T1 leaves to

@@ -925,3 +925,26 @@ not actual GCP authentication.
 **Tests**: 23 tests covering types, PKCE, pages, providers, and registry.
 
 **Debt**: OpenAI Codex login is not fully implemented (raises NotImplementedError).
+
+### Step 2.15 — images
+
+**File**: `packages/ai/src/{images,images-api-registry}.ts` + `providers/images/*` → `packages/ai/images/src/cortex/ai/images/`
+
+**What it does**: Image generation module with provider registry.
+
+**Key implementation details**:
+- Provider registry pattern (similar to api_registry.py)
+- One built-in provider: OpenRouter Images
+- Lazy loading for OpenRouter provider (similar to register-builtins)
+- Types for image generation context, model, options, and results
+
+**Files created**:
+- `types.py` - Image generation types
+- `api_registry.py` - Images API provider registry
+- `openrouter.py` - OpenRouter images provider
+- `register_builtins.py` - Lazy registration of built-in providers
+- `__init__.py` - Main exports and generate_images function
+
+**Tests**: 12 tests covering types, registry, and generation.
+
+**Debt**: OpenRouter provider uses httpx directly instead of OpenAI SDK (simplified implementation).
