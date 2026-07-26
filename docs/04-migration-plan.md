@@ -277,7 +277,7 @@ Coarser leaves until the code stabilizes.
       `session-manager.ts` → `packages/code/session/src/cortex/code/session/` + tests.
 - [x] **4.4 prompts** — `packages/coding-agent/src/core/{system-prompt,mode-prompts,prompt-templates}.ts`
       → `packages/code/prompts/src/cortex/code/prompts/` + tests.
-- [ ] **4.5 print** — `packages/coding-agent/src/modes/print-mode.ts` →
+- [x] **4.5 print** — `packages/coding-agent/src/modes/print-mode.ts` →
       `packages/code/print/src/cortex/code/print.py` + e2e test.
 - [ ] **4.6 main** — `packages/coding-agent/src/main.ts`, `cli/args.ts` →
       `packages/code/main/src/cortex/code/main.py` + entry point; first runnable CLI.
