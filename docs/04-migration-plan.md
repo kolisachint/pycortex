@@ -273,7 +273,7 @@ Coarser leaves until the code stabilizes.
       `packages/code/config/src/cortex/code/config/` + tests.
 - [x] **4.2 tools** — `packages/coding-agent/src/core/tools/{read,bash,edit,write,grep,find,ls}.ts`
       → `packages/code/tools/src/cortex/code/tools/` + tests.
-- [ ] **4.3 session** — `packages/coding-agent/src/core/agent-session*.ts`,
+- [x] **4.3 session** — `packages/coding-agent/src/core/agent-session*.ts`,
       `session-manager.ts` → `packages/code/session/src/cortex/code/session/` + tests.
 - [ ] **4.4 prompts** — `packages/coding-agent/src/core/{system-prompt,mode-prompts,prompt-templates}.ts`
       → `packages/code/prompts/src/cortex/code/prompts/` + tests.
