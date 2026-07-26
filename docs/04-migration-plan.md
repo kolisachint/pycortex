@@ -245,7 +245,7 @@ providers; faux first).
 - [x] **3.3 agent** — `packages/agent/src/agent.ts` →
       `packages/agent/agent/src/cortex/agent/agent.py` + tests. Gate:
       `pytest packages/agent/agent`.
-- [ ] **3.4 harness** — `packages/agent/src/harness/{messages,system-prompt,prompt-templates,skills,types,agent-harness}.ts` →
+- [x] **3.4 harness** — `packages/agent/src/harness/{messages,system-prompt,prompt-templates,skills,types,agent-harness}.ts` →
       `packages/agent/harness/src/cortex/agent/harness/` + tests. Gate:
       `pytest packages/agent/harness`.
 - [ ] **3.5 session** — `packages/agent/src/harness/session/*` + `execution-env*` →
