@@ -236,7 +236,7 @@ providers; faux first).
 
 ## Phase 3 — `cortex.agent` leaves
 
-- [ ] **3.1 types** — `packages/agent/src/types.ts` →
+- [x] **3.1 types** — `packages/agent/src/types.ts` →
       `packages/agent/types/src/cortex/agent/types.py` + tests. Gate:
       `pytest packages/agent/types`.
 - [ ] **3.2 loop** — `packages/agent/src/agent-loop.ts` →

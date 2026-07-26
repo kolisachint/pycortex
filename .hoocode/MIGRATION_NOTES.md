@@ -966,3 +966,30 @@ not actual GCP authentication.
 - Tests pass when run individually per package
 - Running `pytest packages/ai` fails due to known import collection issue (see AGENTS.md)
 - Gates pass: ruff check, ruff format, pyright all clean
+
+### Step 3.1 — types (agent)
+
+**File**: `packages/agent/src/types.ts` → `packages/agent/types/src/cortex/agent/types/`
+
+**What it does**: Agent runtime types for tool execution, context, and events.
+
+**Key implementation details**:
+- Ported from TypeScript to Python dataclasses
+- Generic types use TypeVar for Python 3.11 compatibility
+- AgentEvent simplified to dict[str, Any] union (Python dict doesn't support multiple type args)
+- AgentToolCall is an alias for Tool (from cortex.ai.types)
+
+**Files created**:
+- `_types.py` - All agent types
+- `__init__.py` - Re-exports
+- `tests/test_types.py` - 12 tests
+
+**Types ported**:
+- StreamFn, ToolExecutionMode, ThinkingLevel
+- AgentToolCall, AgentToolResult, AgentTool
+- AgentContext, AgentState, AgentEvent
+- BeforeToolCallContext/Result, AfterToolCallContext/Result
+- ShouldStopAfterTurnContext, PrepareNextTurnContext
+- BackgroundToolResult, AgentLoopTurnUpdate
+
+**Note**: CustomAgentMessages was omitted (used for declaration merging in TS, not applicable in Python).
