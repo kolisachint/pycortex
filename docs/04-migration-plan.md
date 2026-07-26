@@ -288,7 +288,7 @@ Coarser leaves until the code stabilizes.
       `packages/code/rpc/src/cortex/code/rpc.py` + protocol tests.
 - [ ] **5.2 interactive** — `packages/coding-agent/src/modes/interactive/**` →
       `packages/code/interactive/src/cortex/code/interactive/` + e2e pty tests.
-- [ ] **5.3 resources** — `packages/coding-agent/src/core/{skills,resource-loader}.ts` →
+- [x] **5.3 resources** — `packages/coding-agent/src/core/{skills,resource-loader}.ts` →
       `packages/code/resources/src/cortex/code/resources/`.
 - [ ] **5.4 subagents** — `packages/coding-agent/src/core/subagent*.ts`,
       `core/tools/subagent.ts` → `packages/code/subagents/src/cortex/code/subagents/`.
