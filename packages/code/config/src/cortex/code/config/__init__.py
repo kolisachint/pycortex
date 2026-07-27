@@ -8,6 +8,7 @@ from cortex.code.config.config import (
     DISPATCH_DIR_NAME,
     ENV_AGENT_DIR,
     ENV_SESSION_DIR,
+    VERSION,
     expand_tilde_path,
     get_agent_dir,
     get_auth_path,
@@ -86,6 +87,7 @@ __all__ = [
     "DISPATCH_DIR_NAME",
     "ENV_AGENT_DIR",
     "ENV_SESSION_DIR",
+    "VERSION",
     "is_bun_binary",
     "is_bun_runtime",
     # Config functions

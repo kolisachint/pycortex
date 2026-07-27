@@ -4,7 +4,30 @@ version = "0.0.3"
 description = "Umbrella meta-package for the cortex code namespace"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+# Carries no code: installing it pulls in every published `cortex.code.*` leaf,
+# pinned to the release it was cut with (doc 02 §1). Bare, unpinned sibling deps
+# are invisible to `bump_versions.py`'s re-pin regex, so every one carries a
+# specifier — the lesson 1.8 learned on the tui umbrella.
+dependencies = [
+    "cortexcode-cli-config>=0.0.3,<0.1.0",
+    "cortexcode-cli-prompts>=0.0.3,<0.1.0",
+    "cortexcode-cli-tools>=0.0.3,<0.1.0",
+    "cortexcode-cli-session>=0.0.3,<0.1.0",
+    "cortexcode-cli-resources>=0.0.3,<0.1.0",
+    "cortexcode-cli-extensions>=0.0.3,<0.1.0",
+    "cortexcode-cli-subagents>=0.0.3,<0.1.0",
+    "cortexcode-cli-rpc>=0.0.3,<0.1.0",
+    "cortexcode-cli-print>=0.0.3,<0.1.0",
+    "cortexcode-cli-interactive>=0.0.1,<0.1.0",
+    "cortexcode-cli-main>=0.0.3,<0.1.0",
+]
+
+# The `pycortex` command — until now there was no `[project.scripts]` anywhere in
+# the workspace, so the product had no entry point at all. It belongs on the
+# umbrella rather than on `code/main`: the script is only useful once every leaf
+# it reaches is installed, and the umbrella is the distribution that says so.
+[project.scripts]
+pycortex = "cortex.code.main:main"
 
 [tool.cortex]
 publish = false
@@ -13,6 +36,19 @@ publish = false
 packages = [
     "src/cortex",
 ]
+
+[tool.uv.sources]
+cortexcode-cli-config = { workspace = true }
+cortexcode-cli-prompts = { workspace = true }
+cortexcode-cli-tools = { workspace = true }
+cortexcode-cli-session = { workspace = true }
+cortexcode-cli-resources = { workspace = true }
+cortexcode-cli-extensions = { workspace = true }
+cortexcode-cli-subagents = { workspace = true }
+cortexcode-cli-rpc = { workspace = true }
+cortexcode-cli-print = { workspace = true }
+cortexcode-cli-interactive = { workspace = true }
+cortexcode-cli-main = { workspace = true }
 
 [build-system]
 requires = [

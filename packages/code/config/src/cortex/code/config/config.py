@@ -362,6 +362,12 @@ def get_update_instruction(package_name: str) -> str:
 # Application name and config
 APP_NAME = "hoocode"
 APP_TITLE = "HooCode"
+# `config.ts` reads this off the CLI's own package.json. The Python workspace has
+# no single package that carries the product version — the leaves are versioned
+# independently and the `cortexcode-code` umbrella tracks the publish train, not
+# the release — so the release version lives here, alongside the other identity
+# constants, and `bump_versions.py`'s leaf re-pinning leaves it alone.
+VERSION = "0.1.0"
 CONFIG_DIR_NAME = ".hoocode"
 DISPATCH_DIR_NAME = "dispatch"
 

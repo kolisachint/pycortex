@@ -4,7 +4,14 @@ version = "0.0.1"
 description = "Cortex CLI leaf: interactive TUI mode"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "cortexcode-cli-config>=0.0.3,<0.1.0",
+    "cortexcode-tui-components>=0.0.3,<0.1.0",
+    "cortexcode-tui-keys>=0.0.3,<0.1.0",
+    "cortexcode-tui-render>=0.0.3,<0.1.0",
+    "cortexcode-tui-terminal>=0.0.3,<0.1.0",
+    "cortexcode-tui-util>=0.0.3,<0.1.0",
+]
 
 [tool.cortex]
 publish = true
@@ -13,6 +20,14 @@ publish = true
 packages = [
     "src/cortex",
 ]
+
+[tool.uv.sources]
+cortexcode-cli-config = { workspace = true }
+cortexcode-tui-components = { workspace = true }
+cortexcode-tui-keys = { workspace = true }
+cortexcode-tui-render = { workspace = true }
+cortexcode-tui-terminal = { workspace = true }
+cortexcode-tui-util = { workspace = true }
 
 [build-system]
 requires = [

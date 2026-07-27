@@ -380,6 +380,9 @@ name = "cortexcode-cli-e2e"
 version = "0.0.1"
 source = { editable = "packages/code/e2e" }
 dependencies = [
+    { name = "cortexcode-cli-config" },
+    { name = "cortexcode-cli-interactive" },
+    { name = "cortexcode-tui-components" },
     { name = "cortexcode-tui-render" },
     { name = "cortexcode-tui-terminal" },
     { name = "cortexcode-tui-testkit" },
@@ -387,6 +390,9 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cortexcode-cli-config", editable = "packages/code/config" },
+    { name = "cortexcode-cli-interactive", editable = "packages/code/interactive" },
+    { name = "cortexcode-tui-components", editable = "packages/tui/components" },
     { name = "cortexcode-tui-render", editable = "packages/tui/render" },
     { name = "cortexcode-tui-terminal", editable = "packages/tui/terminal" },
     { name = "cortexcode-tui-testkit", editable = "packages/tui/testkit" },
@@ -401,11 +407,39 @@ source = { editable = "packages/code/extensions" }
 name = "cortexcode-cli-interactive"
 version = "0.0.1"
 source = { editable = "packages/code/interactive" }
+dependencies = [
+    { name = "cortexcode-cli-config" },
+    { name = "cortexcode-tui-components" },
+    { name = "cortexcode-tui-keys" },
+    { name = "cortexcode-tui-render" },
+    { name = "cortexcode-tui-terminal" },
+    { name = "cortexcode-tui-util" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-cli-config", editable = "packages/code/config" },
+    { name = "cortexcode-tui-components", editable = "packages/tui/components" },
+    { name = "cortexcode-tui-keys", editable = "packages/tui/keys" },
+    { name = "cortexcode-tui-render", editable = "packages/tui/render" },
+    { name = "cortexcode-tui-terminal", editable = "packages/tui/terminal" },
+    { name = "cortexcode-tui-util", editable = "packages/tui/util" },
+]
 
 [[package]]
 name = "cortexcode-cli-main"
 version = "0.0.3"
 source = { editable = "packages/code/main" }
+dependencies = [
+    { name = "cortexcode-cli-config" },
+    { name = "cortexcode-cli-interactive" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-cli-config", editable = "packages/code/config" },
+    { name = "cortexcode-cli-interactive", editable = "packages/code/interactive" },
+]
 
 [[package]]
 name = "cortexcode-cli-print"
@@ -456,6 +490,34 @@ requires-dist = [
 name = "cortexcode-code"
 version = "0.0.3"
 source = { editable = "packages/code/_meta" }
+dependencies = [
+    { name = "cortexcode-cli-config" },
+    { name = "cortexcode-cli-extensions" },
+    { name = "cortexcode-cli-interactive" },
+    { name = "cortexcode-cli-main" },
+    { name = "cortexcode-cli-print" },
+    { name = "cortexcode-cli-prompts" },
+    { name = "cortexcode-cli-resources" },
+    { name = "cortexcode-cli-rpc" },
+    { name = "cortexcode-cli-session" },
+    { name = "cortexcode-cli-subagents" },
+    { name = "cortexcode-cli-tools" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-cli-config", editable = "packages/code/config" },
+    { name = "cortexcode-cli-extensions", editable = "packages/code/extensions" },
+    { name = "cortexcode-cli-interactive", editable = "packages/code/interactive" },
+    { name = "cortexcode-cli-main", editable = "packages/code/main" },
+    { name = "cortexcode-cli-print", editable = "packages/code/print" },
+    { name = "cortexcode-cli-prompts", editable = "packages/code/prompts" },
+    { name = "cortexcode-cli-resources", editable = "packages/code/resources" },
+    { name = "cortexcode-cli-rpc", editable = "packages/code/rpc" },
+    { name = "cortexcode-cli-session", editable = "packages/code/session" },
+    { name = "cortexcode-cli-subagents", editable = "packages/code/subagents" },
+    { name = "cortexcode-cli-tools", editable = "packages/code/tools" },
+]
 
 [[package]]
 name = "cortexcode-tui"
