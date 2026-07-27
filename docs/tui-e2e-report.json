@@ -1,0 +1,221 @@
+{
+  "generated_from": "c730ed5",
+  "note": "Written by scripts/tui_e2e.py. Consumed by scripts/migrate_next.py --status. A Phase 7 step cannot be ticked while it still owns unmet scenarios.",
+  "passing": [
+    "harness/receives-input",
+    "harness/renders-a-frame",
+    "harness/resize-repaints"
+  ],
+  "unmet": [
+    {
+      "id": "auth/login-dialog",
+      "status": "pending",
+      "blocked_by": "7.11",
+      "title": "`/login` opens the provider picker"
+    },
+    {
+      "id": "auth/missing-key-message",
+      "status": "pending",
+      "blocked_by": "7.11",
+      "title": "A missing API key explains itself instead of crashing"
+    },
+    {
+      "id": "chat/abort-turn",
+      "status": "pending",
+      "blocked_by": "7.4",
+      "title": "Escape aborts an in-flight turn and says so"
+    },
+    {
+      "id": "chat/assistant-round-trip",
+      "status": "pending",
+      "blocked_by": "7.4",
+      "title": "A prompt round-trips against the faux provider"
+    },
+    {
+      "id": "chat/error-surface",
+      "status": "pending",
+      "blocked_by": "7.4",
+      "title": "A provider error renders as an error message, not a crash"
+    },
+    {
+      "id": "chat/loader-while-busy",
+      "status": "pending",
+      "blocked_by": "7.5",
+      "title": "A loader runs during the turn and clears after"
+    },
+    {
+      "id": "chat/markdown-rendering",
+      "status": "pending",
+      "blocked_by": "7.5",
+      "title": "Assistant markdown renders styled, not raw"
+    },
+    {
+      "id": "chat/streaming-incremental",
+      "status": "pending",
+      "blocked_by": "7.5",
+      "title": "Assistant text appears progressively while streaming"
+    },
+    {
+      "id": "chat/user-message-renders",
+      "status": "pending",
+      "blocked_by": "7.3",
+      "title": "A submitted message renders as a user message"
+    },
+    {
+      "id": "commands/clear",
+      "status": "pending",
+      "blocked_by": "7.8",
+      "title": "`/clear` empties the chat log"
+    },
+    {
+      "id": "commands/file-mention",
+      "status": "pending",
+      "blocked_by": "7.8",
+      "title": "`@` opens file autocomplete and inserts a path"
+    },
+    {
+      "id": "commands/help",
+      "status": "pending",
+      "blocked_by": "7.8",
+      "title": "`/help` lists the built-in commands"
+    },
+    {
+      "id": "commands/slash-autocomplete",
+      "status": "pending",
+      "blocked_by": "7.8",
+      "title": "Typing `/` opens the command autocomplete"
+    },
+    {
+      "id": "e2e/first-run",
+      "status": "pending",
+      "blocked_by": "7.12",
+      "title": "A clean install boots, prompts, answers and exits cleanly"
+    },
+    {
+      "id": "footer/context-meter",
+      "status": "pending",
+      "blocked_by": "7.7",
+      "title": "Footer shows remaining context budget"
+    },
+    {
+      "id": "footer/git-branch",
+      "status": "pending",
+      "blocked_by": "7.7",
+      "title": "Footer shows the git branch and dirty mark"
+    },
+    {
+      "id": "footer/model-and-tokens",
+      "status": "pending",
+      "blocked_by": "7.7",
+      "title": "Footer shows the active model and token usage"
+    },
+    {
+      "id": "input/history-recall",
+      "status": "pending",
+      "blocked_by": "7.3",
+      "title": "Up-arrow recalls the previous submission"
+    },
+    {
+      "id": "input/multiline",
+      "status": "pending",
+      "blocked_by": "7.3",
+      "title": "Shift+Enter opens a second line instead of submitting"
+    },
+    {
+      "id": "input/type-and-submit",
+      "status": "pending",
+      "blocked_by": "7.3",
+      "title": "Typed text appears, Enter clears the editor"
+    },
+    {
+      "id": "overlay/escape-closes",
+      "status": "pending",
+      "blocked_by": "7.9",
+      "title": "Escape closes an overlay and restores editor focus"
+    },
+    {
+      "id": "overlay/model-selector",
+      "status": "pending",
+      "blocked_by": "7.9",
+      "title": "`/model` switches model and the footer follows"
+    },
+    {
+      "id": "overlay/session-selector",
+      "status": "pending",
+      "blocked_by": "7.9",
+      "title": "`/sessions` lists sessions and loads one"
+    },
+    {
+      "id": "overlay/settings",
+      "status": "pending",
+      "blocked_by": "7.9",
+      "title": "`/settings` opens settings and a change persists"
+    },
+    {
+      "id": "session/persist-across-restart",
+      "status": "pending",
+      "blocked_by": "7.10",
+      "title": "A turn survives quit and relaunch"
+    },
+    {
+      "id": "session/resume",
+      "status": "pending",
+      "blocked_by": "7.10",
+      "title": "`--continue` restores the previous transcript on screen"
+    },
+    {
+      "id": "shell/boot-banner",
+      "status": "pending",
+      "blocked_by": "7.2",
+      "title": "Startup banner and brand mark are on screen"
+    },
+    {
+      "id": "shell/ctrl-c-exits",
+      "status": "pending",
+      "blocked_by": "7.2",
+      "title": "Ctrl+C twice exits and restores the terminal"
+    },
+    {
+      "id": "shell/editor-prompt",
+      "status": "pending",
+      "blocked_by": "7.2",
+      "title": "The editor is focused and shows its `>` prompt"
+    },
+    {
+      "id": "shell/footer-present",
+      "status": "pending",
+      "blocked_by": "7.2",
+      "title": "A footer line is present under the editor"
+    },
+    {
+      "id": "shell/resize-reflows",
+      "status": "pending",
+      "blocked_by": "7.2",
+      "title": "Resizing reflows the shell without corruption"
+    },
+    {
+      "id": "tools/bash-renders",
+      "status": "pending",
+      "blocked_by": "7.6",
+      "title": "A bash call streams its output into the log"
+    },
+    {
+      "id": "tools/diff-renders",
+      "status": "pending",
+      "blocked_by": "7.6",
+      "title": "An edit renders as a coloured diff"
+    },
+    {
+      "id": "tools/execution-renders",
+      "status": "pending",
+      "blocked_by": "7.6",
+      "title": "A tool call renders with name, args and result"
+    },
+    {
+      "id": "tools/output-expand",
+      "status": "pending",
+      "blocked_by": "7.6",
+      "title": "Ctrl+O expands and collapses truncated tool output"
+    }
+  ]
+}

@@ -1027,3 +1027,98 @@ not actual GCP authentication.
 **Notes**:
 - Gates pass: ruff check, ruff format, pyright all clean for the prompts package
 - Pre-existing failing test in TUI components package (autocomplete parity) unrelated to this step
+
+---
+
+## Phase 7 — why it exists, and what changed in the driver
+
+### The finding
+
+After 6.3 the plan read 65/65 and every box was ticked, but **`pycortex` does not
+start a TUI**. `code/main` reaches the interactive branch and prints
+`Interactive mode not yet implemented`; `code/interactive` is a 151-line stub
+whose `run_interactive_mode` prints one line and returns an exit code. There is
+no `[project.scripts]` entry anywhere, so there is no `pycortex` (or `cortex`)
+command to run in the first place.
+
+The framework underneath is fine and must not be redone: `cortex.tui.*` is ported
+and verified against captured TS goldens (1,324 tests green,
+`docs/tui-parity-report.json` clean). Rendering a `Box`+`Text` through the real
+`TUI` onto a `Surface` produces a correct frame today. What is missing is the app
+that assembles those parts — ~16.6k lines of TS under `modes/interactive/`, plus
+`core/agent-session.ts` (2,479 lines) and the registries around it.
+
+### Why the audit did not catch it
+
+`leaf-populated` asks "does this leaf have module code and at least one
+`tests/test_*.py`". A stub answers **yes** to both. So 5.2 was ticked over a stub,
+legitimately, by an audit doing exactly what it was written to do.
+
+### What changed
+
+- **`packages/code/e2e/` (`cortex.code.e2e`)** — the app-level counterpart of
+  `tui/testkit`, `never_publish = true`. `HarnessTerminal` completes the `Terminal`
+  ABC over testkit's `CaptureTerminal` (adding the app-level surface — title,
+  progress, drain — and *recording* it so scenarios can assert on it).
+  `AppHarness` boots a TUI, types, presses named keys, resizes, and reads the cell
+  grid back.
+  - Rendering is driven by `TUI.render_now()`, not `request_render()`. The latter
+    coalesces onto the event loop, so a test would have to sleep to see its own
+    keystroke.
+  - `transcript()` (scrollback + viewport) is the right assertion target for chat,
+    not `screen()` — the viewport is 24 rows and turn one scrolls off fast.
+  - `_keys.KEY_SEQUENCES` is round-trip tested against the app's own
+    `cortex.tui.keys.parse_key`, so the harness cannot send bytes the app would
+    not recognise. All 40 entries verified.
+
+- **The corpus** (`_scenarios.py`) — 38 scenarios, each one thing a person can
+  check by looking at the app, each naming the Phase 7 step that owes it. Written
+  up-front so each step's scope is fixed before the work starts. 3 passing (7.1's
+  own self-checks), 35 pending.
+
+- **`scripts/tui_e2e.py`** — runs the corpus, writes `docs/tui-e2e-report.json`.
+  Exits non-zero only on a *failing* scenario; pending is the expected state until
+  Phase 7 finishes, so it does not redden CI.
+
+- **`scripts/migrate_next.py`** — two new verifiers, automatic for phase 7:
+  - `e2e-scenarios` — mirrors `parity_gaps()` one layer up, reading the e2e report.
+    Same ownership rule: an unmet scenario only contradicts the box of the step
+    that *owes* it, so 7.1 is not blocked by the 7.2 scenarios it exists to test.
+  - `no-stubs` — greps the step's leaves for `STUB_MARKERS`. This is the direct fix
+    for how 5.2 slipped through.
+
+  Verified by ticking 7.2 by hand: the audit rejected it with three concrete
+  reasons (stub markers in `code/interactive`, stub markers in `code/main`, 5 unmet
+  scenarios). Reverted.
+
+- **`.github/workflows/ci.yml` — NOT APPLIED, needs a human.** The test matrix says
+  `coding-agent`, a directory that does not exist (the group is `code`). That leg
+  exits 4 on every run, and **no `packages/code/**` test has ever run in CI** —
+  including every leaf Phases 4 and 5 added. The fix iterates leaves per group,
+  matching how `migrate_next.gates` targets pytest (`pytest packages/<group>`
+  cannot work: every leaf names its test dir `tests`, so the basenames collide),
+  and adds an `e2e` job that runs the corpus and fails if the committed report is
+  stale.
+
+  The patch is committed at **`.hoocode/pending-ci-fix.patch`** but the workflow
+  file itself is untouched: this session pushes over an OAuth app without
+  `workflow` scope, so any commit touching `.github/workflows/` is rejected
+  outright. Apply it with a token that has the scope:
+
+  ```
+  git apply .hoocode/pending-ci-fix.patch && rm .hoocode/pending-ci-fix.patch
+  ```
+
+  Until then CI does not cover `packages/code/**` at all, so run the leaf gates
+  locally and do not read a green CI badge as coverage of this phase.
+
+### Known, deliberately not fixed here
+
+- **`5.6` audit failure is real and pre-existing**: `code/_meta` has
+  `publish = false` while `tui/_meta`, `ai/_meta` and `agent/_meta` are all
+  `true`. 5.6 promised the CLI umbrella would be publishable. Flipping it is a
+  release decision (it puts `cortexcode-code` on PyPI), so it is left for a human.
+- The stub markers in `agent/loop`, `code/subagents`, `code/session/compaction`,
+  `ai/images/openrouter` and `ai/oauth/openai_codex` are untouched. Phase 7 owns
+  `agent/loop` (step 7.5); the others are outside its scope and remain honest
+  gaps.

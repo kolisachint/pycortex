@@ -27,7 +27,9 @@ members = [
     "cortexcode-ai-types",
     "cortexcode-ai-util",
     "cortexcode-cli-config",
+    "cortexcode-cli-e2e",
     "cortexcode-cli-extensions",
+    "cortexcode-cli-interactive",
     "cortexcode-cli-main",
     "cortexcode-cli-print",
     "cortexcode-cli-prompts",
@@ -374,9 +376,31 @@ version = "0.0.3"
 source = { editable = "packages/code/config" }
 
 [[package]]
+name = "cortexcode-cli-e2e"
+version = "0.0.1"
+source = { editable = "packages/code/e2e" }
+dependencies = [
+    { name = "cortexcode-tui-render" },
+    { name = "cortexcode-tui-terminal" },
+    { name = "cortexcode-tui-testkit" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-tui-render", editable = "packages/tui/render" },
+    { name = "cortexcode-tui-terminal", editable = "packages/tui/terminal" },
+    { name = "cortexcode-tui-testkit", editable = "packages/tui/testkit" },
+]
+
+[[package]]
 name = "cortexcode-cli-extensions"
-version = "0.0.3"
+version = "0.0.1"
 source = { editable = "packages/code/extensions" }
+
+[[package]]
+name = "cortexcode-cli-interactive"
+version = "0.0.1"
+source = { editable = "packages/code/interactive" }
 
 [[package]]
 name = "cortexcode-cli-main"
@@ -410,7 +434,7 @@ source = { editable = "packages/code/session" }
 
 [[package]]
 name = "cortexcode-cli-subagents"
-version = "0.0.3"
+version = "0.0.1"
 source = { editable = "packages/code/subagents" }
 
 [[package]]

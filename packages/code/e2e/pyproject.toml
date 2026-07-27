@@ -1,0 +1,35 @@
+[project]
+name = "cortexcode-cli-e2e"
+version = "0.0.1"
+description = "Cortex CLI leaf: end-to-end TUI harness (never published)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "cortexcode-tui-render",
+    "cortexcode-tui-terminal",
+    "cortexcode-tui-testkit",
+]
+
+[tool.cortex]
+# Test infrastructure, not a port of anything in hoocode — the app-level
+# counterpart of `tui/testkit`. Same reasoning: `never_publish` is the permanent
+# form of `publish = false`, so umbrella steps that demand "every leaf in the
+# group publishes" skip this leaf instead of demanding the impossible.
+publish = false
+never_publish = true
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "src/cortex",
+]
+
+[tool.uv.sources]
+cortexcode-tui-render = { workspace = true }
+cortexcode-tui-terminal = { workspace = true }
+cortexcode-tui-testkit = { workspace = true }
+
+[build-system]
+requires = [
+    "hatchling",
+]
+build-backend = "hatchling.build"

@@ -304,3 +304,101 @@ Coarser leaves until the code stabilizes.
 - [x] **6.2 docs port** — design docs rewritten for Python leaves.
 - [x] **6.3 release 0.1.0 umbrella train** — lockstep umbrella bumps + all published
       leaves via `release.yml`.
+
+---
+
+## Phase 7 — End-to-end TUI integration
+
+**Why this phase exists.** Phases 0–6 ported the *leaves* and ticked every box,
+but `pycortex` does not start a TUI. `main` prints
+`Interactive mode not yet implemented`, and `code/interactive` is a 151-line stub
+whose `run_interactive_mode` prints one line and returns. Step 5.2 was ticked
+anyway because the audit's only question was "does this leaf have module code and
+a test file" — and a stub answers yes to both.
+
+So the framework is real and the product is not. Concretely, what is missing:
+
+| Gap | Evidence | Owed by |
+| --- | --- | --- |
+| No TUI is ever constructed | `code/main` never imports `cortex.tui` | 7.2 |
+| `code/interactive` is a stub | 151 lines vs 16.6k of TS under `modes/interactive/` | 7.2–7.9 |
+| The agent cannot stream | `agent/loop` `_stream_assistant_response` raises | 7.5 |
+| No agent-session orchestrator | `core/agent-session.ts` (2,479 lines) has no Python counterpart | 7.4 |
+| No footer / keybindings / slash-commands / task-store / model-registry / auth-storage | no counterpart under `packages/` | 7.7–7.11 |
+
+What *is* real and must not be re-done: `cortex.tui.*` — renderer, components,
+keys, terminal, images, editing — is ported and verified against captured TS
+goldens (1,324 tests, `docs/tui-parity-report.json` clean). Phase 7 assembles
+those parts; it does not rebuild them.
+
+**How this phase is proved.** Not by reading the diff. `packages/code/e2e`
+(`cortex.code.e2e`) boots the real interactive mode against a fake terminal,
+presses keys, and reads the resulting cell grid. Each step owns a set of named
+scenarios in `cortex.code.e2e._scenarios` — one per thing a person can check by
+running the app and looking at the screen. `scripts/tui_e2e.py` runs the corpus
+and writes `docs/tui-e2e-report.json`; `migrate_next.py` reads it and **refuses to
+tick a Phase 7 box while that step still owns a pending or failing scenario**, and
+additionally refuses while stub markers remain in the step's leaves
+(`verify: no-stubs`). Between steps:
+
+```
+uv run scripts/tui_e2e.py              # the whole corpus, grouped by step
+uv run scripts/tui_e2e.py --step 7.3   # just the step you are on
+uv run pycortex                        # and look at it yourself
+```
+
+Steps are ordered so the product is runnable from 7.2 onward and grows one
+visible capability at a time.
+
+- [x] **7.1 e2e harness** — `packages/code/e2e/` (`cortex.code.e2e`): fake terminal
+      over `tui/testkit`'s `CaptureTerminal`, `AppHarness` (boot / type / key /
+      resize / snapshot), the scenario corpus, `scripts/tui_e2e.py`, and the
+      `migrate_next.py` verifiers (`e2e-scenarios`, `no-stubs`). No app code.
+      verify: leaf-populated, e2e-scenarios
+- [ ] **7.2 app shell boots** — `modes/interactive/interactive-mode.ts` constructor +
+      `run()` skeleton, `brand.ts`, `core/wordmark.ts`, `components/footer.ts` shell →
+      `packages/code/interactive/`. `packages/code/main` stops printing and
+      constructs `TUI(ProcessTerminal())`; `pycortex` opens a screen with the
+      banner, an editor showing `>`, and a footer; Ctrl+C twice exits and restores
+      the terminal. Export `build_app_root(tui, **options)` — the corpus boots
+      through it. Also add the console script: **no `[project.scripts]` exists
+      anywhere in the workspace today**, so there is no `pycortex` command to run
+      at all. It belongs on `packages/code/_meta` (the `cortexcode-code` umbrella),
+      pointing at `cortex.code.main:main`.
+- [ ] **7.3 editor + chat log** — `components/custom-editor.ts`, `user-message.ts`,
+      `core/keybindings.ts` → `packages/code/interactive/`. Typing renders, Enter
+      submits and clears, Shift+Enter opens a line, Up recalls history, the
+      submission lands in the chat container.
+- [ ] **7.4 agent-session bridge** — `core/agent-session.ts`, `agent-session-runtime.ts`,
+      `agent-session-services.ts` → `packages/code/session/`. Wire the editor's
+      submissions into it and its events back onto the screen; round-trip a prompt
+      against `ai/provider-faux` with no network.
+- [ ] **7.5 streaming turns** — fill in `packages/agent/loop`
+      (`_stream_assistant_response`, `_execute_tool_calls`) and
+      `components/assistant-message.ts` → `packages/code/interactive/`. Assistant
+      text appears progressively, a loader runs during the turn, markdown renders
+      styled. verify: leaf-populated, e2e-scenarios, no-stubs
+- [ ] **7.6 tool execution UI** — `components/{tool-execution,diff,bash-execution}.ts`,
+      `bash-execution-controller.ts` → `packages/code/interactive/`. Tool calls
+      render with args and results, edits render as diffs, bash streams, Ctrl+O
+      expands truncated output.
+- [ ] **7.7 footer + status** — `core/footer-data-provider.ts`, `components/footer.ts`
+      in full → `packages/code/interactive/`. Model, token usage, context meter,
+      git branch and dirty mark.
+- [ ] **7.8 slash commands + autocomplete** — `command-executor.ts`,
+      `core/slash-commands.ts`, `@`-mention providers → `packages/code/interactive/`.
+      `/` opens command autocomplete, `/help` and `/clear` work, `@` inserts a path.
+- [ ] **7.9 overlays + selectors** — `components/{model-selector,session-selector,
+      settings-selector,theme-selector}.ts`, `model-controller.ts` →
+      `packages/code/interactive/`. Overlays open, change state, and Escape restores
+      editor focus.
+- [ ] **7.10 session persistence** — `core/session-manager.ts` wiring into interactive
+      mode → `packages/code/session/`. `--continue` restores the transcript on
+      screen; a turn survives quit and relaunch.
+- [ ] **7.11 auth + model registry** — `core/{model-registry,model-resolver,auth-storage}.ts`,
+      `login-controller.ts` → `packages/code/config/`, `packages/code/interactive/`.
+      `/login` opens the provider picker; a missing key explains itself.
+- [ ] **7.12 e2e cutover** — every scenario in the corpus passing, `tui_e2e.py` exits
+      0 with zero pending, stub markers gone from `code/interactive`, `agent/loop`
+      and `code/main`. Then re-run 6.1's side-by-side against hoocode interactively.
+      verify: e2e-scenarios, no-stubs
