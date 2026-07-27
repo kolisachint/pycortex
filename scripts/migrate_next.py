@@ -28,6 +28,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 PLAN = REPO_ROOT / "docs" / "04-migration-plan.md"
 PACKAGES = REPO_ROOT / "packages"
 PARITY_REPORT = REPO_ROOT / "docs" / "tui-parity-report.json"
+E2E_REPORT = REPO_ROOT / "docs" / "tui-e2e-report.json"
 SRC_REPO_URL = "https://github.com/kolisachint/hoocode"
 
 STEP_RE = re.compile(r"^- \[( |x)\] \*\*(\d+\.\d+) ([^*]+)\*\*")
@@ -225,7 +226,70 @@ def step_verifiers(step: Step) -> set[str]:
     verifiers = {"leaf-populated"}
     if "publish=true" in step.body or "publishable" in step.title.lower():
         verifiers.add("group-published")
+    # Phase 7 is the integration phase, and it exists because `leaf-populated`
+    # is satisfiable by a stub — 5.2 shipped one and was ticked green. Its steps
+    # are held to what the screen shows and to the absence of stub markers.
+    if step.phase == 7:
+        verifiers |= {"e2e-scenarios", "no-stubs"}
     return verifiers
+
+
+# Phrases that mark code as deliberately unfinished. `leaf-populated` cannot see
+# these — a file full of them is still "module code" — which is exactly how a
+# stubbed interactive mode passed the audit.
+STUB_MARKERS = (
+    "not yet implemented",
+    "not implemented yet",
+    "simplified stub",
+    "is a simplified implementation",
+    "NotImplementedError",
+)
+
+
+def stub_markers_in(leaf: Path) -> list[str]:
+    """Stub markers found under a leaf's `src`, as `file:line: marker` strings."""
+    src = leaf / "src"
+    if not src.is_dir():
+        return []
+    found: list[str] = []
+    for path in sorted(src.rglob("*.py")):
+        try:
+            lines = path.read_text().splitlines()
+        except OSError:
+            continue
+        for lineno, line in enumerate(lines, 1):
+            lowered = line.lower()
+            for marker in STUB_MARKERS:
+                if marker.lower() in lowered:
+                    rel = path.relative_to(REPO_ROOT)
+                    found.append(f"{rel}:{lineno}: {marker}")
+    return found
+
+
+def e2e_gaps() -> list[tuple[str, str]]:
+    """End-to-end scenarios the product does not yet satisfy, as (owning step, message).
+
+    Mirrors `parity_gaps`, one layer up: that one guards "this component renders
+    like the TS one", this one guards "the product does the thing when run".
+    """
+    if not E2E_REPORT.is_file():
+        return []
+    try:
+        report = json.loads(E2E_REPORT.read_text())
+    except json.JSONDecodeError:
+        return [("?", f"{E2E_REPORT.name}: not valid JSON")]
+    by_step: dict[str, list[str]] = {}
+    for entry in report.get("unmet", []):
+        by_step.setdefault(entry.get("blocked_by", "?"), []).append(entry.get("id", "?"))
+    return [
+        (
+            step_id,
+            f"step {step_id}: {len(ids)} end-to-end scenario(s) not met "
+            f"({', '.join(sorted(ids)[:3])}{'…' if len(ids) > 3 else ''}) — "
+            f"see `uv run scripts/tui_e2e.py --step {step_id}`",
+        )
+        for step_id, ids in sorted(by_step.items())
+    ]
 
 
 def audit(steps: list[Step]) -> list[str]:
@@ -246,6 +310,15 @@ def audit(steps: list[Step]) -> list[str]:
                 problems.append(
                     f"{step.id} {step.title}: checked, but no code+tests in {', '.join(empty)}"
                 )
+        if "no-stubs" in verifiers:
+            for leaf in leaves:
+                markers = stub_markers_in(leaf)
+                if markers:
+                    shown = "; ".join(markers[:3])
+                    more = f" (+{len(markers) - 3} more)" if len(markers) > 3 else ""
+                    problems.append(
+                        f"{step.id} {step.title}: checked, but stub markers remain — {shown}{more}"
+                    )
         if "group-published" in verifiers:
             groups = {p.parent.name for p in leaves} or step_groups(step)
             unpublished: list[str] = []
@@ -265,6 +338,16 @@ def audit(steps: list[Step]) -> list[str]:
     # must not be blocked by the renderer gaps (1.5) it exists to expose.
     ticked = {s.id for s in steps if s.done}
     problems.extend(msg for step_id, msg in parity_gaps() if step_id in ticked)
+    # Same ownership rule for the end-to-end corpus: an unmet scenario only
+    # contradicts a checkbox when the step that owes it is the one ticked.
+    # Building the harness (7.1) must not be blocked by the shell (7.2) it exists
+    # to test.
+    e2e_owed = {
+        step_id
+        for step_id, _ in e2e_gaps()
+        if any(s.id == step_id and "e2e-scenarios" in step_verifiers(s) for s in steps)
+    }
+    problems.extend(msg for step_id, msg in e2e_gaps() if step_id in ticked and step_id in e2e_owed)
     return problems
 
 

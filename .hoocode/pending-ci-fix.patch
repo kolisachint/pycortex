@@ -1,0 +1,58 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index c2269c7..0fb5936 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -28,7 +28,7 @@ jobs:
+     strategy:
+       fail-fast: false
+       matrix:
+-        package: [tui, ai, agent, coding-agent]
++        group: [tui, ai, agent, code]
+     steps:
+       - uses: actions/checkout@v4
+       - uses: astral-sh/setup-uv@v5
+@@ -36,9 +36,41 @@ jobs:
+           python-version: "3.11"
+       - name: Sync workspace
+         run: uv sync --all-packages
+-      - name: Test ${{ matrix.package }}
+-        # exit code 5 = no tests collected (empty placeholder package) — OK during bootstrap
+-        run: uv run pytest packages/${{ matrix.package }} || { c=$?; [ "$c" -eq 5 ] && echo "no tests yet" || exit "$c"; }
++      - name: Test ${{ matrix.group }}
++        # Per leaf, not per group: `pytest packages/<group>` fails collection because
++        # every leaf names its test dir `tests`, so the basenames collide. This is the
++        # same targeting `scripts/migrate_next.py` gates with.
++        # Exit code 5 = no tests collected (empty placeholder leaf) — OK during bootstrap.
++        run: |
++          set -u
++          failed=0
++          for leaf in packages/${{ matrix.group }}/*/; do
++            [ -f "$leaf/pyproject.toml" ] || continue
++            echo "::group::pytest $leaf"
++            uv run pytest "$leaf" || { c=$?; [ "$c" -eq 5 ] && echo "no tests yet" || failed=1; }
++            echo "::endgroup::"
++          done
++          exit "$failed"
++
++  e2e:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: astral-sh/setup-uv@v5
++        with:
++          python-version: "3.11"
++      - name: Sync workspace
++        run: uv sync --all-packages
++      - name: End-to-end TUI corpus
++        # Exits non-zero only on a *failing* scenario. Pending scenarios are the
++        # expected state until Phase 7 finishes, and must not redden the build.
++        run: uv run scripts/tui_e2e.py
++      - name: Report is current
++        # The report is an audited input to `migrate_next.py`; a stale one lets a
++        # Phase 7 box be ticked against yesterday's results.
++        run: |
++          uv run scripts/tui_e2e.py --refresh
++          git diff --exit-code docs/tui-e2e-report.json
+ 
+   build:
+     runs-on: ubuntu-latest

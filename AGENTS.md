@@ -45,6 +45,7 @@ hand-edit the checkbox.
 | Checklist / plan | `docs/04-migration-plan.md` (driven by `scripts/migrate_next.py`) |
 | Live progress + audit | `uv run scripts/migrate_next.py --status` |
 | Architecture + package map | `docs/02-target-architecture.md` |
+| End-to-end product state | `uv run scripts/tui_e2e.py` (Phase 7 only) |
 | Conventions, gotchas, step log | `.hoocode/MIGRATION_NOTES.md` |
 | TS source (never edit) | see below — **not** a fixed path |
 
@@ -73,6 +74,34 @@ On a fresh container none of it exists until the driver clones it, so run
   this is pre-existing. Gates run **targeted** pytest per package.
 - `uv sync --all-packages` (not plain `uv sync`) — anything less collapses the venv
   to a couple of editables and breaks namespace-package merging.
+
+## Phase 7 is different: the unit of proof is the running product
+
+Phases 0–6 ported leaves. **Phase 7 assembles them into an app that runs**, because
+until it lands `pycortex` does not start a TUI at all — `code/main` prints
+"Interactive mode not yet implemented" and `code/interactive` is a stub.
+
+That happened because `leaf-populated` ("has module code and a test file") is
+satisfiable by a stub, so 5.2 was ticked green over one. Phase 7 steps are
+therefore audited on two extra things:
+
+- `e2e-scenarios` — the step's named scenarios in `cortex.code.e2e` must pass;
+- `no-stubs` — no stub markers (`not yet implemented`, `NotImplementedError`, …)
+  left under the step's leaves.
+
+Both are automatic for any step in Phase 7; a step can override with `verify:`.
+
+```
+uv run scripts/tui_e2e.py              # whole corpus, grouped by step
+uv run scripts/tui_e2e.py --step 7.3   # just the step you are on
+uv run scripts/tui_e2e.py --detail <scenario-id>
+uv run scripts/tui_e2e.py --refresh    # rewrite docs/tui-e2e-report.json (the audited input)
+```
+
+**Finish a Phase 7 step by flipping its scenarios from `pending` to implemented**
+in `packages/code/e2e/src/cortex/code/e2e/_scenarios.py`, not by adding new ones.
+The corpus is the spec: it was written up-front so the scope of each step is
+fixed before the work starts.
 
 ## TUI work is verified against a surface, not by reading the diff
 
