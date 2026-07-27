@@ -5,6 +5,9 @@ description = "Cortex CLI leaf: end-to-end TUI harness (never published)"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "cortexcode-cli-config",
+    "cortexcode-cli-interactive",
+    "cortexcode-tui-components",
     "cortexcode-tui-render",
     "cortexcode-tui-terminal",
     "cortexcode-tui-testkit",
@@ -24,6 +27,9 @@ packages = [
 ]
 
 [tool.uv.sources]
+cortexcode-cli-config = { workspace = true }
+cortexcode-cli-interactive = { workspace = true }
+cortexcode-tui-components = { workspace = true }
 cortexcode-tui-render = { workspace = true }
 cortexcode-tui-terminal = { workspace = true }
 cortexcode-tui-testkit = { workspace = true }

@@ -1,10 +1,15 @@
 {
-  "generated_from": "c730ed5",
+  "generated_from": "deeabd7",
   "note": "Written by scripts/tui_e2e.py. Consumed by scripts/migrate_next.py --status. A Phase 7 step cannot be ticked while it still owns unmet scenarios.",
   "passing": [
     "harness/receives-input",
     "harness/renders-a-frame",
-    "harness/resize-repaints"
+    "harness/resize-repaints",
+    "shell/boot-banner",
+    "shell/ctrl-c-exits",
+    "shell/editor-prompt",
+    "shell/footer-present",
+    "shell/resize-reflows"
   ],
   "unmet": [
     {
@@ -162,36 +167,6 @@
       "status": "pending",
       "blocked_by": "7.10",
       "title": "`--continue` restores the previous transcript on screen"
-    },
-    {
-      "id": "shell/boot-banner",
-      "status": "pending",
-      "blocked_by": "7.2",
-      "title": "Startup banner and brand mark are on screen"
-    },
-    {
-      "id": "shell/ctrl-c-exits",
-      "status": "pending",
-      "blocked_by": "7.2",
-      "title": "Ctrl+C twice exits and restores the terminal"
-    },
-    {
-      "id": "shell/editor-prompt",
-      "status": "pending",
-      "blocked_by": "7.2",
-      "title": "The editor is focused and shows its `>` prompt"
-    },
-    {
-      "id": "shell/footer-present",
-      "status": "pending",
-      "blocked_by": "7.2",
-      "title": "A footer line is present under the editor"
-    },
-    {
-      "id": "shell/resize-reflows",
-      "status": "pending",
-      "blocked_by": "7.2",
-      "title": "Resizing reflows the shell without corruption"
     },
     {
       "id": "tools/bash-renders",

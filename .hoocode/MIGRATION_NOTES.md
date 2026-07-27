@@ -1122,3 +1122,116 @@ legitimately, by an audit doing exactly what it was written to do.
   `ai/images/openrouter` and `ai/oauth/openai_codex` are untouched. Phase 7 owns
   `agent/loop` (step 7.5); the others are outside its scope and remain honest
   gaps.
+
+## 7.2 app shell boots — DONE
+
+`pycortex` now starts a TUI. `modes/interactive/{brand.ts,components/footer.ts}` +
+`core/wordmark.ts` + the constructor/`init()`/`run()`/`shutdown()` skeleton of
+`interactive-mode.ts` (3,528 lines) → `packages/code/interactive/` (~900),
+5 e2e scenarios, 116 unit tests, plus a `[project.scripts]` entry — the first one
+in the workspace.
+
+1. **THE REAL BLOCKER WAS NOT IN `code/interactive` AT ALL.** With the shell
+   built, the corpus went green on the first run and the pty did not: the app
+   drew a perfect screen and then ignored every key. `ProcessTerminal.start()`
+   carried the comment *"in a real implementation, we would set up stdin reading
+   here — for now, we'll just query the terminal"*, and `drain_input` *"for now,
+   we just sleep"*. So `cortex.tui.terminal` had no raw mode, no stdin reader, no
+   SIGWINCH, and never flushed stdout. Every earlier phase passed its gates over
+   this, because nothing had ever tried to *use* the terminal — 1.5–1.19 verify
+   rendering against captured frames, which is a pure function of the write side.
+   Fixed here (`_enable_raw_mode`, `_install_stdin_reader`, `_install_resize_handler`,
+   a real `drain_input`, `flush` after every write) with 36 new pty-driven tests.
+   - Raw mode is the load-bearing part: canonical mode turns `\x03` into a
+     SIGINT, so `handle_ctrl_c` would never see the keystroke the TS binds.
+   - The reader goes on the event loop (`loop.add_reader`) when there is one —
+     `run_interactive_mode` starts the TUI inside `asyncio.run`, so input,
+     rendering and the coalescing timer stay on one thread. The thread fallback
+     is for a synchronous driver.
+   - `tty.setraw` leaves `VMIN=1`, so a bare `os.read` blocks forever on an idle
+     terminal. Everything not driven by the loop's readability callback
+     (`drain_input`, the thread pump) asks `select` first.
+   - Node's writes go out as made; Python's are buffered and a TUI frame has no
+     newline to flush a line-buffered stream. `write()` flushes.
+   - **LESSON, same shape as 1.15's `is_image_line`:** a stub with a polite
+     comment is invisible to `no-stubs` (none of the STUB_MARKERS appear in
+     "in a real implementation, we would…") and invisible to every test that
+     only asks the object about its dimensions. Run the product.
+2. **The e2e corpus cannot see the tty, so `--done` alone would have shipped a
+   dead app.** `HarnessTerminal` implements input by calling the handler
+   directly, which is right for the harness and says nothing about whether a
+   real terminal ever delivers a byte. Step 7.2 is signed off on a pty smoke run
+   as well: boot the console script under `pty.openpty()`, type, press Ctrl+C
+   twice, and check the exit code, the banner, and that `CSI ?25h` / `CSI ?2004l`
+   went out. Do this for every Phase 7 step that adds a key binding.
+3. Ctrl+C is handled by a **TUI input listener**, not by the editor. The TS
+   reaches `handleCtrlC` through `CustomEditor`'s `onAction("app.clear")`, which
+   needs `core/keybindings.ts` + `components/custom-editor.ts` — both 7.3. The
+   base `Editor` deliberately ignores Ctrl+C ("let the parent handle it") and
+   offers no hook. 7.3 moves it. The listener returns `{"consume": True}`; that
+   is invisible today (the editor ignores the key anyway) and will not be once
+   7.3 binds it, so a test asserts a later listener never sees it.
+4. **Shutdown resolves an exit code; it does not `process.exit`.** The TS exits
+   the process from inside `shutdown()`, which would make the exit path the one
+   thing the corpus could never watch. `InteractiveMode.shutdown()` tears down
+   and calls `options.on_exit`; `run()` awaits a future and returns the code;
+   `run_interactive_mode` turns it into a process exit. `on_exit` is how
+   `shell/ctrl-c-exits` observes the thing the step promises.
+5. `build_app_root(tui, **options)` is the corpus's single seam. It builds the
+   tree but does **not** start the TUI — the harness starts it itself, and the
+   two must not both do it.
+6. **Only a subset of `theme/theme.ts` (1,207 lines) is ported**: the colour
+   maths, the `Theme` value type, and the built-in dark palette. `dark.json` is
+   copied **verbatim** as package data rather than transcribed into a Python
+   dict, so the two cannot drift. The registry half — loading user themes, the
+   watcher, light mode, `getMarkdownTheme`, the highlighter — waits for 7.9,
+   which has something to point it at.
+   - The `spread < 10` guard in `rgbTo256` is not decoration: without it the
+     palette's own `selectedBg` (`#3a3a4a`) resolves to a grey and every
+     selected row loses its blue. It is mutation-tested with that exact colour.
+7. **`FooterState` is a projection, not an invention.** The TS footer reads an
+   `AgentSession` and a `FooterDataProvider`; neither exists yet. All the *line
+   assembly* is ported whole (width maths, gauge, token formatting, both lines)
+   and the data arrives as a dataclass whose field names mirror the accessors
+   they will come from, so 7.7 is a rewiring. Extension statuses and the
+   startup-progress bars are left out — they need stores nothing has ported.
+8. **JS number formatting bites twice in the footer.** `Math.round` is half-up
+   and Python's `round` is half-to-even (a 6.25% context fill is one gauge cell
+   in the TS and zero here); `toFixed` is half-away-from-zero and `f"{x:.1f}"`
+   is half-to-even (2.25% reads `2.3%` there and `2.2%` here). `_js_round` and
+   `_to_fixed`, both with discriminating tests — a footer number is something a
+   user watches tick over.
+9. `main` stops lying about the flags it cannot serve. `--list-models`,
+   `--export` and `--print-token-surface` needed subsystems this port has not
+   reached, and each printed "not yet implemented" and **returned 0** — a script
+   piping `--export` somewhere was told it worked. They now name the step that
+   delivers them and exit 2. (This was also forced: `no-stubs` covers all of a
+   step's leaves, and `code/main` is one of 7.2's.)
+10. `VERSION` lives in `cortex.code.config.config` beside `APP_NAME`. `config.ts`
+    reads it off the CLI's package.json; the Python workspace has no package that
+    carries the *product* version, since leaves are versioned on the publish
+    train.
+11. The `cortexcode-code` umbrella was an empty shell, exactly as `cortexcode-tui`
+    was before 1.8: `dependencies = []`, so `pip install cortexcode-code` would
+    have installed nothing — and a console script pointing into it would have
+    been broken on arrival. It now pins all eleven published `code` leaves.
+12. MUTATION TESTING: 29 mutations across the shell, the footer, the wordmark and
+    the theme; 26 caught on the first honest run. All three misses were real
+    gaps, and all three are now closed by *discriminating* cases rather than more
+    tests: the consumed Ctrl+C (nothing downstream was watching), "keep listening
+    after shutdown" (the assertion was on `on_exit`, which the shutdown guard
+    swallows either way — it is on the editor's text now), and the `spread < 10`
+    guard (the colour under test was one the cube wins anyway). 29/29.
+
+### Found here, deliberately not fixed
+
+- **`ProcessTerminal` never calls `set_kitty_protocol_active`.** The TS
+  `terminal.ts` imports `./keys.js` and tells it when the protocol goes on and
+  off; `matches_key` reads that flag. Wiring it up means a new leaf edge
+  `tui/terminal → tui/keys`, which is a package-map decision (doc 02) and not
+  7.2's to make. Acyclic, so it is available whenever someone wants it.
+- **No `code` leaf ships `py.typed`**, so every published `cortex.code.*`
+  package is untyped to a downstream strict checker — the exact gap 1.8 closed
+  for the tui group. It belongs to 5.6, which is already failing its audit.
+- 5.6's `publish = false` on `code/_meta` is untouched, for the reason 7.1 gave:
+  flipping it puts `cortexcode-code` on PyPI, which is a release decision.

@@ -355,7 +355,7 @@ visible capability at a time.
       resize / snapshot), the scenario corpus, `scripts/tui_e2e.py`, and the
       `migrate_next.py` verifiers (`e2e-scenarios`, `no-stubs`). No app code.
       verify: leaf-populated, e2e-scenarios
-- [ ] **7.2 app shell boots** — `modes/interactive/interactive-mode.ts` constructor +
+- [x] **7.2 app shell boots** — `modes/interactive/interactive-mode.ts` constructor +
       `run()` skeleton, `brand.ts`, `core/wordmark.ts`, `components/footer.ts` shell →
       `packages/code/interactive/`. `packages/code/main` stops printing and
       constructs `TUI(ProcessTerminal())`; `pycortex` opens a screen with the
