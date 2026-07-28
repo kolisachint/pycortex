@@ -16,11 +16,23 @@ the event loop, which is right in production and useless in a test — a scenari
 that has to sleep to see its own keystroke is a flaky scenario. Every driving
 method ends in `render()`, which calls `TUI.render_now()`, so the surface is
 always the frame that follows the input just sent.
+
+**The turn is asynchronous, and the scenario should not have to know that.** From
+7.4 the app answers a submission by running an agent turn on the event loop, so
+"press Enter and look at the screen" spans work no keystroke can drive on its
+own. The harness therefore owns a loop and, after every input, *pumps* it: run
+ready callbacks, repeatedly, until the app reports itself idle (`attach(busy=…)`)
+or the pass budget runs out. Pumping never advances the clock — a turn that is
+waiting on a real timer, or on a scenario-held gate, stays in flight and is
+observable mid-way, which is what `chat/abort-turn` needs. `settle()` is the
+explicit form for anything that must wait on wall-clock time.
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+import asyncio
+import time
+from collections.abc import Callable, Coroutine, Iterable
 from typing import Any
 
 from cortex.code.e2e._keys import resolve_key
@@ -32,6 +44,11 @@ __all__ = ["AppHarness"]
 
 # A root builder gets the live TUI and attaches whatever the app's root is.
 RootBuilder = Callable[[TUI], None]
+
+#: How many passes of ready callbacks one `pump()` will run before giving up on
+#: the app going idle. A faux turn settles in a few dozen; a turn blocked on a
+#: gate never will, and spending the budget on it costs microseconds.
+PUMP_PASSES = 500
 
 
 class AppHarness:
@@ -45,6 +62,16 @@ class AppHarness:
         rows: int = 24,
     ) -> None:
         self.terminal = HarnessTerminal(columns=columns, rows=rows)
+        # The app schedules work with `asyncio.get_event_loop()` and the TUI
+        # coalesces frames onto a loop; give both one that this harness drives,
+        # rather than whatever loop policy the test process happens to have.
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        self._busy: Callable[[], bool] | None = None
+        self._tasks: list[asyncio.Task[Any]] = []
+        #: Whatever `attach` adopted, for the rare assertion that is about the
+        #: app's state rather than the screen (that a turn was aborted, say).
+        self.app: Any = None
         self.tui = TUI(self.terminal)
         build_root(self.tui)
         self.tui.start()
@@ -52,8 +79,44 @@ class AppHarness:
 
     # ---- lifecycle --------------------------------------------------------
 
+    def attach(
+        self,
+        *,
+        app: Any = None,
+        busy: Callable[[], bool] | None = None,
+        run: Coroutine[Any, Any, Any] | None = None,
+    ) -> None:
+        """Adopt an app's background loop and its notion of "still working".
+
+        `busy` is what `pump()` waits to go false; without it a pump is a single
+        pass of ready callbacks. `run` is scheduled on the harness's loop — the
+        app's own message loop, which is what turns a submission into a turn.
+        """
+        if app is not None:
+            self.app = app
+        if busy is not None:
+            self._busy = busy
+        if run is not None:
+            self.spawn(run)
+
+    def spawn(self, coro: Coroutine[Any, Any, Any]) -> asyncio.Task[Any]:
+        """Schedule a coroutine on the harness's loop."""
+        task = self.loop.create_task(coro)
+        self._tasks.append(task)
+        return task
+
     def stop(self) -> None:
         self.tui.stop()
+        for task in self._tasks:
+            task.cancel()
+        if self._tasks:
+            # Let the cancellations actually land. Closing the loop with tasks
+            # still pending is what turns a tidy teardown into a page of
+            # "Task was destroyed but it is pending!" on stderr.
+            self.loop.run_until_complete(asyncio.gather(*self._tasks, return_exceptions=True))
+        self._tasks = []
+        self.loop.close()
+        asyncio.set_event_loop(None)
 
     def __enter__(self) -> AppHarness:
         return self
@@ -67,16 +130,45 @@ class AppHarness:
         """Flush a frame now, bypassing the event-loop coalescing."""
         self.tui.render_now()
 
+    def _pass(self) -> None:
+        """Run one pass of whatever the loop already has ready."""
+        self.loop.run_until_complete(asyncio.sleep(0))
+
+    def pump(self, *, passes: int = PUMP_PASSES) -> None:
+        """Let the app act on what just happened, then render.
+
+        Bounded by ready work, not by time: a pass runs the callbacks already
+        queued, so work waiting on a timer or a gate is left in flight.
+        """
+        self._pass()
+        if self._busy is not None:
+            for _ in range(passes):
+                if not self._busy():
+                    break
+                self._pass()
+        self.render()
+
+    def settle(self, *, timeout: float = 2.0) -> None:
+        """Pump until the app is idle, letting real timers fire. Then render.
+
+        `pump()` is enough for anything driven by ready callbacks; this is for a
+        turn that sleeps — a throttled provider, a retry delay.
+        """
+        deadline = time.monotonic() + timeout
+        while self._busy is not None and self._busy() and time.monotonic() < deadline:
+            self.loop.run_until_complete(asyncio.sleep(0.001))
+        self.render()
+
     def send(self, data: str) -> None:
         """Feed raw bytes as if the terminal produced them, then render."""
         self.terminal.send_input(data)
-        self.render()
+        self.pump()
 
     def type(self, text: str) -> None:
         """Type literal text. One `send` per character, as a real tty delivers."""
         for char in text:
             self.terminal.send_input(char)
-        self.render()
+        self.pump()
 
     def key(self, name: str) -> None:
         """Press a named key (see `_keys.KEY_SEQUENCES`)."""
@@ -91,7 +183,7 @@ class AppHarness:
         # A resize invalidates every cached line; force the full repaint the
         # real app gets via the renderer's width-changed path.
         self.tui.request_render(force=True)
-        self.render()
+        self.pump()
 
     # ---- reading the screen ----------------------------------------------
 

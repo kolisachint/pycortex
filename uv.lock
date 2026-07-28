@@ -101,6 +101,18 @@ source = { editable = "packages/agent/_meta" }
 name = "cortexcode-agent-agent"
 version = "0.0.3"
 source = { editable = "packages/agent/agent" }
+dependencies = [
+    { name = "cortexcode-agent-loop" },
+    { name = "cortexcode-agent-types" },
+    { name = "cortexcode-ai-types" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-agent-loop", editable = "packages/agent/loop" },
+    { name = "cortexcode-agent-types", editable = "packages/agent/types" },
+    { name = "cortexcode-ai-types", editable = "packages/ai/types" },
+]
 
 [[package]]
 name = "cortexcode-agent-compaction"
@@ -122,6 +134,18 @@ requires-dist = [{ name = "pyyaml", specifier = ">=6.0" }]
 name = "cortexcode-agent-loop"
 version = "0.0.3"
 source = { editable = "packages/agent/loop" }
+dependencies = [
+    { name = "cortexcode-agent-types" },
+    { name = "cortexcode-ai-stream" },
+    { name = "cortexcode-ai-types" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-agent-types", editable = "packages/agent/types" },
+    { name = "cortexcode-ai-stream", editable = "packages/ai/stream" },
+    { name = "cortexcode-ai-types", editable = "packages/ai/types" },
+]
 
 [[package]]
 name = "cortexcode-agent-mcp"
@@ -409,6 +433,7 @@ version = "0.0.1"
 source = { editable = "packages/code/interactive" }
 dependencies = [
     { name = "cortexcode-cli-config" },
+    { name = "cortexcode-cli-session" },
     { name = "cortexcode-tui-components" },
     { name = "cortexcode-tui-keys" },
     { name = "cortexcode-tui-render" },
@@ -419,6 +444,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "cortexcode-cli-config", editable = "packages/code/config" },
+    { name = "cortexcode-cli-session", editable = "packages/code/session" },
     { name = "cortexcode-tui-components", editable = "packages/tui/components" },
     { name = "cortexcode-tui-keys", editable = "packages/tui/keys" },
     { name = "cortexcode-tui-render", editable = "packages/tui/render" },
@@ -465,6 +491,18 @@ source = { editable = "packages/code/rpc" }
 name = "cortexcode-cli-session"
 version = "0.0.3"
 source = { editable = "packages/code/session" }
+dependencies = [
+    { name = "cortexcode-agent-agent" },
+    { name = "cortexcode-ai-types" },
+    { name = "cortexcode-cli-config" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-agent-agent", editable = "packages/agent/agent" },
+    { name = "cortexcode-ai-types", editable = "packages/ai/types" },
+    { name = "cortexcode-cli-config", editable = "packages/code/config" },
+]
 
 [[package]]
 name = "cortexcode-cli-subagents"

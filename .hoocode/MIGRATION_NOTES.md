@@ -1300,3 +1300,124 @@ Shift+Enter opens a line, Up recalls, the submission lands in the chat log.
   `ExpandableText` and lists the keybinding hints on expand. The component is not
   ported and the key it expands on is `app.tools.expand` (Ctrl+O), which 7.6
   wires for tool output — the hint list can land with it.
+
+## 7.4 agent-session bridge — DONE
+
+`pycortex` now holds a conversation. `core/agent-session.ts` (2,479 lines) +
+`agent-session-runtime.ts` + the assembling half of `agent-session-services.ts` →
+`packages/code/session/{agent_session,runtime}.py` (~700), wired into
+`code/interactive`: 3 e2e scenarios, 33 + 17 + 56 + 219 tests across the four
+leaves it touches. Type a line, Enter, and the faux provider answers on screen;
+Escape aborts and says so; a provider error renders instead of crashing.
+
+1. **THE STEP COULD NOT BE TRUE FROM `code/session` ALONE — the two leaves under
+   it had never run a turn.** `agent/loop::_stream_assistant_response` was
+   `raise NotImplementedError` and `Agent` had no run lifecycle at all: no
+   `abort()`, no `is_streaming`, no `wait_for_idle()`, `prompt()` returning the
+   last assistant message instead of driving a run. Phase 3 ticked both because
+   `leaf-populated` is satisfiable by a sketch and the tests only asked the
+   objects about their fields. Same shape as 7.2's `cortex.tui.terminal`: the
+   blocker was a phase and a half below the step. Both are now ports of the TS —
+   `streamAssistantResponse`, `runLoop`'s steering/follow-up structure,
+   `runWithLifecycle`/`processEvents`/`handleRunFailure` — and their tests drive
+   real turns against `ai/provider-faux` rather than asserting a stub raises.
+   - `executeToolCalls` stays 7.5's, but it now **raises and names the step**
+     instead of returning `{messages: [], terminate: False}`: that empty batch
+     sends the loop round again with the same assistant message, forever. A hang
+     is a worse answer than an error the user can read.
+2. **What of `agent-session.ts` is here: the spine.** Subscribe/emit, `prompt`
+   with its preflight, `steer`/`followUp` + the queue the UI displays, `abort`,
+   the state accessors, and session persistence on `message_end`. Absent, and
+   named in the module docstring where each would have been: the extension
+   runner, the tool registry and `_rebuildSystemPrompt` (7.5/7.6), model
+   management (7.9/7.11), skill/template expansion (7.8), and the
+   compaction/retry/tree controllers — those three exist next door but read
+   messages as **dicts with camelCase keys** (`msg.get("stopReason")`) while the
+   agent emits pydantic models, so wiring them is its own step, not a side
+   effect of this one.
+3. **The TS's `_agentEventQueue` has no counterpart, and should not.** It chains
+   agent events onto a promise so a slow handler cannot be overtaken — necessary
+   because TS listeners are sync. `Agent._process_events` *awaits* its listeners
+   in order, so the ordering the queue exists to guarantee is the await itself.
+4. **A missing subsystem changed behaviour in exactly one place, and the TS
+   agrees with the result.** With no `ModelRegistry` (7.11) nothing can answer
+   "is there a key for this model", so the preflight falls back to the
+   `DEFAULT_MODEL` sentinel the agent starts on — provider `"unknown"`, which is
+   the case `formatNoApiKeyFoundMessage` is *written for* (`UNKNOWN_PROVIDER`).
+   A fresh `pycortex` therefore answers Enter with "No API key found for the
+   selected model" + the `/login` guidance, which is what the TS shows, for the
+   same reason: its registry answers false for that same sentinel.
+   `auth-guidance.ts` was ported into `code/config` to say it (it builds its text
+   from `get_docs_path`).
+5. **The corpus needed an event loop, and it must not need a clock.** A turn is
+   asynchronous, so `AppHarness` now owns a loop and, after every input, *pumps*
+   it: run ready callbacks until the app reports itself idle (`attach(busy=…)`),
+   bounded by a pass budget. Pumping never advances time, which is the whole
+   point — a turn parked on a scenario-held `asyncio.Event` stays in flight and
+   is observable mid-way, which is what `chat/abort-turn` presses Escape into.
+   `settle()` is the explicit form for work that really sleeps.
+   - `InteractiveMode.message_loop()` is the TS's "Main interactive loop" and is
+     started as a task; `run()` still owns the TUI and the exit code, and the
+     harness starts the loop itself (the same split as `build_app_root`).
+   - `is_busy()` is `_turn_pending or session.is_streaming`. The flag covers the
+     gap the corpus would otherwise race: between Enter and the loop resuming,
+     the session is not streaming yet and the app is anything but idle.
+6. **7.3's line is gone, as it promised.** `handle_submit` draws nothing; the
+   text goes to `session.prompt()`, the session emits a `user` message event and
+   `handle_session_event` draws it. That is not bookkeeping: a submission the
+   session *refuses* now never appears in the log as though it had been sent.
+7. **The assistant message is drawn flat, and that is 7.5's to fix.** The TS
+   builds an `AssistantMessageComponent` on `message_start` and feeds it every
+   delta; until that component is ported, `message_end` appends the finished
+   text (or the error, or "Operation aborted" — the TS's own wording, read off
+   `session.retry_attempt` exactly where the TS reads it). The deltas already
+   arrive as `message_update` events; 7.5 has a component to point them at.
+8. **Every scenario boots against a faux-backed session** (`faux_session()` in
+   the corpus). `boot_shell` defaults to one, so 7.2's and 7.3's scenarios now
+   run through the real session path too — `chat/user-message-renders` is
+   evidence about the product rather than about a helper the submit handler
+   called. The session manager does not persist: a scenario must not leave a
+   session file on the machine that ran it.
+9. MUTATION TESTING: 33 mutations across the loop, the agent lifecycle, the
+   session bridge, the event handlers and the harness; 27 caught on the first
+   honest run. All six misses were real and all six are now closed by
+   *discriminating* cases rather than more tests:
+   - "an errored turn does not end the run" is invisible with an empty queue
+     (both spellings emit the same events) — it needs a **steering message
+     queued behind the error**, and then the mutant runs a second turn;
+   - "a second prompt during a turn is allowed" was caught by the *lifecycle's*
+     guard, whose message does not tell the caller to use `steer()`; the test
+     now matches the wording `prompt()` owes;
+   - `wait_for_idle` returning early passed a test that awaited the turn anyway;
+     it now asserts the **transcript is complete** when it returns, and
+     `AgentSession.abort()` likewise releases the gate first so the abort has to
+     carry the turn to idle by itself;
+   - the aborted-vs-error label in `handle_run_failure` needs a stream function
+     that **aborts and then throws** (a normal abort comes back through the
+     provider, not through the catch);
+   - Escape's `is_streaming` guard needs a message queued with **no turn
+     running**, which only `session.steer()` can arrange.
+10. **pty smoke run** (7.2's rule for any step that adds a binding): boot the
+    `pycortex` console script under `pty.openpty()`, type, Enter, Escape,
+    Ctrl+D. The banner draws, the typed text echoes, the turn is *answered on
+    screen* ("No API key found …" — this container has no provider configured),
+    `CSI ?25h` / `CSI ?2004l` go out and the exit code is 0.
+
+### Found here, deliberately not fixed
+
+- **`SessionManager` stores snake_case keys, `retry.py` reads camelCase.** The
+  session file now holds `stop_reason`, because that is what `model_dump()` of a
+  pydantic message produces, while `AutoRetryController.is_retryable_error`
+  asks for `message.get("stopReason")`. Nothing reads both today (the retry
+  controller is unwired), but whoever wires it has to pick one spelling and fix
+  the other side — and `docs/03`'s session format is the tie-breaker, not the
+  Python.
+- **`_execute_tool_calls` raises**, so a model that asks for a tool ends the turn
+  with an error naming step 7.5. No tools are registered yet, so nothing can
+  reach it in a normal run.
+- **`agent/loop` has no `BackgroundTaskManager`**, so the inner loop's condition
+  is `has_more_tool_calls or pending_messages` rather than the TS's three-way
+  test. Background tools arrive with tool execution (7.5).
+- 5.6's `publish = false` on `code/_meta` is still untouched, for the reason 7.1
+  and 7.2 both gave: flipping it puts `cortexcode-code` on PyPI, which is a
+  release decision.

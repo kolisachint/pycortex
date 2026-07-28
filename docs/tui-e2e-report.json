@@ -1,7 +1,10 @@
 {
-  "generated_from": "8eae359",
+  "generated_from": "3d18d79",
   "note": "Written by scripts/tui_e2e.py. Consumed by scripts/migrate_next.py --status. A Phase 7 step cannot be ticked while it still owns unmet scenarios.",
   "passing": [
+    "chat/abort-turn",
+    "chat/assistant-round-trip",
+    "chat/error-surface",
     "chat/user-message-renders",
     "harness/receives-input",
     "harness/renders-a-frame",
@@ -27,24 +30,6 @@
       "status": "pending",
       "blocked_by": "7.11",
       "title": "A missing API key explains itself instead of crashing"
-    },
-    {
-      "id": "chat/abort-turn",
-      "status": "pending",
-      "blocked_by": "7.4",
-      "title": "Escape aborts an in-flight turn and says so"
-    },
-    {
-      "id": "chat/assistant-round-trip",
-      "status": "pending",
-      "blocked_by": "7.4",
-      "title": "A prompt round-trips against the faux provider"
-    },
-    {
-      "id": "chat/error-surface",
-      "status": "pending",
-      "blocked_by": "7.4",
-      "title": "A provider error renders as an error message, not a crash"
     },
     {
       "id": "chat/loader-while-busy",

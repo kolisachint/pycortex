@@ -22,14 +22,24 @@ lands here is the part that makes ``pycortex`` a program you can use:
   history, and a :class:`~cortex.code.interactive.components.user_message.UserMessageComponent`
   lands in the chat container.
 
-**Where the TS puts the submission and where it is here.** In the TS a submitted
-message reaches the screen the long way round: ``onSubmit`` resolves
-``getUserInput()``, the run loop hands the text to ``session.prompt()``, the
-session emits a ``user`` message event and ``renderMessage`` draws it. There is
-no session until 7.4, so :meth:`InteractiveMode.render_user_message` — the port
-of that ``renderMessage`` branch — is called from the submit handler directly.
-7.4 moves the call onto the event handler, where the TS has it, and the same
-component keeps drawing the same thing.
+Step 7.4 closed the loop it was all pointing at: submissions now go to an
+:class:`~cortex.code.session.AgentSession` and come back as session events.
+
+* :meth:`InteractiveMode.message_loop` is the TS's "Main interactive loop" —
+  ``getUserInput()`` then ``session.prompt()``, with the ``catch`` that turns a
+  refused turn into a line of red text instead of a traceback;
+* :meth:`InteractiveMode.handle_session_event` is ``handleSessionEvent``, for the
+  branches this port has components for: the user message (which the submit
+  handler no longer draws itself — it arrives as a ``message_start``, the long
+  way round, as in the TS), the finished assistant message, and the terminal's
+  progress indicator over the turn;
+* Escape aborts an in-flight turn.
+
+The assistant message is the honest shortfall: the TS renders it into an
+``AssistantMessageComponent`` that grows as the deltas arrive, and that component
+is step **7.5** along with the loader and the markdown styling. Until then a
+finished turn appends its text — or its error — as a plain line, so the round
+trip is visible without pretending the streaming UI exists.
 
 Shutdown is a callback, not ``process.exit``. The TS exits the process from
 inside ``shutdown()``; doing that here would make the exit path the one thing the
@@ -86,12 +96,50 @@ class AppTerminal(Protocol):
 
     def set_title(self, title: str) -> None: ...
 
+    def set_progress(self, active: bool) -> None: ...
+
     def drain_input(self, max_ms: float = 1000, idle_ms: float = 50) -> None: ...
 
 
 #: Below this width the compact wordmark does not fit, and the TS falls back to
 #: the bare app name and version.
 MIN_BANNER_COLUMNS = 40
+
+
+def _role_of(message: Any) -> str:
+    """Role of a message, whether it arrived as a model or a plain dict."""
+    if isinstance(message, dict):
+        return str(message.get("role", ""))
+    return str(getattr(message, "role", ""))
+
+
+def _message_text(message: Any) -> str:
+    """The text blocks of a message, joined. Port of the TS's content walk."""
+    content = (
+        message.get("content") if isinstance(message, dict) else getattr(message, "content", None)
+    )
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    parts: list[str] = []
+    for block in content:
+        block_type = block.get("type") if isinstance(block, dict) else getattr(block, "type", "")
+        if block_type == "text":
+            text = block.get("text", "") if isinstance(block, dict) else block.text
+            parts.append(str(text))
+    return "".join(parts)
+
+
+def _create_unpersisted_session(cwd: str, settings_manager: SettingsManager) -> Any:
+    """A session with no session file and no model, for an app booted without one."""
+    from cortex.code.session import SessionManager, create_agent_session
+
+    return create_agent_session(
+        cwd=cwd,
+        settings_manager=settings_manager,
+        session_manager=SessionManager(cwd, "", persist=False),
+    ).session
 
 
 def format_display_path(path: str) -> str:
@@ -125,6 +173,12 @@ class InteractiveModeOptions:
 
     #: Working directory the banner and footer describe.
     cwd: str | None = None
+    #: The session prompts are sent to. The TS is always handed one; when it is
+    #: omitted here the app builds an unpersisted, model-less one for itself, so
+    #: a booted-in-a-test app neither writes to ``~/.hoocode`` nor talks to a
+    #: provider. Pressing Enter on that session shows the ``/login`` guidance,
+    #: which is what a fresh install shows too.
+    session: Any | None = None
     #: Settings source; a file-backed manager for the cwd when omitted.
     settings: SettingsManager | None = None
     #: Keybindings; the user's ``keybindings.json`` when omitted.
@@ -145,6 +199,12 @@ class InteractiveMode:
             self.options.settings
             if self.options.settings is not None
             else SettingsManager.create(self.cwd)
+        )
+
+        self.session = (
+            self.options.session
+            if self.options.session is not None
+            else _create_unpersisted_session(self.cwd, self.settings_manager)
         )
 
         self.ui.set_clear_on_shrink(self.settings_manager.get_clear_on_shrink())
@@ -194,6 +254,13 @@ class InteractiveMode:
         self._exit_waiter: asyncio.Future[int] | None = None
         self._on_input_callback: Callable[[str], None] | None = None
         self.built_in_header: Text | None = None
+        self._unsubscribe_session: Callable[[], None] | None = None
+        self._message_loop_task: asyncio.Task[None] | None = None
+        #: Set the moment a submission is handed to the message loop and cleared
+        #: when that turn is over. Between the two the session is not streaming
+        #: yet but the app is anything but idle, which is the difference a test
+        #: driving the app one keystroke at a time has to be able to see.
+        self._turn_pending = False
 
     @property
     def terminal(self) -> AppTerminal:
@@ -253,8 +320,14 @@ class InteractiveMode:
 
         self.setup_key_handlers()
         self.setup_editor_submit_handler()
+        self.setup_session_listener()
         self.update_terminal_title()
         self._is_initialized = True
+
+    def setup_session_listener(self) -> None:
+        """Subscribe to the session, so its events reach the screen."""
+        if self._unsubscribe_session is None:
+            self._unsubscribe_session = self.session.subscribe(self.handle_session_event)
 
     def update_terminal_title(self) -> None:
         """Update terminal title with session name and cwd."""
@@ -265,15 +338,47 @@ class InteractiveMode:
         """Run interactive mode until it is asked to exit. The main entry point.
 
         The TS loops forever on ``getUserInput()`` and lets ``process.exit`` end
-        it. There is nothing to hand a submission to until 7.4, so the shell
-        waits on the same thing the loop really waits on: shutdown.
+        it. Here the loop runs as a task and ``run()`` waits on the exit code
+        :meth:`shutdown` resolves, because a mode that exits the process is a
+        mode the end-to-end corpus can never watch finish.
         """
         self.init()
         self.ui.start()
         if self._exit_code is not None:
             return self._exit_code
         self._exit_waiter = asyncio.get_running_loop().create_future()
-        return await self._exit_waiter
+        self.start_message_loop()
+        try:
+            return await self._exit_waiter
+        finally:
+            self.stop_message_loop()
+
+    def start_message_loop(self, loop: asyncio.AbstractEventLoop | None = None) -> None:
+        """Run :meth:`message_loop` as a task on ``loop`` (the running one by default)."""
+        if self._message_loop_task is not None:
+            return
+        target = loop if loop is not None else asyncio.get_event_loop()
+        self._message_loop_task = target.create_task(self.message_loop())
+
+    def stop_message_loop(self) -> None:
+        if self._message_loop_task is not None:
+            self._message_loop_task.cancel()
+            self._message_loop_task = None
+
+    async def message_loop(self) -> None:
+        """The TS's main interactive loop: read a line, send it, show what breaks."""
+        while True:
+            user_input = await self.get_user_input()
+            try:
+                await self.session.prompt(user_input)
+            except Exception as error:  # noqa: BLE001 - the TS catch, one for one
+                self.show_error(str(error) or "Unknown error occurred")
+            finally:
+                self._turn_pending = False
+
+    def is_busy(self) -> bool:
+        """Whether a submission is in flight — on its way to the session, or streaming."""
+        return self._turn_pending or bool(self.session.is_streaming)
 
     # ------------------------------------------------------------------
     # Key handling
@@ -285,10 +390,32 @@ class InteractiveMode:
         The TS registers eighteen of these in ``setupKeyHandlers``; the other
         sixteen drive a model controller, a task panel, selectors and an external
         editor, none of which exist before 7.6–7.9. What is here is what there is
-        something to do: clear the editor, and exit from an empty one.
+        something to do: clear the editor, exit from an empty one, and abort a
+        turn.
         """
+        self.editor.on_escape = self.handle_escape
         self.editor.on_action("app.clear", self.handle_ctrl_c)
         self.editor.on_ctrl_d = self.handle_ctrl_d
+
+    def handle_escape(self) -> None:
+        """Escape: abort the turn in flight.
+
+        The TS reaches the abort through ``messageQueue.restoreQueuedMessagesToEditor
+        ({abort: true})``, which puts the queued-but-undelivered messages back in
+        the editor before aborting. The queue display is 7.7's, so what is here
+        is the abort and the queue-clearing behind it; the other branches of the
+        TS handler (bash mode, double-escape to /tree) belong to 7.6 and 7.9.
+        """
+        if not self.session.is_streaming:
+            return
+        queued = self.session.clear_queue()
+        pending = [*queued.get("steering", []), *queued.get("follow_up", [])]
+        if pending:
+            current = self.editor.get_text()
+            combined = "\n\n".join(t for t in ["\n\n".join(pending), current] if t.strip())
+            self.editor.set_text(combined)
+        self.session.agent.abort()
+        self.ui.request_render()
 
     def handle_ctrl_c(self) -> None:
         now = time.time() * 1000
@@ -322,7 +449,13 @@ class InteractiveMode:
         self.editor.on_submit = self.handle_submit
 
     def handle_submit(self, text: str) -> None:
-        """A submitted line: remember it, show it, hand it on."""
+        """A submitted line: remember it and hand it to the loop.
+
+        Nothing is drawn here. The text goes to ``session.prompt()``, the session
+        emits a ``user`` message event, and :meth:`handle_session_event` draws it
+        — the long way round the TS takes, so a message the session refused
+        never appears as though it were sent.
+        """
         text = text.strip()
         if not text:
             return
@@ -330,11 +463,9 @@ class InteractiveMode:
         callback = self._on_input_callback
         if callback is not None:
             self._on_input_callback = None
+            self._turn_pending = True
             callback(text)
         self.editor.add_to_history(text)
-        # 7.4 deletes this line: by then the text has gone to `session.prompt()`,
-        # which emits the `user` message event the renderer draws from.
-        self.render_user_message(text)
 
     async def get_user_input(self) -> str:
         """Wait for the next submission. Port of the TS's ``getUserInput``."""
@@ -357,6 +488,67 @@ class InteractiveMode:
             get_markdown_theme(),
             code_block_indent=self.settings_manager.get_code_block_indent(),
         )
+
+    def handle_session_event(self, event: dict[str, Any]) -> None:
+        """Draw what the session reports. Port of ``handleSessionEvent``.
+
+        The TS switch has twenty-odd cases. The ones with something to drive here
+        are the turn's start and end (the terminal progress indicator), and the
+        messages themselves. Tool execution (7.6), the queue display (7.7),
+        compaction and auto-retry (their controllers are unwired) are the rest,
+        and each arrives with the component that shows it.
+        """
+        event_type = event.get("type")
+
+        if event_type == "agent_start":
+            if self.settings_manager.get_show_terminal_progress():
+                self.terminal.set_progress(True)
+            self.ui.request_render()
+        elif event_type == "agent_end":
+            if self.settings_manager.get_show_terminal_progress():
+                self.terminal.set_progress(False)
+            self.ui.request_render()
+        elif event_type == "message_start":
+            message = event.get("message")
+            if _role_of(message) == "user":
+                self.render_user_message(_message_text(message))
+        elif event_type == "message_end":
+            message = event.get("message")
+            if _role_of(message) == "assistant":
+                self.render_assistant_message(message)
+
+    def render_assistant_message(self, message: Any) -> None:
+        """Append a finished assistant message to the chat log.
+
+        **This is 7.5's component, drawn flat.** The TS builds an
+        ``AssistantMessageComponent`` on ``message_start`` and feeds it every
+        delta; what a user sees at the end of a turn is the same text, so the
+        text is what lands here until that component is ported. The error and
+        aborted branches are the TS's, including the wording it puts on an
+        aborted turn — which is the only thing on screen that says the Escape
+        was heard.
+        """
+        stop_reason = getattr(message, "stop_reason", None)
+        error_message: str | None = None
+        if stop_reason == "aborted":
+            retry_attempt = self.session.retry_attempt
+            error_message = (
+                f"Aborted after {retry_attempt} retry attempt{'s' if retry_attempt > 1 else ''}"
+                if retry_attempt > 0
+                else "Operation aborted"
+            )
+        elif stop_reason == "error":
+            error_message = getattr(message, "error_message", None) or "Error"
+
+        text = _message_text(message)
+        if self.chat_container.children:
+            self.chat_container.add_child(Spacer(1))
+        theme = get_theme()
+        if text:
+            self.chat_container.add_child(Text(text, 0, 0))
+        if error_message is not None:
+            self.chat_container.add_child(Text(theme.fg("error", error_message), 0, 0))
+        self.ui.request_render()
 
     def render_user_message(self, text: str) -> None:
         """Append a user message to the chat log.
@@ -393,6 +585,9 @@ class InteractiveMode:
     def stop(self) -> None:
         """Tear the app down and hand the terminal back."""
         self.footer.dispose()
+        if self._unsubscribe_session is not None:
+            self._unsubscribe_session()
+            self._unsubscribe_session = None
         if self._is_initialized:
             self.ui.stop()
             self._is_initialized = False
@@ -429,10 +624,29 @@ def build_app_root(tui: TUI, **options: Any) -> InteractiveMode:
 
 
 def run_interactive_mode(options: InteractiveModeOptions | None = None) -> int:
-    """Run interactive mode against the real terminal. Returns the exit code."""
+    """Run interactive mode against the real terminal. Returns the exit code.
+
+    Builds the session the mode talks to, the way ``main.ts`` does through
+    ``createAgentSessionRuntime``: settings and a session file for the cwd, and
+    whatever model has been resolved for it — which, until the model registry
+    lands in 7.11, is none.
+    """
+    resolved = options if options is not None else InteractiveModeOptions()
+
+    if resolved.session is None:
+        from cortex.code.session import create_agent_session
+
+        cwd = resolved.cwd if resolved.cwd is not None else os.getcwd()
+        # One settings manager, shared: the session reads the same file the app
+        # does, and reading it twice is how the two drift.
+        settings = (
+            resolved.settings if resolved.settings is not None else SettingsManager.create(cwd)
+        )
+        created = create_agent_session(cwd=cwd, settings_manager=settings)
+        resolved = replace(resolved, cwd=cwd, settings=settings, session=created.session)
 
     async def _run() -> int:
-        app = InteractiveMode(TUI(ProcessTerminal()), options)
+        app = InteractiveMode(TUI(ProcessTerminal()), resolved)
         try:
             return await app.run()
         finally:

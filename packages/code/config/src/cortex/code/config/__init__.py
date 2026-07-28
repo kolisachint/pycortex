@@ -1,6 +1,13 @@
 """Configuration utilities for the Cortex code package."""
 
 # Re-export config module
+# Re-export auth guidance
+from cortex.code.config.auth_guidance import (
+    format_no_api_key_found_message,
+    format_no_model_selected_message,
+    format_no_models_available_message,
+    get_provider_login_help,
+)
 from cortex.code.config.config import (
     APP_NAME,
     APP_TITLE,
@@ -102,6 +109,10 @@ __all__ = [
     "get_dispatch_root",
     "get_dispatch_task_dir",
     "get_docs_path",
+    "format_no_api_key_found_message",
+    "format_no_model_selected_message",
+    "format_no_models_available_message",
+    "get_provider_login_help",
     "get_examples_path",
     "get_export_template_dir",
     "get_hoo_code_dir",

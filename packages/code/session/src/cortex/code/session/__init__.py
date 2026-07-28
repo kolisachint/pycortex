@@ -5,6 +5,14 @@ Port of ``packages/coding-agent/src/core/agent-session*.ts`` and ``session-manag
 
 from __future__ import annotations
 
+from cortex.code.session.agent_session import (
+    AgentSession,
+    AgentSessionConfig,
+    AgentSessionEvent,
+    AgentSessionEventListener,
+    ModelRegistryLike,
+    PromptOptions,
+)
 from cortex.code.session.compaction import CompactionController
 from cortex.code.session.cwd import (
     MissingSessionCwdError,
@@ -34,6 +42,13 @@ from cortex.code.session.manager import (
     get_latest_compaction_entry,
 )
 from cortex.code.session.retry import AutoRetryController
+from cortex.code.session.runtime import (
+    AgentSessionRuntime,
+    AgentSessionRuntimeDiagnostic,
+    AgentSessionServices,
+    CreateAgentSessionResult,
+    create_agent_session,
+)
 from cortex.code.session.skills import (
     ParsedSkillBlock,
     Skill,
@@ -59,6 +74,19 @@ from cortex.code.session.tree_navigation import (
 )
 
 __all__ = [
+    # Agent session
+    "AgentSession",
+    "AgentSessionConfig",
+    "AgentSessionEvent",
+    "AgentSessionEventListener",
+    "ModelRegistryLike",
+    "PromptOptions",
+    # Runtime
+    "AgentSessionRuntime",
+    "AgentSessionRuntimeDiagnostic",
+    "AgentSessionServices",
+    "CreateAgentSessionResult",
+    "create_agent_session",
     # Manager
     "SessionManager",
     "CURRENT_SESSION_VERSION",
