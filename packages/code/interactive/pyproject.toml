@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "cortexcode-cli-config>=0.0.3,<0.1.0",
+    "cortexcode-cli-session>=0.0.3,<0.1.0",
     "cortexcode-tui-components>=0.0.3,<0.1.0",
     "cortexcode-tui-keys>=0.0.3,<0.1.0",
     "cortexcode-tui-render>=0.0.3,<0.1.0",
@@ -23,6 +24,7 @@ packages = [
 
 [tool.uv.sources]
 cortexcode-cli-config = { workspace = true }
+cortexcode-cli-session = { workspace = true }
 cortexcode-tui-components = { workspace = true }
 cortexcode-tui-keys = { workspace = true }
 cortexcode-tui-render = { workspace = true }

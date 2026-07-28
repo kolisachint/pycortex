@@ -91,3 +91,94 @@ def test_cursor_motion_goes_through_the_write_stream() -> None:
     term.move_by(-2)
     term.move_by(3)
     assert term.stream == "\x1b[2A\x1b[3B"
+
+
+# ---------------------------------------------------------------------------
+# The event loop (step 7.4)
+# ---------------------------------------------------------------------------
+
+
+def test_the_harness_owns_a_loop_app_code_can_find() -> None:
+    """The app schedules with `get_event_loop()`; it must land on this loop."""
+    import asyncio
+
+    with AppHarness(_label("x")) as h:
+        assert asyncio.get_event_loop() is h.loop
+
+
+def test_pump_runs_work_the_input_kicked_off() -> None:
+    import asyncio
+
+    ran: list[str] = []
+
+    async def work() -> None:
+        await asyncio.sleep(0)
+        ran.append("done")
+
+    with AppHarness(_label("x")) as h:
+        h.spawn(work())
+        assert ran == [], "the task ran before the loop was pumped"
+        h.pump()
+        assert ran == ["done"]
+
+
+def test_pump_waits_for_busy_to_clear() -> None:
+    import asyncio
+
+    state = {"busy": True}
+
+    async def work() -> None:
+        for _ in range(20):
+            await asyncio.sleep(0)
+        state["busy"] = False
+
+    with AppHarness(_label("x")) as h:
+        h.attach(busy=lambda: state["busy"], run=work())
+        h.pump()
+        assert state["busy"] is False, "pump gave up while the app was still working"
+
+
+def test_pump_gives_up_on_work_that_never_finishes() -> None:
+    """A turn held open must stay open — that is how an abort is observable."""
+    import asyncio
+
+    gate = asyncio.Event()
+    state = {"busy": True}
+
+    async def work() -> None:
+        await gate.wait()
+        state["busy"] = False
+
+    with AppHarness(_label("x")) as h:
+        h.attach(busy=lambda: state["busy"], run=work())
+        h.pump(passes=10)
+        assert state["busy"] is True
+        gate.set()
+        h.pump()
+        assert state["busy"] is False
+
+
+def test_settle_lets_real_timers_fire() -> None:
+    """`pump` never advances the clock; `settle` is the form that waits."""
+    import asyncio
+
+    state = {"busy": True}
+
+    async def work() -> None:
+        await asyncio.sleep(0.01)
+        state["busy"] = False
+
+    with AppHarness(_label("x")) as h:
+        h.attach(busy=lambda: state["busy"], run=work())
+        h.pump(passes=5)
+        assert state["busy"] is True, "a sleeping task finished without the clock moving"
+        h.settle()
+        assert state["busy"] is False
+
+
+def test_attach_records_the_app() -> None:
+    marker = object()
+    with AppHarness(_label("x")) as h:
+        assert h.app is None
+        h.attach(app=marker)
+        assert h.app is marker

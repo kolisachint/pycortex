@@ -306,17 +306,21 @@ class TestKeybindings:
 
 
 class TestSubmit:
-    def test_a_submission_renders_as_a_user_message(self):
+    def test_a_submission_draws_nothing_by_itself(self):
+        """7.4 moved the drawing onto the session's `user` message event.
+
+        Until the session has accepted the turn there is nothing to show: a
+        message the session refuses (no model, no key) must not appear in the log
+        as though it had been sent.
+        """
         app = _app()
         app.handle_submit("what does this repo do?")
-        assert [type(child).__name__ for child in app.chat_container.children] == [
-            "UserMessageComponent"
-        ]
+        assert app.chat_container.children == []
 
     def test_later_messages_are_separated_by_a_blank_line(self):
         app = _app()
-        app.handle_submit("one")
-        app.handle_submit("two")
+        app.render_user_message("one")
+        app.render_user_message("two")
         assert [type(child).__name__ for child in app.chat_container.children] == [
             "UserMessageComponent",
             "Spacer",
@@ -344,7 +348,10 @@ class TestSubmit:
         assert app.editor.get_text() == "hello"
         terminal.send_input("\r")
         assert app.editor.get_text() == ""
-        assert len(app.chat_container.children) == 1
+        # The text left the editor for the message loop; nothing is drawn until
+        # the session turns it into a `user` message event.
+        assert app.chat_container.children == []
+        assert app.is_busy() is False, "there was no waiter, so no turn is pending"
 
     def test_shift_enter_opens_a_line_instead_of_submitting(self):
         terminal = FakeTerminal()
@@ -495,3 +502,248 @@ class TestOptions:
         assert options.initial_messages == []
         assert options.verbose is False
         assert options.on_exit is None
+
+
+# ===========================================================================
+# 7.4 — the session bridge
+# ===========================================================================
+
+
+def _chat_text(app: InteractiveMode, width: int = 80) -> str:
+    """Everything the chat log would paint, as text."""
+    lines: list[str] = []
+    for child in app.chat_container.children:
+        lines.extend(child.render(width))
+    return "\n".join(lines)
+
+
+def _faux_app(terminal: FakeTerminal | None = None, **overrides: object):
+    """An app whose session answers from `ai/provider-faux` instead of the network.
+
+    Returns the app and the registration, so a test can queue the next response
+    and unregister the provider when it is done — the api registry is global.
+    """
+    from cortex.ai.providers.faux import register_faux_provider
+    from cortex.code.session import SessionManager, create_agent_session
+
+    registration = register_faux_provider()
+    settings = _settings()
+    created = create_agent_session(
+        cwd="/w/project",
+        settings_manager=settings,
+        session_manager=SessionManager("/w/project", "", persist=False),
+        model=registration.get_model(),
+    )
+    app = _app(terminal, settings=settings, session=created.session, **overrides)
+    return app, registration
+
+
+class TestSessionBridge:
+    def test_an_app_without_a_session_builds_one(self):
+        """The TS is always handed a session; a test-booted app makes its own."""
+        app = _app()
+        assert app.session is not None
+        assert app.session.session_file is None, "the fallback session wrote a session file"
+
+    def test_the_app_subscribes_to_the_session(self):
+        app = _app()
+        assert app.session._event_listeners, "nothing is listening to the session"  # pyright: ignore[reportPrivateUsage]
+
+    def test_stopping_unsubscribes(self):
+        app = _app()
+        app.stop()
+        assert app.session._event_listeners == []  # pyright: ignore[reportPrivateUsage]
+
+    async def test_a_submission_reaches_the_session(self):
+        app, registration = _faux_app()
+        try:
+            from cortex.ai.providers.faux import faux_assistant_message
+
+            registration.set_responses([faux_assistant_message("pong")])
+            loop_task = asyncio.ensure_future(app.message_loop())
+            await asyncio.sleep(0)
+            app.handle_submit("ping")
+            for _ in range(200):
+                if not app.is_busy():
+                    break
+                await asyncio.sleep(0)
+            assert [getattr(m, "role", "") for m in app.session.messages] == ["user", "assistant"]
+            rendered = [type(child).__name__ for child in app.chat_container.children]
+            assert rendered == ["UserMessageComponent", "Spacer", "Text"], rendered
+            loop_task.cancel()
+        finally:
+            registration.unregister()
+
+    async def test_a_refused_turn_becomes_an_error_line(self):
+        """No model, no key: the loop catches it and shows the guidance."""
+        app = _app()
+        loop_task = asyncio.ensure_future(app.message_loop())
+        await asyncio.sleep(0)
+        app.handle_submit("anything")
+        for _ in range(20):
+            if not app.is_busy():
+                break
+            await asyncio.sleep(0)
+        assert app.chat_container.children, "nothing was drawn for the refused turn"
+        assert app.is_busy() is False, "the pending turn was never cleared"
+        loop_task.cancel()
+
+    def test_is_busy_covers_the_gap_before_the_turn_starts(self):
+        app = _app()
+        served: list[str] = []
+        app._on_input_callback = served.append  # pyright: ignore[reportPrivateUsage]
+        assert app.is_busy() is False
+        app.handle_submit("go")
+        assert app.is_busy() is True, "a delivered submission left the app looking idle"
+
+
+class TestSessionEvents:
+    def test_a_user_message_event_draws_the_message(self):
+        from cortex.ai.types import TextContent, UserMessage
+
+        app = _app()
+        message = UserMessage(content=[TextContent(text="hello there")], timestamp=0)
+        app.handle_session_event({"type": "message_start", "message": message})
+        assert [type(c).__name__ for c in app.chat_container.children] == ["UserMessageComponent"]
+
+    def test_an_assistant_message_end_draws_its_text(self):
+        from cortex.ai.providers.faux import faux_assistant_message
+
+        app = _app()
+        app.handle_session_event(
+            {"type": "message_end", "message": faux_assistant_message("the answer")}
+        )
+        assert "the answer" in _chat_text(app), "the assistant text is not in the chat log"
+
+    def test_an_error_turn_draws_its_error_message(self):
+        from cortex.ai.providers.faux import faux_assistant_message
+
+        app = _app()
+        app.handle_session_event(
+            {
+                "type": "message_end",
+                "message": faux_assistant_message(
+                    "", stop_reason="error", error_message="Provider is overloaded"
+                ),
+            }
+        )
+        assert "Provider is overloaded" in _chat_text(app)
+
+    def test_an_error_turn_with_no_message_still_says_something(self):
+        from cortex.ai.providers.faux import faux_assistant_message
+
+        app = _app()
+        app.handle_session_event(
+            {"type": "message_end", "message": faux_assistant_message("", stop_reason="error")}
+        )
+        assert "Error" in _chat_text(app)
+
+    def test_an_aborted_turn_says_so(self):
+        from cortex.ai.providers.faux import faux_assistant_message
+
+        app = _app()
+        app.handle_session_event(
+            {
+                "type": "message_end",
+                "message": faux_assistant_message("half", stop_reason="aborted"),
+            }
+        )
+        assert "half" in _chat_text(app), "the partial answer was thrown away"
+        assert "Operation aborted" in _chat_text(app)
+
+    def test_a_user_message_end_is_not_drawn_twice(self):
+        from cortex.ai.types import TextContent, UserMessage
+
+        app = _app()
+        message = UserMessage(content=[TextContent(text="once")], timestamp=0)
+        app.handle_session_event({"type": "message_start", "message": message})
+        app.handle_session_event({"type": "message_end", "message": message})
+        assert len(app.chat_container.children) == 1
+
+    def test_the_turn_raises_and_lowers_the_terminal_progress_indicator(self):
+        terminal = FakeTerminal()
+        settings = _settings()
+        settings.set_show_terminal_progress(True)
+        app = _app(terminal, settings=settings)
+        app.handle_session_event({"type": "agent_start"})
+        app.handle_session_event({"type": "agent_end"})
+        assert terminal.progress == [True, False]
+
+    def test_the_progress_indicator_is_off_by_default(self):
+        """`showTerminalProgress` defaults to false in the TS, and the app asks."""
+        terminal = FakeTerminal()
+        app = _app(terminal)
+        app.handle_session_event({"type": "agent_start"})
+        app.handle_session_event({"type": "agent_end"})
+        assert terminal.progress == []
+
+
+class TestEscape:
+    async def test_escape_aborts_an_in_flight_turn(self):
+        app, registration = _faux_app()
+        try:
+            released = asyncio.Event()
+
+            async def slow(*_args: object):
+                from cortex.ai.providers.faux import faux_assistant_message
+
+                await released.wait()
+                return faux_assistant_message("too late")
+
+            registration.set_responses([slow])
+            turn = asyncio.ensure_future(app.session.prompt("wait for it"))
+            for _ in range(50):
+                if app.session.is_streaming:
+                    break
+                await asyncio.sleep(0)
+            assert app.session.is_streaming, "the turn never started"
+
+            app.handle_escape()
+            released.set()
+            await turn
+            assert not app.session.is_streaming
+            assert getattr(app.session.messages[-1], "stop_reason", "") == "aborted"
+        finally:
+            registration.unregister()
+
+    async def test_escape_does_nothing_when_no_turn_is_running(self):
+        """Idle Escape belongs to 7.9's double-escape, not to the abort path."""
+        app, registration = _faux_app()
+        try:
+            app.editor.set_text("draft")
+            await app.session.steer("queued for the next turn")
+
+            app.handle_escape()
+
+            assert app.editor.get_text() == "draft", "Escape rewrote the editor"
+            assert app.session.get_steering_messages() == ["queued for the next turn"], (
+                "Escape emptied the queue with no turn to abort"
+            )
+        finally:
+            registration.unregister()
+
+    async def test_escape_puts_queued_messages_back_in_the_editor(self):
+        app, registration = _faux_app()
+        try:
+            released = asyncio.Event()
+
+            async def slow(*_args: object):
+                from cortex.ai.providers.faux import faux_assistant_message
+
+                await released.wait()
+                return faux_assistant_message("done")
+
+            registration.set_responses([slow])
+            turn = asyncio.ensure_future(app.session.prompt("first"))
+            for _ in range(50):
+                if app.session.is_streaming:
+                    break
+                await asyncio.sleep(0)
+            await app.session.steer("queued while busy")
+
+            app.handle_escape()
+            assert "queued while busy" in app.editor.get_text()
+            released.set()
+            await turn
+        finally:
+            registration.unregister()

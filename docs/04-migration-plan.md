@@ -322,7 +322,7 @@ So the framework is real and the product is not. Concretely, what is missing:
 | --- | --- | --- |
 | No TUI is ever constructed | `code/main` never imports `cortex.tui` | 7.2 |
 | `code/interactive` is a stub | 151 lines vs 16.6k of TS under `modes/interactive/` | 7.2–7.9 |
-| The agent cannot stream | `agent/loop` `_stream_assistant_response` raises | 7.5 |
+| The agent cannot execute tools | `agent/loop` `_execute_tool_calls` raises (streaming landed in 7.4) | 7.5 |
 | No agent-session orchestrator | `core/agent-session.ts` (2,479 lines) has no Python counterpart | 7.4 |
 | No footer / keybindings / slash-commands / task-store / model-registry / auth-storage | no counterpart under `packages/` | 7.7–7.11 |
 
@@ -369,15 +369,17 @@ visible capability at a time.
       `core/keybindings.ts` → `packages/code/interactive/`. Typing renders, Enter
       submits and clears, Shift+Enter opens a line, Up recalls history, the
       submission lands in the chat container.
-- [ ] **7.4 agent-session bridge** — `core/agent-session.ts`, `agent-session-runtime.ts`,
+- [x] **7.4 agent-session bridge** — `core/agent-session.ts`, `agent-session-runtime.ts`,
       `agent-session-services.ts` → `packages/code/session/`. Wire the editor's
       submissions into it and its events back onto the screen; round-trip a prompt
       against `ai/provider-faux` with no network.
 - [ ] **7.5 streaming turns** — fill in `packages/agent/loop`
-      (`_stream_assistant_response`, `_execute_tool_calls`) and
-      `components/assistant-message.ts` → `packages/code/interactive/`. Assistant
-      text appears progressively, a loader runs during the turn, markdown renders
-      styled. verify: leaf-populated, e2e-scenarios, no-stubs
+      (`_execute_tool_calls`; `_stream_assistant_response` landed with 7.4, which
+      needed it to round-trip a prompt) and `components/assistant-message.ts` →
+      `packages/code/interactive/`. Assistant text appears progressively — the
+      `message_update` events already arrive, and 7.4 draws only the finished
+      message — a loader runs during the turn, markdown renders styled.
+      verify: leaf-populated, e2e-scenarios, no-stubs
 - [ ] **7.6 tool execution UI** — `components/{tool-execution,diff,bash-execution}.ts`,
       `bash-execution-controller.ts` → `packages/code/interactive/`. Tool calls
       render with args and results, edits render as diffs, bash streams, Ctrl+O

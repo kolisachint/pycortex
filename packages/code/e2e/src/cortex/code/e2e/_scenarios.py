@@ -21,7 +21,7 @@ from __future__ import annotations
 import traceback
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 from cortex.code.e2e._harness import AppHarness
 from cortex.tui.render import TUI
@@ -87,13 +87,22 @@ def boot_app(*, columns: int = 80, rows: int = 24, **options: object) -> AppHarn
     app scenario goes through, so pointing the corpus at a different root — a
     later step's, or a test double's — is a one-line change here rather than an
     edit to thirty scenarios. `options` are `InteractiveModeOptions` fields.
+
+    The app's message loop (7.4) is started on the harness's loop rather than by
+    `run()`: `run()` also starts the TUI and waits for an exit code, and the
+    harness owns both.
     """
     from cortex.code.interactive import build_app_root
 
-    def build(tui: TUI) -> None:
-        build_app_root(tui, **options)
+    built: list[Any] = []
 
-    return AppHarness(build, columns=columns, rows=rows)
+    def build(tui: TUI) -> None:
+        built.append(build_app_root(tui, **options))
+
+    harness = AppHarness(build, columns=columns, rows=rows)
+    app = built[0]
+    harness.attach(app=app, busy=app.is_busy, run=app.message_loop())
+    return harness
 
 
 # ===========================================================================
@@ -144,6 +153,43 @@ def harness_resize_repaints() -> None:
 # ===========================================================================
 
 
+@dataclass
+class FauxSession:
+    """A session wired to `ai/provider-faux`: a real turn, and no network."""
+
+    session: Any
+    #: Queue what the provider answers with next. Takes `AssistantMessage`s (see
+    #: `faux_assistant_message`) or callables the provider invokes per request.
+    set_responses: Callable[[list[Any]], None]
+    unregister: Callable[[], None]
+
+
+def faux_session(*, cwd: str = "/w/project", settings: Any = None) -> FauxSession:
+    """Build the session the shell scenarios prompt against.
+
+    Everything real except the provider: a real `Agent`, a real `AgentSession`,
+    the real agent loop — and a faux provider in place of the HTTP call, which is
+    what step 7.4 promises ("round-trip a prompt against `ai/provider-faux` with
+    no network"). The session manager does not persist: a scenario must not
+    leave a session file on the machine that ran it.
+    """
+    from cortex.ai.providers.faux import register_faux_provider
+    from cortex.code.session import SessionManager, create_agent_session
+
+    registration = register_faux_provider()
+    created = create_agent_session(
+        cwd=cwd,
+        settings_manager=settings,
+        session_manager=SessionManager(cwd, "", persist=False),
+        model=registration.get_model(),
+    )
+    return FauxSession(
+        session=created.session,
+        set_responses=registration.set_responses,
+        unregister=registration.unregister,
+    )
+
+
 def boot_shell(*, columns: int = 80, rows: int = 24, **options: object) -> AppHarness:
     """Boot the shell with nothing of the machine it runs on in the picture.
 
@@ -153,14 +199,20 @@ def boot_shell(*, columns: int = 80, rows: int = 24, **options: object) -> AppHa
     start failing the day someone set `quietStartup` in their own settings file.
     Keybindings are the same story one layer down: with the user's
     `keybindings.json` in play, "press Enter to submit" is only true by default.
+    The session is the same story one layer up: the real one would need a model,
+    a key and a network, so the shell boots against `faux_session()` unless the
+    scenario brings its own.
     """
     from cortex.code.config import SettingsManager
     from cortex.code.config.settings_storage import InMemorySettingsStorage
     from cortex.code.interactive import KeybindingsManager
 
-    options.setdefault("settings", SettingsManager.from_storage(InMemorySettingsStorage()))
+    settings = options.setdefault(
+        "settings", SettingsManager.from_storage(InMemorySettingsStorage())
+    )
     options.setdefault("keybindings", KeybindingsManager())
-    options.setdefault("cwd", "/w/project")
+    cwd = options.setdefault("cwd", "/w/project")
+    options.setdefault("session", faux_session(cwd=str(cwd), settings=settings).session)
     return boot_app(columns=columns, rows=rows, **options)
 
 
@@ -335,9 +387,95 @@ def chat_user_message_renders() -> None:
 # 7.4 — the agent session is wired in
 # ===========================================================================
 
-pending("chat/assistant-round-trip", "A prompt round-trips against the faux provider", "7.4")
-pending("chat/error-surface", "A provider error renders as an error message, not a crash", "7.4")
-pending("chat/abort-turn", "Escape aborts an in-flight turn and says so", "7.4")
+
+@scenario("chat/assistant-round-trip", "A prompt round-trips against the faux provider", "7.4")
+def chat_assistant_round_trip() -> None:
+    from cortex.ai.providers.faux import faux_assistant_message
+
+    faux = faux_session()
+    faux.set_responses([faux_assistant_message("Ada Lovelace wrote the first algorithm.")])
+    try:
+        with boot_shell(session=faux.session) as h:
+            h.type("who wrote the first algorithm?")
+            h.key("enter")
+
+            # The whole round trip, in the order a user sees it: the question in
+            # the chat log, then the answer under it, and the editor empty and
+            # ready again.
+            h.assert_shows("who wrote the first algorithm?")
+            h.assert_shows("Ada Lovelace wrote the first algorithm.")
+            assert _prompt_row(h) >= 0, f"the editor did not come back\n\n{h.snapshot()}"
+
+            # It really went through the session: the agent's transcript holds
+            # the user message and the assistant reply, in that order.
+            roles = [getattr(m, "role", "") for m in faux.session.messages]
+            assert roles == ["user", "assistant"], f"transcript is {roles!r}"
+            assert not faux.session.is_streaming, "the turn never finished"
+    finally:
+        faux.unregister()
+
+
+@scenario("chat/error-surface", "A provider error renders as an error message, not a crash", "7.4")
+def chat_error_surface() -> None:
+    from cortex.ai.providers.faux import faux_assistant_message
+
+    faux = faux_session()
+    faux.set_responses(
+        [faux_assistant_message("", stop_reason="error", error_message="Provider is overloaded")]
+    )
+    try:
+        with boot_shell(session=faux.session) as h:
+            h.type("hello?")
+            h.key("enter")
+
+            h.assert_shows("Provider is overloaded")
+            # Not a crash: the app is still running and still takes input.
+            assert _prompt_row(h) >= 0, f"the editor is gone\n\n{h.snapshot()}"
+            h.type("still here")
+            h.assert_shows("> still here", scrollback=False)
+    finally:
+        faux.unregister()
+
+
+@scenario("chat/abort-turn", "Escape aborts an in-flight turn and says so", "7.4")
+def chat_abort_turn() -> None:
+    import asyncio
+
+    from cortex.ai.providers.faux import faux_assistant_message
+
+    faux = faux_session()
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    async def slow_response(*_args: Any) -> Any:
+        # Hold the turn open until the scenario lets go, so "in-flight" is a
+        # state the test controls rather than a race it hopes to win.
+        started.set()
+        await release.wait()
+        return faux_assistant_message("...eventually")
+
+    faux.set_responses([slow_response])
+    try:
+        with boot_shell(session=faux.session) as h:
+            h.type("take your time")
+            h.key("enter")
+            assert started.is_set(), f"the turn never started\n\n{h.snapshot()}"
+            assert faux.session.is_streaming, "the session does not think it is streaming"
+
+            h.key("escape")
+            release.set()
+            h.settle()
+
+            # The turn ended, and the screen says why.
+            assert not faux.session.is_streaming, f"still streaming after Escape\n\n{h.snapshot()}"
+            h.assert_shows("Operation aborted")
+            last = faux.session.messages[-1]
+            assert getattr(last, "stop_reason", "") == "aborted", (
+                f"the turn was not recorded as aborted: {getattr(last, 'stop_reason', None)!r}"
+            )
+    finally:
+        faux.unregister()
+
 
 # ===========================================================================
 # 7.5 — streaming
