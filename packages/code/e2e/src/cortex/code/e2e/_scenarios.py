@@ -151,19 +151,31 @@ def boot_shell(*, columns: int = 80, rows: int = 24, **options: object) -> AppHa
     string: both feed the banner and the footer, so a scenario that used the real
     ones would render a different screen on every machine — and would quietly
     start failing the day someone set `quietStartup` in their own settings file.
+    Keybindings are the same story one layer down: with the user's
+    `keybindings.json` in play, "press Enter to submit" is only true by default.
     """
     from cortex.code.config import SettingsManager
     from cortex.code.config.settings_storage import InMemorySettingsStorage
+    from cortex.code.interactive import KeybindingsManager
 
     options.setdefault("settings", SettingsManager.from_storage(InMemorySettingsStorage()))
+    options.setdefault("keybindings", KeybindingsManager())
     options.setdefault("cwd", "/w/project")
     return boot_app(columns=columns, rows=rows, **options)
 
 
 def _prompt_row(harness: AppHarness) -> int:
-    """Index of the editor's prompt line, or -1."""
+    """Index of the editor's prompt line while the editor is empty, or -1."""
     for index, line in enumerate(harness.surface().lines()):
         if line.strip() == ">":
+            return index
+    return -1
+
+
+def _editor_row(harness: AppHarness) -> int:
+    """Index of the editor's first line, empty or not, or -1."""
+    for index, line in enumerate(harness.surface().lines()):
+        if line == ">" or line.startswith("> "):
             return index
     return -1
 
@@ -236,10 +248,88 @@ def shell_ctrl_c_exits() -> None:
 # 7.3 — typing and the chat log
 # ===========================================================================
 
-pending("input/type-and-submit", "Typed text appears, Enter clears the editor", "7.3")
-pending("input/multiline", "Shift+Enter opens a second line instead of submitting", "7.3")
-pending("input/history-recall", "Up-arrow recalls the previous submission", "7.3")
-pending("chat/user-message-renders", "A submitted message renders as a user message", "7.3")
+
+@scenario("input/type-and-submit", "Typed text appears, Enter clears the editor", "7.3")
+def input_type_and_submit() -> None:
+    with boot_shell() as h:
+        h.type("hello world")
+        row = _editor_row(h)
+        assert row >= 0, f"no editor line on screen\n\n{h.snapshot()}"
+        h.assert_shows("> hello world", scrollback=False)
+        surface = h.surface()
+        # The caret trails the last character typed, not the start of the line.
+        assert (surface.cursor_row, surface.cursor_x) == (row, 2 + len("hello world")), (
+            f"caret is not after the typed text: {(surface.cursor_row, surface.cursor_x)}"
+            f"\n\n{h.snapshot()}"
+        )
+
+        h.key("enter")
+        prompt = _prompt_row(h)
+        assert prompt >= 0, f"the editor still holds the submitted text\n\n{h.snapshot()}"
+        surface = h.surface()
+        assert (surface.cursor_row, surface.cursor_x) == (prompt, 2), (
+            f"caret did not return to the empty prompt: {(surface.cursor_row, surface.cursor_x)}"
+            f"\n\n{h.snapshot()}"
+        )
+
+
+@scenario("input/multiline", "Shift+Enter opens a second line instead of submitting", "7.3")
+def input_multiline() -> None:
+    with boot_shell() as h:
+        h.type("first")
+        h.key("shift+enter")
+        h.type("second")
+
+        row = _editor_row(h)
+        lines = h.surface().lines()
+        # Still in the editor — a submission would have emptied it — and the
+        # second line is directly under the first, with the caret on it.
+        assert row >= 0 and lines[row] == "> first", (
+            f"the first line left the editor\n\n{h.snapshot()}"
+        )
+        assert lines[row + 1].strip() == "second", f"no second line\n\n{h.snapshot()}"
+        assert h.surface().cursor_row == row + 1, (
+            f"caret stayed on the first line: {h.surface().cursor_row}\n\n{h.snapshot()}"
+        )
+
+        # Enter, on the other hand, submits the whole thing.
+        h.key("enter")
+        assert _prompt_row(h) >= 0, f"Enter did not submit\n\n{h.snapshot()}"
+        h.assert_shows("first", "second")
+
+
+@scenario("input/history-recall", "Up-arrow recalls the previous submission", "7.3")
+def input_history_recall() -> None:
+    with boot_shell() as h:
+        h.type("remember me")
+        h.key("enter")
+        assert _prompt_row(h) >= 0, f"the submission did not clear the editor\n\n{h.snapshot()}"
+
+        h.key("up")
+        h.assert_shows("> remember me", scrollback=False)
+        surface = h.surface()
+        assert surface.cursor_x == 2 + len("remember me"), (
+            f"caret is not at the end of the recalled line: {surface.cursor_x}\n\n{h.snapshot()}"
+        )
+
+
+@scenario("chat/user-message-renders", "A submitted message renders as a user message", "7.3")
+def chat_user_message_renders() -> None:
+    with boot_shell() as h:
+        h.type("what does this repo do?")
+        h.key("enter")
+
+        surface = h.surface()
+        rows = [i for i, line in enumerate(surface.lines()) if "what does this repo do?" in line]
+        assert rows, f"the submitted text is nowhere on screen\n\n{h.snapshot()}"
+        # In the chat log above the editor, not still sitting in it.
+        assert rows[0] < _prompt_row(h), f"the message is not in the chat log\n\n{h.snapshot()}"
+        # And rendered as a *user message*: the component boxes it against the
+        # theme's background, which a bare line of text would not have.
+        assert any(cell.style.bg is not None for cell in surface.grid[rows[0]]), (
+            f"the message is not drawn as a user message\n\n{h.snapshot()}"
+        )
+
 
 # ===========================================================================
 # 7.4 — the agent session is wired in

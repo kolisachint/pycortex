@@ -1,26 +1,35 @@
 """Interactive mode for the coding agent.
 
-Port of ``modes/interactive/interactive-mode.ts`` — the constructor and the
-``init()``/``run()``/``stop()`` skeleton, which is what step 7.2 owes. The TS file
-is 3,528 lines because it is also the chat log, the tool renderer, the command
-executor, the overlay host and the extension chrome; each of those arrives with
-the step that has something for it to drive (7.3 onwards). What lands here is the
-part that makes ``pycortex`` a program you can look at:
+Port of ``modes/interactive/interactive-mode.ts`` — the constructor, the
+``init()``/``run()``/``stop()`` skeleton (step 7.2) and the input path: the
+keybinding-aware editor, its submit handler and the chat log it writes into
+(step 7.3). The TS file is 3,528 lines because it is also the tool renderer, the
+command executor, the overlay host and the extension chrome; each of those
+arrives with the step that has something for it to drive (7.4 onwards). What
+lands here is the part that makes ``pycortex`` a program you can use:
 
 * the component tree — header, chat, pending messages, status, editor, footer —
   assembled onto a :class:`~cortex.tui.render.TUI` in the TS's order, because the
   order *is* the layout;
 * the startup banner, drawn with :func:`~cortex.code.interactive.wordmark.build_compact_wordmark`;
 * focus on the editor, so the caret sits at the ``>`` prompt on the first frame;
-* Ctrl+C: once clears the editor, twice within 500 ms shuts down and hands the
-  terminal back.
+* a :class:`~cortex.code.interactive.components.custom_editor.CustomEditor` over
+  the app :class:`~cortex.code.interactive.keybindings.KeybindingsManager`, which
+  is what turns Ctrl+C into ``app.clear`` and Ctrl+D into ``app.exit`` —
+  once clears the editor, twice within 500 ms shuts down and hands the terminal
+  back;
+* the submit path: Enter submits and clears, the text goes into the editor's
+  history, and a :class:`~cortex.code.interactive.components.user_message.UserMessageComponent`
+  lands in the chat container.
 
-**Where the TS puts these and where they are here.** ``handleCtrlC`` is reached in
-the TS through ``CustomEditor``'s app-action dispatch (`app.clear`), which needs
-``core/keybindings.ts`` and ``components/custom-editor.ts`` — both 7.3. The base
-:class:`~cortex.tui.components.Editor` deliberately ignores Ctrl+C ("let the
-parent handle it") and offers no hook, so the shell listens on the TUI instead.
-7.3 moves it onto the editor where the TS has it.
+**Where the TS puts the submission and where it is here.** In the TS a submitted
+message reaches the screen the long way round: ``onSubmit`` resolves
+``getUserInput()``, the run loop hands the text to ``session.prompt()``, the
+session emits a ``user`` message event and ``renderMessage`` draws it. There is
+no session until 7.4, so :meth:`InteractiveMode.render_user_message` — the port
+of that ``renderMessage`` branch — is called from the submit handler directly.
+7.4 moves the call onto the event handler, where the TS has it, and the same
+component keeps drawing the same thing.
 
 Shutdown is a callback, not ``process.exit``. The TS exits the process from
 inside ``shutdown()``; doing that here would make the exit path the one thing the
@@ -35,16 +44,19 @@ import asyncio
 import os
 import time
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Protocol, cast
 
 from cortex.code.config import APP_NAME, APP_TITLE, VERSION, SettingsManager
+from cortex.code.interactive.components.custom_editor import CustomEditor
 from cortex.code.interactive.components.footer import FooterComponent, FooterState
-from cortex.code.interactive.theme import get_editor_theme, get_theme
+from cortex.code.interactive.components.user_message import UserMessageComponent
+from cortex.code.interactive.keybindings import KeybindingsManager
+from cortex.code.interactive.theme import get_editor_theme, get_markdown_theme, get_theme
 from cortex.code.interactive.wordmark import CompactWordmarkOptions, build_compact_wordmark
-from cortex.tui.components import Editor, EditorOptions, Spacer, Text
-from cortex.tui.keys import matches_key
+from cortex.tui.components import EditorOptions, MarkdownTheme, Spacer, Text
+from cortex.tui.keys import set_keybindings
 from cortex.tui.render import TUI, Container
 from cortex.tui.terminal import ProcessTerminal
 
@@ -115,6 +127,8 @@ class InteractiveModeOptions:
     cwd: str | None = None
     #: Settings source; a file-backed manager for the cwd when omitted.
     settings: SettingsManager | None = None
+    #: Keybindings; the user's ``keybindings.json`` when omitted.
+    keybindings: KeybindingsManager | None = None
     #: Called once, with the exit code, when the app has torn itself down.
     on_exit: Callable[[int], None] | None = None
 
@@ -142,9 +156,20 @@ class InteractiveMode:
         self.status_container = Container()
         self.editor_container = Container()
 
-        self.editor = Editor(
+        # The app's bindings become the process-wide ones, as `setKeybindings` in
+        # the TS does: the base editor resolves `tui.input.submit` and friends
+        # through the global, so a user override has to be visible from there too.
+        self.keybindings = (
+            self.options.keybindings
+            if self.options.keybindings is not None
+            else KeybindingsManager.create()
+        )
+        set_keybindings(self.keybindings)
+
+        self.editor = CustomEditor(
             self.ui,
             get_editor_theme(),
+            self.keybindings,
             EditorOptions(
                 padding_x=self.settings_manager.get_editor_padding_x(),
                 autocomplete_max_visible=self.settings_manager.get_autocomplete_max_visible(),
@@ -167,7 +192,7 @@ class InteractiveMode:
         self._last_sigint_time = 0.0
         self._exit_code: int | None = None
         self._exit_waiter: asyncio.Future[int] | None = None
-        self._dispose_input_listener: Callable[[], None] | None = None
+        self._on_input_callback: Callable[[str], None] | None = None
         self.built_in_header: Text | None = None
 
     @property
@@ -182,9 +207,10 @@ class InteractiveMode:
     def build_banner(self) -> str:
         """The startup header: the compact wordmark, or a one-liner if too narrow.
 
-        7.3 wraps this in the TS's `ExpandableText` so Ctrl+O reveals the
-        keybinding hints — that list is generated from `core/keybindings.ts`,
-        which does not exist yet, so the collapsed form is all there is to show.
+        The TS wraps this in an `ExpandableText` whose expansion lists the
+        keybinding hints. That component is not ported and the key it expands on
+        is `app.tools.expand` (Ctrl+O), which 7.6 wires for tool output; the
+        collapsed form is all there is to show until then.
         """
         theme = get_theme()
         if self.ui.terminal.columns < MIN_BANNER_COLUMNS:
@@ -225,7 +251,8 @@ class InteractiveMode:
         self.ui.add_child(self.footer)
         self.ui.set_focus(self.editor)
 
-        self._dispose_input_listener = self.ui.add_input_listener(self._handle_input)
+        self.setup_key_handlers()
+        self.setup_editor_submit_handler()
         self.update_terminal_title()
         self._is_initialized = True
 
@@ -252,11 +279,16 @@ class InteractiveMode:
     # Key handling
     # ------------------------------------------------------------------
 
-    def _handle_input(self, data: str) -> dict[str, Any] | None:
-        if matches_key(data, "ctrl+c"):
-            self.handle_ctrl_c()
-            return {"consume": True}
-        return None
+    def setup_key_handlers(self) -> None:
+        """Bind the app actions the editor dispatches.
+
+        The TS registers eighteen of these in ``setupKeyHandlers``; the other
+        sixteen drive a model controller, a task panel, selectors and an external
+        editor, none of which exist before 7.6–7.9. What is here is what there is
+        something to do: clear the editor, and exit from an empty one.
+        """
+        self.editor.on_action("app.clear", self.handle_ctrl_c)
+        self.editor.on_ctrl_d = self.handle_ctrl_d
 
     def handle_ctrl_c(self) -> None:
         now = time.time() * 1000
@@ -266,13 +298,79 @@ class InteractiveMode:
             self.clear_editor()
             self._last_sigint_time = now
 
+    def handle_ctrl_d(self) -> None:
+        """Exit. Only reached with an empty editor — :class:`CustomEditor` checks."""
+        self.shutdown()
+
     def clear_editor(self) -> None:
         self.editor.set_text("")
         self.ui.request_render()
 
     # ------------------------------------------------------------------
+    # Submitting
+    # ------------------------------------------------------------------
+
+    def setup_editor_submit_handler(self) -> None:
+        """Wire Enter to :meth:`handle_submit`.
+
+        The TS builds the slash-command table here and the handler consults it
+        before anything else, along with the bash-mode (``!``) prefix, the
+        compaction queue and the streaming steer path. Commands are 7.8, bash is
+        7.6 and the session — with its queue and its streaming flag — is 7.4; the
+        submission itself is all this step owes.
+        """
+        self.editor.on_submit = self.handle_submit
+
+    def handle_submit(self, text: str) -> None:
+        """A submitted line: remember it, show it, hand it on."""
+        text = text.strip()
+        if not text:
+            return
+
+        callback = self._on_input_callback
+        if callback is not None:
+            self._on_input_callback = None
+            callback(text)
+        self.editor.add_to_history(text)
+        # 7.4 deletes this line: by then the text has gone to `session.prompt()`,
+        # which emits the `user` message event the renderer draws from.
+        self.render_user_message(text)
+
+    async def get_user_input(self) -> str:
+        """Wait for the next submission. Port of the TS's ``getUserInput``."""
+        future: asyncio.Future[str] = asyncio.get_running_loop().create_future()
+
+        def deliver(text: str) -> None:
+            if not future.done():
+                future.set_result(text)
+
+        self._on_input_callback = deliver
+        return await future
+
+    # ------------------------------------------------------------------
     # Messages on screen
     # ------------------------------------------------------------------
+
+    def get_markdown_theme_with_settings(self) -> MarkdownTheme:
+        """The markdown theme, with the user's code-block indent applied."""
+        return replace(
+            get_markdown_theme(),
+            code_block_indent=self.settings_manager.get_code_block_indent(),
+        )
+
+    def render_user_message(self, text: str) -> None:
+        """Append a user message to the chat log.
+
+        Port of the ``case "user"`` branch of the TS's ``renderMessage``, minus
+        the skill-block split (``parseSkillBlock``, 7.6): the blank line before
+        every message but the first, then the boxed message itself.
+        """
+        if self.chat_container.children:
+            self.chat_container.add_child(Spacer(1))
+        self.chat_container.add_child(
+            UserMessageComponent(text, self.get_markdown_theme_with_settings())
+        )
+        self.ui.request_render()
 
     def show_error(self, error_message: str) -> None:
         theme = get_theme()
@@ -294,9 +392,6 @@ class InteractiveMode:
 
     def stop(self) -> None:
         """Tear the app down and hand the terminal back."""
-        if self._dispose_input_listener is not None:
-            self._dispose_input_listener()
-            self._dispose_input_listener = None
         self.footer.dispose()
         if self._is_initialized:
             self.ui.stop()

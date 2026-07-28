@@ -9,6 +9,7 @@ cannot see from the outside.
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable
 
 import pytest
@@ -17,9 +18,12 @@ from cortex.code.config.settings_storage import InMemorySettingsStorage
 from cortex.code.interactive import (
     InteractiveMode,
     InteractiveModeOptions,
+    KeybindingsManager,
     build_app_root,
     format_display_path,
 )
+from cortex.code.interactive.theme import get_markdown_theme
+from cortex.tui.keys import set_keybindings
 from cortex.tui.render import TUI
 from cortex.tui.terminal import Terminal
 
@@ -57,6 +61,9 @@ class FakeTerminal(Terminal):
 
     def stop(self) -> None:
         self.stopped = True
+        # `ProcessTerminal.stop` destroys its stdin reader; without the same here
+        # a shut-down app would keep being handed keys no real terminal sends.
+        self._on_input = None
 
     def drain_input(self, max_ms: float = 1000, idle_ms: float = 50) -> None:
         self.drained += 1
@@ -89,7 +96,7 @@ class FakeTerminal(Terminal):
         self.progress.append(active)
 
     def send_input(self, data: str) -> None:
-        assert self._on_input is not None, "terminal was never started"
+        assert self._on_input is not None, "terminal is not delivering input"
         self._on_input(data)
 
 
@@ -98,7 +105,13 @@ def _settings() -> SettingsManager:
 
 
 def _app(terminal: FakeTerminal | None = None, **overrides: object) -> InteractiveMode:
-    options: dict[str, object] = {"settings": _settings(), "cwd": "/w/project"}
+    # Keybindings come from an empty config for the same reason settings do: the
+    # defaults are the contract, and the machine running the tests may not use them.
+    options: dict[str, object] = {
+        "settings": _settings(),
+        "keybindings": KeybindingsManager(),
+        "cwd": "/w/project",
+    }
     options.update(overrides)
     return build_app_root(TUI(terminal or FakeTerminal()), **options)
 
@@ -232,21 +245,175 @@ class TestCtrlC:
         terminal.send_input("i")
         assert app.editor.get_text() == "hi"
 
-    def test_the_key_is_consumed_rather_than_passed_on(self):
-        """Nothing downstream of the app's listener sees Ctrl+C.
+    def test_it_arrives_as_the_editors_app_clear_action(self):
+        """Ctrl+C is the editor's `app.clear` binding, not a listener on the TUI.
 
-        Today the base editor happens to ignore it, so dropping the `consume`
-        would look harmless from the screen. It is not: listeners run in order,
-        and 7.3's editor binds `app.clear` for real.
+        The distinction is not cosmetic: an app-level listener sees every key
+        before the focused component does, so it would fire on Ctrl+C even while
+        an overlay owned the keyboard (7.9). Rebinding `app.clear` is enough to
+        prove where the handler hangs — the app must follow the binding.
         """
-        seen: list[str] = []
+        terminal = FakeTerminal()
+        app = _app(terminal, keybindings=KeybindingsManager({"app.clear": "ctrl+g"}))
+        app.ui.start()
+        app.editor.set_text("keep")
+
+        terminal.send_input("\x03")
+        assert app.editor.get_text() == "keep", "Ctrl+C still cleared after being rebound"
+        terminal.send_input("\x07")
+        assert app.editor.get_text() == "", "the rebound key did not reach `app.clear`"
+
+
+class TestCtrlD:
+    def test_an_empty_editor_exits(self):
+        exits: list[int] = []
+        terminal = FakeTerminal()
+        app = _app(terminal, on_exit=exits.append)
+        app.ui.start()
+        terminal.send_input("\x04")
+        assert exits == [0]
+
+    def test_a_non_empty_editor_does_not(self):
+        """Ctrl+D on text is delete-forward, which is why `CustomEditor` guards it."""
+        exits: list[int] = []
+        terminal = FakeTerminal()
+        app = _app(terminal, on_exit=exits.append)
+        app.ui.start()
+        app.editor.set_text("still writing")
+        terminal.send_input("\x04")
+        assert exits == []
+
+
+class TestKeybindings:
+    def test_the_apps_bindings_become_the_process_wide_ones(self):
+        """The base editor resolves `tui.*` bindings through the global manager.
+
+        So an app that keeps its bindings to itself would honour a user's
+        `app.clear` override and silently ignore their `tui.input.submit` one.
+        Rebinding submit is what tells the two apart.
+        """
+        terminal = FakeTerminal()
+        app = _app(terminal, keybindings=KeybindingsManager({"tui.input.submit": "ctrl+s"}))
+        try:
+            app.ui.start()
+            app.editor.set_text("hello")
+            terminal.send_input("\r")
+            assert app.editor.get_text() == "hello", "Enter submitted after being rebound"
+            terminal.send_input("\x13")
+            assert app.editor.get_text() == "", "the rebound key did not submit"
+        finally:
+            set_keybindings(KeybindingsManager())
+
+
+class TestSubmit:
+    def test_a_submission_renders_as_a_user_message(self):
+        app = _app()
+        app.handle_submit("what does this repo do?")
+        assert [type(child).__name__ for child in app.chat_container.children] == [
+            "UserMessageComponent"
+        ]
+
+    def test_later_messages_are_separated_by_a_blank_line(self):
+        app = _app()
+        app.handle_submit("one")
+        app.handle_submit("two")
+        assert [type(child).__name__ for child in app.chat_container.children] == [
+            "UserMessageComponent",
+            "Spacer",
+            "UserMessageComponent",
+        ]
+
+    async def test_surrounding_whitespace_is_trimmed(self):
+        app = _app()
+        pending = asyncio.ensure_future(app.get_user_input())
+        await asyncio.sleep(0)
+        app.handle_submit("  padded  ")
+        assert await pending == "padded"
+
+    def test_an_empty_submission_is_ignored(self):
+        app = _app()
+        app.handle_submit("   \n  ")
+        assert app.chat_container.children == []
+
+    def test_enter_submits_and_clears_the_editor(self):
         terminal = FakeTerminal()
         app = _app(terminal)
-        app.ui.add_input_listener(lambda data: seen.append(data) or None)
         app.ui.start()
-        terminal.send_input("\x03")
-        terminal.send_input("x")
-        assert seen == ["x"], f"Ctrl+C reached a later listener: {seen!r}"
+        for char in "hello":
+            terminal.send_input(char)
+        assert app.editor.get_text() == "hello"
+        terminal.send_input("\r")
+        assert app.editor.get_text() == ""
+        assert len(app.chat_container.children) == 1
+
+    def test_shift_enter_opens_a_line_instead_of_submitting(self):
+        terminal = FakeTerminal()
+        app = _app(terminal)
+        app.ui.start()
+        for char in "first":
+            terminal.send_input(char)
+        terminal.send_input("\x1b[13;2u")
+        for char in "second":
+            terminal.send_input(char)
+        assert app.editor.get_text() == "first\nsecond"
+        assert app.chat_container.children == [], "Shift+Enter submitted"
+
+    def test_a_submission_is_recalled_by_the_up_arrow(self):
+        terminal = FakeTerminal()
+        app = _app(terminal)
+        app.ui.start()
+        app.editor.set_text("remember me")
+        terminal.send_input("\r")
+        terminal.send_input("\x1b[A")
+        assert app.editor.get_text() == "remember me"
+
+
+class TestGetUserInput:
+    def test_a_waiter_is_served_once(self):
+        """The TS clears `onInputCallback` *before* resolving, and so does this.
+
+        Through `get_user_input` the difference is invisible — its future
+        ignores a second result — so the callback is set the way the TS sets it,
+        which is the form 7.4's run loop will use.
+        """
+        app = _app()
+        served: list[str] = []
+        app._on_input_callback = served.append  # pyright: ignore[reportPrivateUsage]
+        app.handle_submit("one")
+        app.handle_submit("two")
+        assert served == ["one"], f"the waiter was served again: {served!r}"
+
+    async def test_resolves_with_the_next_submission(self):
+        app = _app()
+        pending = asyncio.ensure_future(app.get_user_input())
+        await asyncio.sleep(0)
+        app.handle_submit("hello")
+        assert await pending == "hello"
+
+    async def test_only_the_waiter_that_asked_is_served(self):
+        """The TS clears `onInputCallback` as it resolves; a second line needs a
+        second `getUserInput()`, which is what makes the run loop a loop."""
+        app = _app()
+        first = asyncio.ensure_future(app.get_user_input())
+        await asyncio.sleep(0)
+        app.handle_submit("one")
+        assert await first == "one"
+
+        second = asyncio.ensure_future(app.get_user_input())
+        await asyncio.sleep(0)
+        app.handle_submit("two")
+        assert await second == "two"
+
+
+class TestMarkdownTheme:
+    def test_takes_the_code_block_indent_from_settings(self):
+        """The palette has no opinion on the indent; the settings do."""
+        app = _app()
+        assert get_markdown_theme().code_block_indent is None
+        assert (
+            app.get_markdown_theme_with_settings().code_block_indent
+            == app.settings_manager.get_code_block_indent()
+        )
 
 
 class TestShutdown:
@@ -281,25 +448,25 @@ class TestShutdown:
         assert exits == [3]
 
     def test_stops_listening_for_input(self):
-        """A stopped app does not act on keys that arrive after it let go.
+        """A stopped app does not act on keys, because none are delivered to it.
 
-        Watching `on_exit` cannot see this — the shutdown guard would swallow a
-        second call anyway — so the assertion is on Ctrl+C's *other* effect:
-        with the listener still attached, this clears the editor.
+        Ctrl+C hangs off the editor now, and the editor is still focused after
+        shutdown; what ends the app's hold on the keyboard is the terminal, whose
+        `stop()` tears the stdin reader down. The fake mirrors that, so a key
+        pressed after shutdown has nowhere to go.
         """
         terminal = FakeTerminal()
         app = _app(terminal)
         app.ui.start()
         app.editor.set_text("survives")
         app.shutdown()
-        terminal.send_input("\x03")
+        with pytest.raises(AssertionError, match="not delivering input"):
+            terminal.send_input("\x03")
         assert app.editor.get_text() == "survives", "the app kept handling keys after shutting down"
 
 
 class TestRun:
     async def test_returns_the_code_shutdown_was_given(self):
-        import asyncio
-
         app = _app()
         task = asyncio.ensure_future(app.run())
         await asyncio.sleep(0)
@@ -312,8 +479,6 @@ class TestRun:
         assert await app.run() == 2
 
     async def test_starts_the_tui(self):
-        import asyncio
-
         terminal = FakeTerminal()
         app = _app(terminal)
         task = asyncio.ensure_future(app.run())
