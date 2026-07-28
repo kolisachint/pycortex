@@ -1235,3 +1235,68 @@ in the workspace.
   for the tui group. It belongs to 5.6, which is already failing its audit.
 - 5.6's `publish = false` on `code/_meta` is untouched, for the reason 7.1 gave:
   flipping it puts `cortexcode-code` on PyPI, which is a release decision.
+
+## 7.3 editor + chat log — DONE
+
+`pycortex` now takes input. `components/{custom-editor.ts,user-message.ts}` +
+`core/keybindings.ts` (ported in the session before this one) plus the submit
+path out of `interactive-mode.ts` → `packages/code/interactive/`: 4 e2e
+scenarios, 202 unit tests on the leaf. Typing renders, Enter submits and clears,
+Shift+Enter opens a line, Up recalls, the submission lands in the chat log.
+
+1. **Ctrl+C moved off the TUI input listener and onto the editor**, which is what
+   7.2 said 7.3 would do. `CustomEditor` dispatches `app.clear` →
+   `handle_ctrl_c` and `app.exit` (Ctrl+D, empty editor only) → `handle_ctrl_d`.
+   The listener and its `{"consume": True}` are gone, and so is the test that
+   asserted nothing downstream saw the key — with the handler on the focused
+   component there is no "downstream". What replaced it is a *discriminating*
+   test: rebind `app.clear` to Ctrl+G and check the app follows the binding
+   rather than the byte.
+2. **The submit path renders the message itself, and 7.4 takes that back.** In
+   the TS a submission reaches the screen through `session.prompt()` → a `user`
+   message event → `renderMessage`. `render_user_message` is that branch of
+   `renderMessage`, called from `handle_submit` for now; the line is marked for
+   deletion in 7.4 rather than the component being written twice.
+   `get_user_input()` is ported as the TS has it, so the run loop 7.4 adds has
+   its seam already.
+3. **Shift+Enter needed a key the harness could not send.** `KEY_SEQUENCES` had
+   no entry, and the obvious `\x1b\r` is *alt*+enter to `parse_key` — the CSI-u
+   form `\x1b[13;2u` is the one that round-trips. `test_keys.py` holds the whole
+   table to that, which is why the wrong choice fails loudly instead of typing
+   junk into the editor.
+4. **Keybindings are a machine-dependent input, exactly like settings.**
+   `KeybindingsManager.create()` reads `~/.config/hoocode/keybindings.json`, so a
+   corpus booting through it would assert "Enter submits" on the author's config.
+   `InteractiveModeOptions.keybindings` is the seam; `boot_shell` and the unit
+   tests both pass an empty manager. Defaults are the contract.
+5. **`set_keybindings(self.keybindings)` is load-bearing and was invisible.** The
+   base `Editor` resolves `tui.input.submit`/`newLine`/`cursorUp` through the
+   *global* manager, so an app that kept its manager to itself would honour a
+   user's `app.clear` override and silently ignore their `tui.input.submit` one.
+   Nothing caught its removal until a test rebound submit to Ctrl+S.
+6. **pty smoke run** (7.2 asks for one on every step that adds a binding): boot
+   the `pycortex` console script under `pty.openpty()`, type a line, Enter,
+   Shift+Enter a two-line draft, Ctrl+C to clear it, Ctrl+D to exit. Exit code 0,
+   the submitted text comes back wrapped in the OSC 133 zone markers only
+   `UserMessageComponent` emits, and `CSI ?25h` / `CSI ?2004l` go out.
+7. MUTATION TESTING: 15 mutations across the submit path, the chat log, the key
+   handlers and `CustomEditor`; 13 caught on the first run, both misses closed
+   with discriminating tests (the global keybindings above, and "the waiter is
+   cleared before it is served" — `get_user_input`'s future ignores a second
+   result, so the callback had to be observed the way the TS sets it). 15/15.
+   - A mutation that removes `callback(text)` makes an `await get_user_input()`
+     test hang rather than fail. Give the runner a `timeout=` — a mutation script
+     that stalls leaves the module mutated on disk for as long as it stalls.
+
+### Found here, deliberately not fixed
+
+- **`markdown.codeBlockIndent` never comes off disk.** `SettingsManager` exposes
+  `get_code_block_indent()` and `DEFAULT_SETTINGS` carries the field, but nothing
+  in the settings parser reads a `markdown` block out of the JSON, so the setting
+  is unreachable for a user. That is a `code/config` gap (2.x), not this step's;
+  the app wires the accessor through to the markdown theme, which is all the TS
+  does here.
+- **The startup banner is still a plain `Text`.** The TS wraps it in
+  `ExpandableText` and lists the keybinding hints on expand. The component is not
+  ported and the key it expands on is `app.tools.expand` (Ctrl+O), which 7.6
+  wires for tool output — the hint list can land with it.

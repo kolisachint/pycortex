@@ -45,6 +45,11 @@ KEY_SEQUENCES: dict[str, str] = {
     "pageDown": "\x1b[6~",
     "delete": "\x1b[3~",
     "insert": "\x1b[2~",
+    # Enter with a modifier — the editor's "open a line instead of submitting".
+    # The CSI-u form is what a terminal with the Kitty protocol sends; the legacy
+    # `\x1b\r` an unmodified terminal falls back to parses as `alt+enter`, so it
+    # cannot stand in for this one.
+    "shift+enter": "\x1b[13;2u",
     # Modified arrows — word motion in the editor.
     "shift+up": "\x1b[1;2A",
     "shift+down": "\x1b[1;2B",

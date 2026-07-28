@@ -1,6 +1,7 @@
 """Keyboard input handling and keybindings for terminal applications."""
 
 from cortex.tui.keys._keys import (
+    TUI_KEYBINDINGS,
     Key,
     Keybinding,
     KeybindingConfig,
@@ -9,7 +10,6 @@ from cortex.tui.keys._keys import (
     KeybindingDefinitions,
     KeybindingsManager,
     KeyId,
-    TUI_KEYBINDINGS,
     decode_kitty_printable,
     decode_printable_key,
     get_keybindings,

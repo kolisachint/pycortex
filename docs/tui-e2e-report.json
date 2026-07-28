@@ -1,10 +1,14 @@
 {
-  "generated_from": "deeabd7",
+  "generated_from": "8eae359",
   "note": "Written by scripts/tui_e2e.py. Consumed by scripts/migrate_next.py --status. A Phase 7 step cannot be ticked while it still owns unmet scenarios.",
   "passing": [
+    "chat/user-message-renders",
     "harness/receives-input",
     "harness/renders-a-frame",
     "harness/resize-repaints",
+    "input/history-recall",
+    "input/multiline",
+    "input/type-and-submit",
     "shell/boot-banner",
     "shell/ctrl-c-exits",
     "shell/editor-prompt",
@@ -61,12 +65,6 @@
       "title": "Assistant text appears progressively while streaming"
     },
     {
-      "id": "chat/user-message-renders",
-      "status": "pending",
-      "blocked_by": "7.3",
-      "title": "A submitted message renders as a user message"
-    },
-    {
       "id": "commands/clear",
       "status": "pending",
       "blocked_by": "7.8",
@@ -113,24 +111,6 @@
       "status": "pending",
       "blocked_by": "7.7",
       "title": "Footer shows the active model and token usage"
-    },
-    {
-      "id": "input/history-recall",
-      "status": "pending",
-      "blocked_by": "7.3",
-      "title": "Up-arrow recalls the previous submission"
-    },
-    {
-      "id": "input/multiline",
-      "status": "pending",
-      "blocked_by": "7.3",
-      "title": "Shift+Enter opens a second line instead of submitting"
-    },
-    {
-      "id": "input/type-and-submit",
-      "status": "pending",
-      "blocked_by": "7.3",
-      "title": "Typed text appears, Enter clears the editor"
     },
     {
       "id": "overlay/escape-closes",

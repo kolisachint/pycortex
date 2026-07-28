@@ -365,7 +365,7 @@ visible capability at a time.
       anywhere in the workspace today**, so there is no `pycortex` command to run
       at all. It belongs on `packages/code/_meta` (the `cortexcode-code` umbrella),
       pointing at `cortex.code.main:main`.
-- [ ] **7.3 editor + chat log** — `components/custom-editor.ts`, `user-message.ts`,
+- [x] **7.3 editor + chat log** — `components/custom-editor.ts`, `user-message.ts`,
       `core/keybindings.ts` → `packages/code/interactive/`. Typing renders, Enter
       submits and clears, Shift+Enter opens a line, Up recalls history, the
       submission lands in the chat container.
