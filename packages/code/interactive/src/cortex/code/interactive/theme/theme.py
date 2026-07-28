@@ -1,17 +1,10 @@
 """Theme tokens and the ANSI they resolve to.
 
 Port of the colour core of ``modes/interactive/theme/theme.ts``: the colour-mode
-detection, the hex → truecolor/256-colour conversion, the :class:`Theme` value
+detection, the hex -> truecolor/256-colour conversion, the :class:`Theme` value
 type, and the built-in ``dark`` palette loaded from the theme JSON this package
 ships (a verbatim copy of the TS ``theme/dark.json``, so the two cannot drift by
 transcription).
-
-What is *not* here, and why: ``theme.ts`` is 1,207 lines, and most of it is the
-theme *registry* — loading user themes off disk, the file watcher, light mode,
-`getMarkdownTheme`, and the syntax highlighter. Those belong to the steps that
-have something to point them at (7.9 ports the theme selector). Step 7.2 needs
-exactly one thing from this file: a palette the shell can colour itself with, so
-that is what it ports — the pure half, whole.
 """
 
 from __future__ import annotations
@@ -23,13 +16,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from cortex.tui.components import EditorTheme, SelectListTheme
+from cortex.tui.components import EditorTheme, MarkdownTheme, SelectListTheme
 
 __all__ = [
     "ColorMode",
     "Theme",
     "detect_color_mode",
     "get_editor_theme",
+    "get_markdown_theme",
     "get_select_list_theme",
     "get_theme",
     "hex_to_256",
@@ -68,7 +62,7 @@ def detect_color_mode() -> ColorMode:
     # "screen-256color", or "screen.xterm-256color".
     if term == "screen" or term.startswith("screen-") or term.startswith("screen."):
         return "256color"
-    # Assume truecolor for everything else — virtually all modern terminals do.
+    # Assume truecolor for everything else -- virtually all modern terminals do.
     return "truecolor"
 
 
@@ -120,7 +114,7 @@ def _rgb_to_256(r: int, g: int, b: int) -> int:
     gray_dist = _color_distance(r, g, b, gray_value, gray_value, gray_value)
 
     # Only consider grayscale if the colour is nearly neutral (spread < 10) AND
-    # grayscale is actually closer — otherwise the cube preserves the tint.
+    # grayscale is actually closer -- otherwise the cube preserves the tint.
     spread = max(r, g, b) - min(r, g, b)
     if spread < 10 and gray_dist < cube_dist:
         return 232 + gray_idx
@@ -189,7 +183,7 @@ _BG_TOKENS = (
 
 
 class Theme:
-    """A resolved palette: token name → the ANSI prefix that selects it."""
+    """A resolved palette: token name -> the ANSI prefix that selects it."""
 
     def __init__(
         self,
@@ -277,7 +271,7 @@ def get_theme() -> Theme:
 
     The TS exports a ``theme`` Proxy so every call site sees the current theme
     without re-importing. Python has no equivalent that keeps pyright happy, so
-    call sites ask for it — which is also why the shell passes colour *closures*
+    call sites ask for it -- which is also why the shell passes colour *closures*
     into `build_compact_wordmark` rather than the theme itself.
     """
     global _active
@@ -306,3 +300,31 @@ def get_editor_theme() -> EditorTheme:
     theme = get_theme()
     border_color: Callable[[str], str] = lambda text: theme.fg("borderMuted", text)  # noqa: E731
     return EditorTheme(border_color=border_color, select_list=get_select_list_theme())
+
+
+def get_markdown_theme() -> MarkdownTheme:
+    """Build the markdown theme from the active palette.
+
+    Port of ``getMarkdownTheme()`` from theme.ts. The syntax highlighter
+    is omitted for now -- ``highlight()`` depends on cli-highlight, which
+    is not ported yet. Unhighlighted code blocks are styled with the
+    ``mdCodeBlock`` colour.
+    """
+    theme = get_theme()
+    return MarkdownTheme(
+        heading=lambda text: theme.fg("mdHeading", text),
+        link=lambda text: theme.fg("mdLink", text),
+        link_url=lambda text: theme.fg("mdLinkUrl", text),
+        code=lambda text: theme.fg("mdCode", text),
+        code_block=lambda text: theme.fg("mdCodeBlock", text),
+        code_block_border=lambda text: theme.fg("mdCodeBlockBorder", text),
+        quote=lambda text: theme.fg("mdQuote", text),
+        quote_border=lambda text: theme.fg("mdQuoteBorder", text),
+        hr=lambda text: theme.fg("mdHr", text),
+        list_bullet=lambda text: theme.fg("mdListBullet", text),
+        bold=theme.bold,
+        italic=theme.italic,
+        underline=theme.underline,
+        strikethrough=theme.italic,  # Terminal fallback: italic for strikethrough
+        highlight_code=None,  # Not ported yet
+    )

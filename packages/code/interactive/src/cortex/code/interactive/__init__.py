@@ -22,6 +22,13 @@ from cortex.code.interactive.interactive_mode import (
     format_display_path,
     run_interactive_mode,
 )
+from cortex.code.interactive.keybindings import (
+    KEYBINDINGS,
+    AppKeybinding,
+    KeybindingsManager,
+    migrate_keybindings_config,
+    order_keybindings_config,
+)
 from cortex.code.interactive.theme import Theme, get_theme
 from cortex.code.interactive.wordmark import (
     WORDMARK,
@@ -46,10 +53,15 @@ __all__ = [
     "FooterState",
     "InteractiveMode",
     "InteractiveModeOptions",
+    "KEYBINDINGS",
+    "AppKeybinding",
+    "KeybindingsManager",
     "Theme",
     "build_app_root",
     "build_compact_wordmark",
     "format_display_path",
     "get_theme",
+    "migrate_keybindings_config",
+    "order_keybindings_config",
     "run_interactive_mode",
 ]

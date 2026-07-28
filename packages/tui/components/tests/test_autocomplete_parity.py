@@ -130,6 +130,21 @@ async def test_matches_the_ts(
         f"no TS capture for {scenario['id']} — run `uv run scripts/tui_goldens.py --refresh`"
     )
 
+    # On case-insensitive filesystems (macOS default), files that differ only
+    # in case share one inode, so a scenario that creates both "Beta.txt" and
+    # "beta.txt" collapses to one file.  Skip rather than fail.
+    tree_spec = scenario.get("tree") or {}
+    file_names = list(tree_spec.get("files", {}).keys())
+    if len(file_names) != len({n.lower() for n in file_names}):
+        test_path = tmp_path / "case_check"
+        test_path.mkdir()
+        (test_path / "A").write_text("")
+        if not (test_path / "a").exists():
+            # Filesystem IS case-sensitive — keep the test
+            pass
+        else:
+            pytest.skip("case-insensitive filesystem collapses case-differing files")
+
     root = tmp_path
     cwd = root / "cwd"
     build_tree(cwd, scenario.get("tree"))

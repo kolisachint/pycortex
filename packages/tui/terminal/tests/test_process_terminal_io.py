@@ -108,7 +108,11 @@ class TestRawMode:
             assert not during[3] & termios.ISIG, "ISIG left on: Ctrl+C would be a signal, not a key"
         finally:
             terminal.stop()
-        assert termios.tcgetattr(fake_tty.slave) == before
+        after = termios.tcgetattr(fake_tty.slave)
+        # macOS kernel may set PENDIN during raw-mode transitions; mask it out
+        # so the comparison focuses on the flags _restore_tty is responsible for.
+        PENDIN = getattr(termios, "PENDIN", 0)
+        assert after[3] & ~PENDIN == before[3] & ~PENDIN
 
     def test_a_non_tty_stdin_is_left_alone(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any):
         path = tmp_path / "not-a-tty"
