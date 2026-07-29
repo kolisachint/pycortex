@@ -2,27 +2,48 @@
 
 Port of ``modes/interactive/components/footer.ts``.
 
-**Shell, not the whole thing.** The TS footer reads an `AgentSession` and a
-`ReadonlyFooterDataProvider`; neither exists in the port yet (7.4 and 7.7). The
-line *assembly* does not depend on either, so all of it is ported here — the
-width maths, the context gauge, the token formatting and both footer lines — and
-the data arrives as a :class:`FooterState`, a plain projection of what the two
-TS sources supply. Step 7.7 replaces that projection with the real provider and
-adds the two trailing sections this shell leaves out: extension statuses and the
-transient startup-progress bars, both of which need stores nothing has ported.
+Two lines always, and up to two kinds of transient line under them: identity and
+location on the first (brand mark, mode, path, branch, session name, live
+subagent count), session vitals on the second (context gauge, token and cost
+deltas, model and thinking level), then the extension status line and one line
+per in-flight startup download or index build.
+
+Step 7.2 shipped the line *assembly* over a ``FooterState`` projection, because
+neither the session nor the data provider had been ported. Both exist now, so the
+component reads them directly as the TS does: everything on screen is derived at
+render time, which is what makes the footer follow a turn, a branch switch or a
+model change without anyone telling it to.
 """
 
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+import os
+from collections.abc import Callable, Sequence
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
 
 from cortex.code.interactive.brand import BRAND_MARK, GIT_BRANCH_GLYPH
+from cortex.code.interactive.footer_data_provider import ReadonlyFooterDataProvider
+from cortex.code.interactive.startup_progress import (
+    DownloadProgress,
+    ErrorProgress,
+    StartupProgress,
+    startup_progress,
+)
 from cortex.code.interactive.theme import get_theme
 from cortex.tui.util import truncate_to_width, visible_width
 
-__all__ = ["FooterComponent", "FooterState", "assemble_line", "context_gauge", "format_tokens"]
+__all__ = [
+    "FooterComponent",
+    "active_subagent_count",
+    "assemble_line",
+    "context_gauge",
+    "format_tokens",
+    "render_startup_line",
+    "sanitize_status_text",
+    "set_task_source",
+]
 
 
 def _to_fixed(value: float, digits: int) -> str:
@@ -78,6 +99,46 @@ def context_gauge(percent: float, error_level: float, warn_level: float) -> tupl
     return fill + track, theme.fg(color, fill) + theme.fg("dim", track)
 
 
+#: Where the live task list comes from. The TS reads the process-wide
+#: ``taskStore``; ``core/task-store.ts`` is not in this step's file list and is
+#: not ported, so the footer counts an empty list until it is. This is the seam
+#: it arrives through — the *filter* below is the ported part, and it is what
+#: decides which task is a running delegation rather than a plan row.
+_task_source: Callable[[], Sequence[Any]] = list
+
+
+def set_task_source(source: Callable[[], Sequence[Any]]) -> None:
+    """Point the subagent counter at a task list."""
+    global _task_source
+    _task_source = source
+
+
+def active_subagent_count() -> int:
+    """Count subagent runs currently in flight, for the footer's live delegation cue."""
+    return sum(
+        1
+        for task in _task_source()
+        if _attr(task, "source") == "subagent" and _attr(task, "status") == "in_progress"
+    )
+
+
+def _attr(value: Any, name: str) -> Any:
+    if isinstance(value, dict):
+        return value.get(name)
+    return getattr(value, name, None)
+
+
+def sanitize_status_text(text: str) -> str:
+    """Sanitize text for display in a single-line status.
+
+    Removes newlines, tabs, carriage returns, and collapses runs of spaces.
+    """
+    collapsed = text.replace("\r", " ").replace("\n", " ").replace("\t", " ")
+    while "  " in collapsed:
+        collapsed = collapsed.replace("  ", " ")
+    return collapsed.strip()
+
+
 def format_tokens(count: int) -> str:
     if count < 1000:
         return str(count)
@@ -90,91 +151,143 @@ def format_tokens(count: int) -> str:
     return f"{_js_round(count / 1000000)}M"
 
 
-@dataclass
-class FooterState:
-    """Everything the footer draws, projected out of the session.
+#: Cells in a startup-progress bar; compact so several tools fit the footer.
+STARTUP_BAR_CELLS = 12
 
-    The TS reads these off `AgentSession` and `FooterDataProvider` directly. This
-    stands in until 7.4/7.7 land those; the field names deliberately mirror the
-    accessors they will come from, so the swap is a rewiring rather than a
-    rewrite.
+
+def _format_mb(size_bytes: float) -> str:
+    return f"{_to_fixed(size_bytes / (1024 * 1024), 1)} MB"
+
+
+def _determinate_bar(ratio: float, detail: str) -> str:
+    """``·``-fill bar + percent + trailing detail, matching the voice download bar."""
+    theme = get_theme()
+    clamped = max(0.0, min(1.0, ratio))
+    filled = _js_round(clamped * STARTUP_BAR_CELLS)
+    bar = theme.fg("accent", "·" * filled) + theme.fg("dim", "·" * (STARTUP_BAR_CELLS - filled))
+    pct = f"{_js_round(clamped * 100)}%"
+    return f"{bar} {theme.fg('muted', pct)} {theme.fg('dim', f'· {detail}')}"
+
+
+def render_startup_line(entry: StartupProgress) -> str:
+    """One footer line for a transient startup-progress entry.
+
+    Styled like the voice download bar: a ``·`` fill over a dim track with
+    percent and a ``received / total`` (or ``done/total``) detail. An
+    indeterminate download (no Content-Length) drops the bar for a running byte
+    count; an error entry renders as a dim message. Returns a styled string; the
+    caller width-clamps it.
     """
-
-    #: Working directory, already ``~``-shortened (`FooterDataProvider` does not
-    #: do this — the TS footer does it inline, and so does :meth:`display_cwd`).
-    cwd: str
-    mode: str = "build"
-    git_branch: str | None = None
-    session_name: str | None = None
-    model_id: str | None = None
-    model_provider: str | None = None
-    model_reasoning: bool = False
-    thinking_level: str | None = None
-    using_subscription: bool = False
-    available_provider_count: int = 0
-    active_subagents: int = 0
-    context_window: int = 0
-    #: Percentage of the context window in use; ``None`` renders as ``?``, which
-    #: is what the TS shows between a compaction and the next response.
-    context_percent: float | None = 0.0
-    total_input: int = 0
-    total_output: int = 0
-    total_cache_read: int = 0
-    total_cache_write: int = 0
-    total_cost: float = 0.0
-    auto_compact_enabled: bool = True
-    compaction_reserve_tokens: int = 0
+    theme = get_theme()
+    if isinstance(entry, ErrorProgress):
+        return theme.fg("dim", f"{entry.label}: {entry.message}")
+    label = theme.fg("text", entry.label)
+    if isinstance(entry, DownloadProgress):
+        if entry.total_bytes is None or entry.total_bytes <= 0:
+            return f"{label} {theme.fg('dim', f'{_format_mb(entry.received_bytes)}…')}"
+        detail = f"{_format_mb(entry.received_bytes)} / {_format_mb(entry.total_bytes)}"
+        return f"{label} {_determinate_bar(entry.received_bytes / entry.total_bytes, detail)}"
+    detail = f"{entry.done}/{entry.total} {entry.unit}"
+    ratio = entry.done / entry.total if entry.total > 0 else 0.0
+    return f"{label} {_determinate_bar(ratio, detail)}"
 
 
 class FooterComponent:
-    """Footer component that shows pwd, token stats, and context usage."""
+    """Footer component that shows pwd, token stats, and context usage.
 
-    def __init__(self, state: FooterState) -> None:
-        self._state = state
+    Computes token/context stats from the session; gets the git branch, the
+    active mode and the extension statuses from the provider.
+    """
 
-    def set_state(self, state: FooterState) -> None:
-        self._state = state
+    def __init__(self, session: Any, footer_data: ReadonlyFooterDataProvider) -> None:
+        self._session = session
+        self._footer_data = footer_data
+        self._auto_compact_enabled = True
+
+    def set_session(self, session: Any) -> None:
+        self._session = session
 
     @property
-    def state(self) -> FooterState:
-        return self._state
+    def session(self) -> Any:
+        return self._session
 
     def set_auto_compact_enabled(self, enabled: bool) -> None:
-        self._state.auto_compact_enabled = enabled
+        self._auto_compact_enabled = enabled
 
     def invalidate(self) -> None:
-        """No-op: git branch is cached/invalidated by the provider."""
+        """No-op: git branch is cached/invalidated by the provider.
+
+        Kept for the call sites in the interactive mode, as in the TS.
+        """
 
     def dispose(self) -> None:
         """No-op: git watcher cleanup is handled by the provider."""
 
     def render(self, width: int) -> list[str]:
-        state = self._state
+        session = self._session
         theme = get_theme()
+        state = session.state
 
-        context_window = state.context_window
-        context_percent_value = state.context_percent if state.context_percent is not None else 0.0
-        context_percent = (
-            _to_fixed(context_percent_value, 1) if state.context_percent is not None else "?"
-        )
+        # Cumulative usage over ALL session entries, not just the messages that
+        # survived the last compaction: what the turn cost is what it cost.
+        total_input = 0
+        total_output = 0
+        total_cache_read = 0
+        total_cache_write = 0
+        total_cost = 0.0
+        for entry in session.session_manager.get_entries():
+            if _attr(entry, "type") != "message":
+                continue
+            message = _attr(entry, "message")
+            if message is None or _attr(message, "role") != "assistant":
+                continue
+            usage = _attr(message, "usage")
+            if usage is None:
+                continue
+            total_input += _attr(usage, "input") or 0
+            total_output += _attr(usage, "output") or 0
+            total_cache_read += _attr(usage, "cache_read") or 0
+            total_cache_write += _attr(usage, "cache_write") or 0
+            cost = _attr(usage, "cost")
+            total_cost += (_attr(cost, "total") or 0.0) if cost is not None else 0.0
+
+        # Context usage comes off the session, which handles compaction: after
+        # one, tokens are unknown until the next LLM response.
+        context_usage = session.get_context_usage()
+        model = _attr(state, "model")
+        context_window = (
+            _attr(context_usage, "context_window")
+            if context_usage is not None
+            else _attr(model, "context_window")
+        ) or 0
+        usage_percent = _attr(context_usage, "percent") if context_usage is not None else None
+        context_percent_value = usage_percent if usage_percent is not None else 0.0
+        context_percent = _to_fixed(context_percent_value, 1) if usage_percent is not None else "?"
+
+        # Replace home directory with ~
+        pwd = session.session_manager.get_cwd()
+        home = os.environ.get("HOME") or os.environ.get("USERPROFILE")
+        if home and pwd.startswith(home):
+            pwd = f"~{pwd[len(home) :]}"
+        branch = self._footer_data.get_git_branch()
+        session_name = session.session_manager.get_session_name()
+        mode_label = self._footer_data.get_active_mode()
 
         # ── Line 1 — identity & location ────────────────────────────────────
         # Lead with the brand mark + MODE (the agent's guardrail: Ask/Plan/Build/
         # Debug) in bold accent so it is the first thing the eye lands on, then
         # the path, git branch, and session name in descending emphasis. The live
         # subagent count sits flush right — present only while work is delegated.
-        brand = f"{BRAND_MARK} {state.mode.upper()}"
-        l1_plain = f"{brand}  {state.cwd}"
-        l1_styled = f"{theme.bold(theme.fg('accent', brand))}  {theme.fg('muted', state.cwd)}"
-        if state.git_branch:
-            l1_plain += f" {GIT_BRANCH_GLYPH} {state.git_branch}"
-            l1_styled += (
-                f" {theme.fg('dim', GIT_BRANCH_GLYPH)} {theme.fg('muted', state.git_branch)}"
-            )
-        if state.session_name:
-            l1_plain += f" • {state.session_name}"
-            l1_styled += theme.fg("dim", f" • {state.session_name}")
-        n_sub = state.active_subagents
+        brand = f"{BRAND_MARK} {mode_label.upper()}"
+        l1_plain = f"{brand}  {pwd}"
+        l1_styled = f"{theme.bold(theme.fg('accent', brand))}  {theme.fg('muted', pwd)}"
+        if branch:
+            l1_plain += f" {GIT_BRANCH_GLYPH} {branch}"
+            l1_styled += f" {theme.fg('dim', GIT_BRANCH_GLYPH)} {theme.fg('muted', branch)}"
+        if session_name:
+            l1_plain += f" • {session_name}"
+            l1_styled += theme.fg("dim", f" • {session_name}")
+        n_sub = active_subagent_count()
         l1_right_plain = f"◇{n_sub} running" if n_sub > 0 else ""
         l1_right_styled = (
             theme.fg("accent", f"◇{n_sub}") + theme.fg("dim", " running") if n_sub > 0 else ""
@@ -186,15 +299,16 @@ class FooterComponent:
         # point) leads, then token/cost deltas, with the model + thinking level
         # flush right. Numbers read in muted, labels/arrows in dim.
         threshold_percent: float | None = None
-        if state.auto_compact_enabled and context_window > 0:
-            effective = context_window - state.compaction_reserve_tokens
+        if self._auto_compact_enabled and context_window > 0:
+            reserve_tokens = session.settings_manager.get_compaction_reserve_tokens()
+            effective = context_window - reserve_tokens
             if effective > 0:
                 threshold_percent = (effective / context_window) * 100
         error_level = threshold_percent - 3 if threshold_percent is not None else 90.0
         warn_level = threshold_percent - 10 if threshold_percent is not None else 70.0
         if threshold_percent is not None:
             auto_indicator = f" auto@{_to_fixed(threshold_percent, 0)}%"
-        elif state.auto_compact_enabled:
+        elif self._auto_compact_enabled:
             auto_indicator = " auto"
         else:
             auto_indicator = ""
@@ -223,37 +337,57 @@ class FooterComponent:
                 theme.fg("dim", symbol) + theme.fg("muted", format_tokens(n)),
             )
 
-        if state.total_input:
-            segs.append(arrow("↑", state.total_input))
-        if state.total_output:
-            segs.append(arrow("↓", state.total_output))
-        if state.total_cache_read:
-            segs.append(arrow("R", state.total_cache_read))
-        if state.total_cache_write:
-            segs.append(arrow("W", state.total_cache_write))
-        if state.total_cost or state.using_subscription:
-            cost_str = f"${_to_fixed(state.total_cost, 3)}"
-            if state.using_subscription:
+        if total_input:
+            segs.append(arrow("↑", total_input))
+        if total_output:
+            segs.append(arrow("↓", total_output))
+        if total_cache_read:
+            segs.append(arrow("R", total_cache_read))
+        if total_cache_write:
+            segs.append(arrow("W", total_cache_write))
+        registry = getattr(session, "model_registry", None)
+        using_subscription = bool(registry.is_using_oauth(model)) if registry and model else False
+        if total_cost or using_subscription:
+            cost_str = f"${_to_fixed(total_cost, 3)}"
+            if using_subscription:
                 cost_str += " (sub)"
             segs.append((cost_str, theme.fg("muted", cost_str)))
         l2_plain = "  ".join(plain for plain, _ in segs)
         l2_styled = "  ".join(styled for _, styled in segs)
 
         # Right: model, thinking level, and provider (when several are configured).
-        model_name = state.model_id or "no-model"
+        model_name = (_attr(model, "id") if model else None) or "no-model"
         r2_plain = model_name
         r2_styled = theme.fg("muted", model_name)
-        if state.model_reasoning:
-            tl = state.thinking_level or "off"
+        if model is not None and _attr(model, "reasoning"):
+            tl = _attr(state, "thinking_level") or "off"
             tstr = "thinking off" if tl == "off" else tl
             r2_plain += f" • {tstr}"
             r2_styled += theme.fg("dim", f" • {tstr}")
-        if state.available_provider_count > 1 and state.model_id:
+        if self._footer_data.get_available_provider_count() > 1 and model is not None:
             # Prepend the provider only when the whole right cluster still fits.
-            with_prov = f"({state.model_provider}) {r2_plain}"
+            provider = _attr(model, "provider")
+            with_prov = f"({provider}) {r2_plain}"
             if visible_width(l2_plain) + 2 + visible_width(with_prov) <= width:
                 r2_plain = with_prov
-                r2_styled = theme.fg("dim", f"({state.model_provider}) ") + r2_styled
+                r2_styled = theme.fg("dim", f"({provider}) ") + r2_styled
         line2 = assemble_line(width, l2_plain, l2_styled, r2_plain, r2_styled)
 
-        return [line1, line2]
+        lines = [line1, line2]
+
+        # Extension statuses on a single line, sorted by key.
+        extension_statuses = self._footer_data.get_extension_statuses()
+        if extension_statuses:
+            status_line = " ".join(
+                sanitize_status_text(extension_statuses[key]) for key in sorted(extension_statuses)
+            )
+            # Truncated with a dim ellipsis, for consistency with the footer style.
+            lines.append(truncate_to_width(status_line, width, theme.fg("dim", "...")))
+
+        # Transient startup progress (first-run tool downloads, index build): one
+        # determinate bar per entry, cleared as each settles. Width-clamped like
+        # the status line so the footer never overflows.
+        for entry in startup_progress.list():
+            lines.append(truncate_to_width(render_startup_line(entry), width, theme.fg("dim", "…")))
+
+        return lines

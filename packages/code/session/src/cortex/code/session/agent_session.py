@@ -55,6 +55,7 @@ from cortex.code.config import (
 )
 from cortex.code.config.auth_guidance import UNKNOWN_PROVIDER
 from cortex.code.session.bash_executor import BashResult, execute_bash_with_operations
+from cortex.code.session.stats import ContextUsage, compute_context_usage
 
 __all__ = [
     "AgentSession",
@@ -351,6 +352,23 @@ class AgentSession:
 
     def set_scoped_models(self, scoped_models: list[Any]) -> None:
         self._scoped_models = list(scoped_models)
+
+    @property
+    def model_registry(self) -> ModelRegistryLike | None:
+        """The registry the session resolves auth against; ``None`` when unconfigured."""
+        return self._model_registry
+
+    def get_context_usage(self) -> ContextUsage | None:
+        """How much of the model's context window this session is holding.
+
+        ``None`` when there is no model or it declares no window — the footer
+        draws a zeroed gauge for that, the same as the TS.
+        """
+        return compute_context_usage(
+            model=self.model,
+            session_manager=self.session_manager,
+            messages=self.messages,
+        )
 
     # =====================================================================
     # Prompting

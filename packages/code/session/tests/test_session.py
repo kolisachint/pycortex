@@ -441,3 +441,121 @@ class TestSessionIntegration:
         # Verify persistence
         assert sm.is_persisted()
         assert os.path.exists(sm.get_session_file() or "")
+
+
+class TestComputeContextUsage:
+    """Tests for the context-usage estimate the footer's meter reads (step 7.7)."""
+
+    @staticmethod
+    def _messages(*, output_chars: int = 40, tokens: int | None = None):
+        from dataclasses import dataclass, field
+
+        @dataclass
+        class Usage:
+            input: int = 0
+            output: int = 0
+            cache_read: int = 0
+            cache_write: int = 0
+            total_tokens: int = 0
+
+        @dataclass
+        class Content:
+            type: str = "text"
+            text: str = ""
+
+        @dataclass
+        class Message:
+            role: str = "user"
+            content: list = field(default_factory=list)
+            usage: Usage = field(default_factory=Usage)
+            stop_reason: str = "stop"
+
+        assistant = Message(
+            role="assistant",
+            content=[Content(text="x" * output_chars)],
+            usage=Usage(total_tokens=tokens if tokens is not None else 0),
+        )
+        return [Message(role="user", content=[Content(text="hello")]), assistant]
+
+    @staticmethod
+    def _manager(entries: list[dict] | None = None):
+        from types import SimpleNamespace
+
+        return SimpleNamespace(get_branch=lambda: entries or [])
+
+    @staticmethod
+    def _model(context_window: int = 1000):
+        from types import SimpleNamespace
+
+        return SimpleNamespace(context_window=context_window)
+
+    def test_no_model_means_no_usage(self) -> None:
+        from cortex.code.session import compute_context_usage
+
+        assert compute_context_usage(None, self._manager(), self._messages()) is None
+
+    def test_a_model_without_a_window_means_no_usage(self) -> None:
+        from cortex.code.session import compute_context_usage
+
+        usage = compute_context_usage(self._model(0), self._manager(), self._messages())
+        assert usage is None
+
+    def test_the_percentage_is_the_estimate_over_the_window(self) -> None:
+        from cortex.code.session import compute_context_usage
+
+        usage = compute_context_usage(
+            self._model(1000), self._manager(), self._messages(tokens=250)
+        )
+        assert usage is not None
+        assert usage.tokens == 250
+        assert usage.percent == 25.0
+
+    def test_after_a_compaction_the_tokens_are_unknown(self) -> None:
+        from cortex.code.session import compute_context_usage
+
+        # The last assistant usage describes the pre-compaction context, so it
+        # says nothing about what is loaded now. Until the next response the
+        # honest answer is "unknown" — the `?` the footer draws.
+        entries = [
+            {"type": "message", "message": {"role": "assistant", "usage": {"total_tokens": 900}}},
+            {"type": "compaction", "id": "c1"},
+        ]
+        usage = compute_context_usage(
+            self._model(1000), self._manager(entries), self._messages(tokens=250)
+        )
+        assert usage is not None
+        assert usage.tokens is None
+        assert usage.percent is None
+
+    def test_a_response_after_the_compaction_restores_the_estimate(self) -> None:
+        from cortex.code.session import compute_context_usage
+
+        entries = [
+            {"type": "compaction", "id": "c1"},
+            {"type": "message", "message": {"role": "assistant", "usage": {"input": 100}}},
+        ]
+        usage = compute_context_usage(
+            self._model(1000), self._manager(entries), self._messages(tokens=250)
+        )
+        assert usage is not None
+        assert usage.tokens == 250
+
+    def test_an_aborted_response_after_the_compaction_does_not_count(self) -> None:
+        from cortex.code.session import compute_context_usage
+
+        entries = [
+            {"type": "compaction", "id": "c1"},
+            {
+                "type": "message",
+                "message": {
+                    "role": "assistant",
+                    "stop_reason": "aborted",
+                    "usage": {"input": 100},
+                },
+            },
+        ]
+        usage = compute_context_usage(
+            self._model(1000), self._manager(entries), self._messages(tokens=250)
+        )
+        assert usage is not None
+        assert usage.tokens is None
