@@ -15,7 +15,7 @@ from cortex.ai.types import (
     Message,
     Model,
     TextContent,
-    Tool,
+    ToolCall,
     ToolResultMessage,
 )
 
@@ -77,8 +77,14 @@ ToolExecutionMode = Literal["sequential", "parallel"]
 # Agent tool call
 # ---------------------------------------------------------------------------
 
-AgentToolCall = Tool
-"""A single tool call content block emitted by an assistant message."""
+AgentToolCall = ToolCall
+"""A single tool call content block emitted by an assistant message.
+
+The TS spells this ``Extract<AssistantMessage["content"][number], {type:
+"toolCall"}>`` — the *call*, with its ``id`` and its ``arguments``, not the
+``Tool`` *definition* it names. This alias pointed at ``Tool`` until step 7.5
+came to execute one and found the two have no field in common but ``name``.
+"""
 
 
 # ---------------------------------------------------------------------------

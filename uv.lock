@@ -138,6 +138,7 @@ dependencies = [
     { name = "cortexcode-agent-types" },
     { name = "cortexcode-ai-stream" },
     { name = "cortexcode-ai-types" },
+    { name = "cortexcode-ai-util" },
 ]
 
 [package.metadata]
@@ -145,6 +146,7 @@ requires-dist = [
     { name = "cortexcode-agent-types", editable = "packages/agent/types" },
     { name = "cortexcode-ai-stream", editable = "packages/ai/stream" },
     { name = "cortexcode-ai-types", editable = "packages/ai/types" },
+    { name = "cortexcode-ai-util", editable = "packages/ai/util" },
 ]
 
 [[package]]

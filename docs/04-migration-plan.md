@@ -373,7 +373,7 @@ visible capability at a time.
       `agent-session-services.ts` → `packages/code/session/`. Wire the editor's
       submissions into it and its events back onto the screen; round-trip a prompt
       against `ai/provider-faux` with no network.
-- [ ] **7.5 streaming turns** — fill in `packages/agent/loop`
+- [x] **7.5 streaming turns** — fill in `packages/agent/loop`
       (`_execute_tool_calls`; `_stream_assistant_response` landed with 7.4, which
       needed it to round-trip a prompt) and `components/assistant-message.ts` →
       `packages/code/interactive/`. Assistant text appears progressively — the

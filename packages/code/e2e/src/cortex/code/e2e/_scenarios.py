@@ -164,7 +164,13 @@ class FauxSession:
     unregister: Callable[[], None]
 
 
-def faux_session(*, cwd: str = "/w/project", settings: Any = None) -> FauxSession:
+def faux_session(
+    *,
+    cwd: str = "/w/project",
+    settings: Any = None,
+    stream_fn: Any = None,
+    tools: list[Any] | None = None,
+) -> FauxSession:
     """Build the session the shell scenarios prompt against.
 
     Everything real except the provider: a real `Agent`, a real `AgentSession`,
@@ -172,6 +178,12 @@ def faux_session(*, cwd: str = "/w/project", settings: Any = None) -> FauxSessio
     what step 7.4 promises ("round-trip a prompt against `ai/provider-faux` with
     no network"). The session manager does not persist: a scenario must not
     leave a session file on the machine that ran it.
+
+    `stream_fn` replaces the *byte source* and nothing else — the model, the
+    preflight and the loop are still the real ones. A scenario about what the
+    screen does **between** two deltas needs to own when the second one arrives,
+    and the faux provider streams whole responses on its own schedule; see
+    `chat/streaming-incremental`.
     """
     from cortex.ai.providers.faux import register_faux_provider
     from cortex.code.session import SessionManager, create_agent_session
@@ -182,6 +194,8 @@ def faux_session(*, cwd: str = "/w/project", settings: Any = None) -> FauxSessio
         settings_manager=settings,
         session_manager=SessionManager(cwd, "", persist=False),
         model=registration.get_model(),
+        stream_fn=stream_fn,
+        tools=tools,
     )
     return FauxSession(
         session=created.session,
@@ -481,9 +495,179 @@ def chat_abort_turn() -> None:
 # 7.5 — streaming
 # ===========================================================================
 
-pending("chat/streaming-incremental", "Assistant text appears progressively while streaming", "7.5")
-pending("chat/loader-while-busy", "A loader runs during the turn and clears after", "7.5")
-pending("chat/markdown-rendering", "Assistant markdown renders styled, not raw", "7.5")
+
+def gated_text_stream(first: str, second: str, gate: Any) -> Any:
+    """A stream function that emits `first`, waits on `gate`, then emits `second`.
+
+    "Progressively" is a statement about the middle of a turn, so the middle has
+    to be a state the scenario holds open rather than a race it hopes to win. The
+    events are the ones a provider really sends (`start`, `text_start`,
+    `text_delta`…), so the app is driven through the same path as a real turn.
+    """
+    from cortex.ai.providers.faux import faux_assistant_message
+    from cortex.ai.stream import AssistantMessageEventStream
+    from cortex.ai.types import (
+        DoneEvent,
+        StartEvent,
+        TextDeltaEvent,
+        TextEndEvent,
+        TextStartEvent,
+    )
+
+    whole = first + second
+
+    def stream_fn(model: Any, context: Any, options: Any) -> Any:
+        import asyncio
+
+        stream = AssistantMessageEventStream()
+
+        async def produce() -> None:
+            stream.push(StartEvent(partial=faux_assistant_message("")))
+            stream.push(TextStartEvent(content_index=0, partial=faux_assistant_message("")))
+            stream.push(
+                TextDeltaEvent(content_index=0, delta=first, partial=faux_assistant_message(first))
+            )
+            await gate.wait()
+            stream.push(
+                TextDeltaEvent(content_index=0, delta=second, partial=faux_assistant_message(whole))
+            )
+            stream.push(
+                TextEndEvent(content_index=0, content=whole, partial=faux_assistant_message(whole))
+            )
+            final = faux_assistant_message(whole)
+            stream.push(DoneEvent(reason="stop", message=final))
+            stream.end(final)
+
+        asyncio.ensure_future(produce())
+        return stream
+
+    return stream_fn
+
+
+@scenario(
+    "chat/streaming-incremental", "Assistant text appears progressively while streaming", "7.5"
+)
+def chat_streaming_incremental() -> None:
+    import asyncio
+
+    gate = asyncio.Event()
+    faux = faux_session(
+        stream_fn=gated_text_stream("Ada Lovelace ", "wrote the first algorithm.", gate)
+    )
+    try:
+        with boot_shell(session=faux.session) as h:
+            h.type("who was first?")
+            h.key("enter")
+            # The streaming redraw is throttled to 100 ms (`text_start` spends
+            # the leading edge, the delta lands inside the window), so this is a
+            # wait on a real timer rather than on ready callbacks. The gate holds
+            # the turn open throughout, so the deadline is what ends this call.
+            h.settle(timeout=0.25)
+
+            # Mid-turn: the first delta is on screen and the second has not been
+            # sent yet. Both halves matter — without the second assertion this
+            # would pass against an app that only draws finished messages, since
+            # by then it would have drawn nothing at all.
+            assert faux.session.is_streaming, f"the turn is not in flight\n\n{h.snapshot()}"
+            h.assert_shows("Ada Lovelace")
+            h.assert_hides("wrote the first algorithm")
+
+            gate.set()
+            h.settle()
+
+            h.assert_shows("Ada Lovelace wrote the first algorithm.")
+            assert not faux.session.is_streaming, "the turn never finished"
+    finally:
+        faux.unregister()
+
+
+@scenario("chat/loader-while-busy", "A loader runs during the turn and clears after", "7.5")
+def chat_loader_while_busy() -> None:
+    import asyncio
+
+    gate = asyncio.Event()
+    faux = faux_session(stream_fn=gated_text_stream("thinking it ", "over", gate))
+    try:
+        with boot_shell(session=faux.session) as h:
+            # Nothing is running, so nothing says anything is.
+            h.assert_hides("Working...", scrollback=False)
+
+            h.type("take a moment")
+            h.key("enter")
+
+            # A spinner frame and the label, in the status band under the chat
+            # log and above the editor.
+            h.assert_shows("Working...", scrollback=False)
+            lines = h.surface().lines()
+            loader_row = next(i for i, line in enumerate(lines) if "Working..." in line)
+            assert any(frame in lines[loader_row] for frame in ("⠋", "⠙", "⠹", "⠸")), (
+                f"the loader has no spinner\n\n{h.snapshot()}"
+            )
+            assert loader_row < _editor_row(h), f"the loader is below the editor\n\n{h.snapshot()}"
+
+            gate.set()
+            h.settle()
+
+            # The turn is over, and the loader went with it.
+            h.assert_hides("Working...", scrollback=False)
+            h.assert_shows("thinking it over")
+    finally:
+        faux.unregister()
+
+
+@scenario("chat/markdown-rendering", "Assistant markdown renders styled, not raw", "7.5")
+def chat_markdown_rendering() -> None:
+    from cortex.ai.providers.faux import faux_assistant_message
+
+    faux = faux_session()
+    faux.set_responses(
+        [
+            faux_assistant_message(
+                "## Ada Lovelace\n\nShe wrote the **first** algorithm.\n\n- one\n- two"
+            )
+        ]
+    )
+    try:
+        with boot_shell(session=faux.session) as h:
+            h.type("tell me about her")
+            h.key("enter")
+            h.settle()
+
+            # The markdown source is gone: no `##` before the heading, no `**`
+            # around the emphasis, and the list bullets are drawn, not typed.
+            h.assert_shows("Ada Lovelace", "She wrote the first algorithm.")
+            h.assert_hides("## Ada Lovelace", "**first**")
+
+            # And it is *styled*, which is the half a plain-text renderer would
+            # also pass: the heading is bold and the emphasised word is too,
+            # while the words either side of it are not.
+            surface = h.surface()
+            heading = _row_containing(h, "Ada Lovelace")
+            assert any(cell.style.bold for cell in surface.grid[heading]), (
+                f"the heading is not styled\n\n{h.snapshot()}"
+            )
+
+            body = _row_containing(h, "She wrote the first algorithm.")
+            row = surface.grid[body]
+            text = "".join(cell.char for cell in row)
+            start = text.index("first")
+            assert all(row[i].style.bold for i in range(start, start + len("first"))), (
+                f"the emphasised word is not bold\n\n{h.snapshot()}"
+            )
+            assert not row[start - 2].style.bold, (
+                f"the whole line is bold, so nothing is emphasised\n\n{h.snapshot()}"
+            )
+    finally:
+        faux.unregister()
+
+
+def _row_containing(harness: AppHarness, text: str) -> int:
+    """Index of the first visible row holding `text`, for a style assertion."""
+    for index, line in enumerate(harness.surface().lines()):
+        if text in line:
+            return index
+    raise AssertionError(f"{text!r} is not on screen\n\n{harness.snapshot()}")
+
 
 # ===========================================================================
 # 7.6 — tools
