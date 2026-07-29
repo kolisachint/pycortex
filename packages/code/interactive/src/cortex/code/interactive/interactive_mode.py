@@ -51,6 +51,19 @@ runs the line as a shell command instead of sending it, streaming its output int
 a :class:`~cortex.code.interactive.components.bash_execution.BashExecutionComponent`
 through :class:`~cortex.code.interactive.bash_execution_controller.BashExecutionController`.
 
+Step 7.8 gave the editor a command line. ``/`` opens the command menu, ``@``
+opens the file one, and a submitted ``/command`` is dispatched by
+:meth:`InteractiveMode.handle_submit` before anything can send it to the model:
+
+* :meth:`InteractiveMode.setup_autocomplete_provider` builds the TS's
+  ``CombinedAutocompleteProvider`` over
+  :data:`~cortex.code.interactive.slash_commands.BUILTIN_SLASH_COMMANDS` and
+  hands it to the editor;
+* :meth:`InteractiveMode.create_built_in_slash_commands` is the TS's dispatch
+  table, and :class:`~cortex.code.interactive.command_executor.CommandExecutor`
+  holds the handlers — the app itself is the ``CommandContext`` they read
+  through.
+
 Shutdown is a callback, not ``process.exit``. The TS exits the process from
 inside ``shutdown()``; doing that here would make the exit path the one thing the
 end-to-end corpus could never watch. :meth:`InteractiveMode.shutdown` tears down
@@ -62,6 +75,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import shutil
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
@@ -69,8 +83,9 @@ from pathlib import Path
 from typing import Any, Protocol, cast
 
 from cortex.ai.types import TextContent
-from cortex.code.config import APP_NAME, APP_TITLE, VERSION, SettingsManager
+from cortex.code.config import APP_NAME, APP_TITLE, VERSION, SettingsManager, get_bin_dir
 from cortex.code.interactive.bash_execution_controller import BashExecutionController
+from cortex.code.interactive.command_executor import CommandExecutor
 from cortex.code.interactive.components.assistant_message import AssistantMessageComponent
 from cortex.code.interactive.components.custom_editor import CustomEditor
 from cortex.code.interactive.components.footer import FooterComponent
@@ -83,20 +98,31 @@ from cortex.code.interactive.components.tool_execution import (
 from cortex.code.interactive.components.user_message import UserMessageComponent
 from cortex.code.interactive.footer_data_provider import FooterDataProvider
 from cortex.code.interactive.keybindings import KeybindingsManager
+from cortex.code.interactive.slash_commands import BUILTIN_SLASH_COMMANDS
 from cortex.code.interactive.startup_progress import startup_progress
 from cortex.code.interactive.theme import get_editor_theme, get_markdown_theme, get_theme
 from cortex.code.interactive.tool_renderers import resolve_tool_renderer
 from cortex.code.interactive.wordmark import CompactWordmarkOptions, build_compact_wordmark
-from cortex.tui.components import EditorOptions, Loader, MarkdownTheme, Spacer, Text
+from cortex.tui.components import (
+    CombinedAutocompleteProvider,
+    EditorOptions,
+    Loader,
+    MarkdownTheme,
+    SlashCommand,
+    Spacer,
+    Text,
+)
 from cortex.tui.keys import set_keybindings
 from cortex.tui.render import TUI, Container
 from cortex.tui.terminal import ProcessTerminal
 
 __all__ = [
+    "BuiltInSlashCommand",
     "InteractiveMode",
     "InteractiveModeOptions",
     "build_app_root",
     "format_display_path",
+    "resolve_fd_path",
     "run_interactive_mode",
 ]
 
@@ -235,12 +261,43 @@ def _create_unpersisted_session(cwd: str, settings_manager: SettingsManager) -> 
     ).session
 
 
+def resolve_fd_path() -> str | None:
+    """Where ``fd`` is, or ``None``.
+
+    The TS calls ``ensureTool("fd", …)``, which resolves the binary and
+    *downloads* it on first run, streaming progress into the footer. The
+    downloader is a tool-binary manager this port has not reached, so what is
+    here is the resolution half: the managed bin directory first (that is where
+    ``ensureTool`` puts it, so a hoocode install is picked up), then ``PATH``.
+
+    ``None`` is not an error state. The TS resolves fd in the background and
+    never awaits it, so an app that has just started — or one on a machine where
+    the download failed — runs with ``fdPath`` unset and simply offers no
+    ``@`` completions. That is exactly what this returns.
+    """
+    managed = shutil.which("fd", path=get_bin_dir())
+    return managed if managed else shutil.which("fd")
+
+
 def format_display_path(path: str) -> str:
     """``~``-shorten a path for display. Port of ``resource-display.formatDisplayPath``."""
     home = str(Path.home())
     if path.startswith(home):
         return f"~{path[len(home) :]}"
     return path
+
+
+@dataclass(frozen=True)
+class BuiltInSlashCommand:
+    """One entry of the submit handler's command table.
+
+    The TS's ``{ withArgs?: boolean; run(text): Promise<void> | void }``. ``run``
+    always receives the whole submitted line, arguments included, because that
+    is what the handlers parse.
+    """
+
+    run: Callable[[str], None]
+    with_args: bool = False
 
 
 @dataclass
@@ -278,6 +335,11 @@ class InteractiveModeOptions:
     keybindings: KeybindingsManager | None = None
     #: Called once, with the exit code, when the app has torn itself down.
     on_exit: Callable[[int], None] | None = None
+    #: The ``fd`` binary the ``@``-mention provider searches with. Resolved from
+    #: ``PATH`` and the managed bin directory when omitted (see
+    #: :func:`resolve_fd_path`); ``@`` completion is simply inert without one,
+    #: which is the state the TS is in until its background download settles.
+    fd_path: str | None = None
 
 
 class InteractiveMode:
@@ -377,10 +439,38 @@ class InteractiveMode:
         #: Set while a `!command` is scheduled or running. See :meth:`is_busy`.
         self._bash_pending = False
 
+        # Commands (7.8): the `fd` the `@` provider searches with, the built-in
+        # command table, and the executor the handlers live on.
+        self.fd_path = (
+            self.options.fd_path if self.options.fd_path is not None else resolve_fd_path()
+        )
+        self.autocomplete_provider: CombinedAutocompleteProvider | None = None
+        self._command_executor: CommandExecutor | None = None
+        self._slash_commands = self.create_built_in_slash_commands()
+
     @property
     def terminal(self) -> AppTerminal:
         """The TUI's terminal, seen through the app-level surface."""
         return cast(AppTerminal, self.ui.terminal)
+
+    @property
+    def session_manager(self) -> Any:
+        """The current session's manager. Part of the command context."""
+        return self.session.session_manager
+
+    @property
+    def command_executor(self) -> CommandExecutor:
+        """The slash-command handlers, built on first use.
+
+        The app *is* the :class:`~cortex.code.interactive.command_executor.CommandContext`
+        — every member of the protocol is a property or a method here — which is
+        the Python spelling of the TS's object-of-getters: a handler reads
+        ``ctx.session`` at call time and gets the session that is current then,
+        not the one that was current when the executor was built.
+        """
+        if self._command_executor is None:
+            self._command_executor = CommandExecutor(self)
+        return self._command_executor
 
     # ------------------------------------------------------------------
     # Startup
@@ -435,6 +525,7 @@ class InteractiveMode:
 
         self.setup_key_handlers()
         self.setup_editor_submit_handler()
+        self.setup_autocomplete_provider()
         self.setup_session_listener()
         self.setup_footer_watchers()
         self.update_terminal_title()
@@ -596,19 +687,110 @@ class InteractiveMode:
     # Submitting
     # ------------------------------------------------------------------
 
-    def setup_editor_submit_handler(self) -> None:
-        """Wire Enter to :meth:`handle_submit`.
+    # ------------------------------------------------------------------
+    # Slash commands and autocomplete
+    # ------------------------------------------------------------------
 
-        The TS builds the slash-command table here and the handler consults it
-        before anything else, along with the bash-mode (``!``) prefix, the
-        compaction queue and the streaming steer path. Commands are 7.8 and the
-        session — with its queue and its streaming flag — is 7.4; the submission
-        and the bash prefix are what this handler owes.
+    def create_built_in_slash_commands(self) -> dict[str, BuiltInSlashCommand]:
+        """The built-in commands the submit handler dispatches.
+
+        Port of ``createBuiltInSlashCommands``, restricted to the handlers that
+        have something to drive — see
+        :mod:`cortex.code.interactive.command_executor` for what each of the
+        others is waiting on. ``withArgs`` commands also match ``/name <args>``
+        and receive the whole line; the rest only match on their own.
+
+        Every handler clears the editor itself, in the TS's order: some show
+        their output before the prompt is wiped and some after, and doing it
+        centrally would flatten a difference the TS is deliberate about.
+
+        ``/debug`` is dispatched but not advertised, exactly as in the TS: it is
+        absent from :data:`~cortex.code.interactive.slash_commands.BUILTIN_SLASH_COMMANDS`,
+        so it never appears in the `/` menu.
         """
+
+        def clear_editor() -> None:
+            self.editor.set_text("")
+
+        def run_name(text: str) -> None:
+            self.command_executor.handle_name(text)
+            clear_editor()
+
+        def run_session(_text: str) -> None:
+            self.command_executor.handle_session()
+            clear_editor()
+
+        def run_changelog(_text: str) -> None:
+            self.command_executor.handle_changelog()
+            clear_editor()
+
+        def run_hotkeys(_text: str) -> None:
+            self.command_executor.handle_hotkeys()
+            clear_editor()
+
+        def run_debug(_text: str) -> None:
+            self.command_executor.handle_debug()
+            clear_editor()
+
+        def run_quit(_text: str) -> None:
+            clear_editor()
+            self.shutdown()
+
+        return {
+            "/name": BuiltInSlashCommand(run_name, with_args=True),
+            "/session": BuiltInSlashCommand(run_session),
+            "/changelog": BuiltInSlashCommand(run_changelog),
+            "/hotkeys": BuiltInSlashCommand(run_hotkeys),
+            "/debug": BuiltInSlashCommand(run_debug),
+            "/quit": BuiltInSlashCommand(run_quit),
+        }
+
+    def create_base_autocomplete_provider(self) -> CombinedAutocompleteProvider:
+        """The provider behind `/` and `@`. Port of ``createBaseAutocompleteProvider``.
+
+        The TS builds four lists — built-ins, prompt templates, extension
+        commands and skill commands — and concatenates them. The last three come
+        off ``session.promptTemplates``, the extension runner and the resource
+        loader, none of which this port has, so the built-ins are the whole list.
+
+        And the built-ins are filtered to the ones
+        :meth:`create_built_in_slash_commands` dispatches. The TS needs no such
+        filter because it has a handler for every row of the table; here, an
+        advertised command with no handler would fall through the submit handler
+        and be sent to the model as a prompt, which is a worse answer than not
+        offering it.
+        """
+        slash_commands: list[SlashCommand] = [
+            SlashCommand(name=command.name, description=command.description)
+            for command in BUILTIN_SLASH_COMMANDS
+            if f"/{command.name}" in self._slash_commands
+        ]
+        return CombinedAutocompleteProvider(
+            slash_commands, self.session_manager.get_cwd(), self.fd_path
+        )
+
+    def setup_autocomplete_provider(self) -> None:
+        """Build the provider and hand it to the editor.
+
+        The TS re-runs this whenever the command list can have changed (a
+        reload, an extension registering a provider wrapper). Nothing here moves
+        yet, so it runs once from :meth:`init` — but it is a method rather than
+        four lines inline because the things that move it are 7.9's and later.
+        """
+        provider = self.create_base_autocomplete_provider()
+        self.autocomplete_provider = provider
+        self.editor.set_autocomplete_provider(provider)
+
+    def setup_editor_submit_handler(self) -> None:
+        """Wire Enter to :meth:`handle_submit`."""
         self.editor.on_submit = self.handle_submit
 
     def handle_submit(self, text: str) -> None:
-        """A submitted line: remember it and hand it to the loop.
+        """A submitted line: a command, a shell command, or a prompt.
+
+        The order is the TS's. A built-in slash command is matched first and
+        never reaches the model; then the ``!`` bash prefix; then the ordinary
+        submission.
 
         Nothing is drawn here for a prompt. The text goes to
         ``session.prompt()``, the session emits a ``user`` message event, and
@@ -621,6 +803,16 @@ class InteractiveMode:
         """
         text = text.strip()
         if not text:
+            return
+
+        # A command is matched on its first word, so `/name my session` reaches
+        # `/name` while `/session please` — a command that takes no arguments —
+        # does not, and goes to the model as ordinary text.
+        space_index = text.find(" ")
+        command_name = text if space_index == -1 else text[:space_index]
+        command = self._slash_commands.get(command_name)
+        if command is not None and (space_index == -1 or command.with_args):
+            command.run(text)
             return
 
         # Deferred bash rows from the last turn belong above whatever comes next.

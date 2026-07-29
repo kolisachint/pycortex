@@ -10,7 +10,9 @@ cannot see from the outside.
 from __future__ import annotations
 
 import asyncio
+import shutil
 from collections.abc import Callable
+from pathlib import Path
 
 import pytest
 from cortex.code.config import APP_TITLE, SettingsManager
@@ -24,6 +26,7 @@ from cortex.code.interactive import (
 )
 from cortex.code.interactive.components import ToolExecutionComponent
 from cortex.code.interactive.theme import get_markdown_theme
+from cortex.tui.components import SlashCommand
 from cortex.tui.keys import set_keybindings
 from cortex.tui.render import TUI
 from cortex.tui.terminal import Terminal
@@ -1194,3 +1197,191 @@ class TestBashMode:
         assert "from the shell" in _chat_text(app)
         assert "$ echo hi" in _chat_text(app)
         assert not app.is_busy()
+
+
+class TestSlashCommandDispatch:
+    """The submit handler's command table, and what it refuses to match."""
+
+    def test_a_command_is_dispatched_instead_of_being_sent(self):
+        app = _app()
+        sent: list[str] = []
+        app._on_input_callback = sent.append  # pyright: ignore[reportPrivateUsage]
+
+        app.editor.set_text("/session")
+        app.handle_submit("/session")
+
+        assert sent == [], "the command was sent to the model as a prompt"
+        assert "Session Info" in _chat_text(app)
+        assert app.editor.get_text() == "", "the command left the editor dirty"
+
+    def test_an_argument_free_command_with_arguments_is_not_a_command(self):
+        # `/session please` has no entry in the table with `withArgs`, so it goes
+        # to the model as ordinary text — the TS's `spaceIdx === -1` rule.
+        app = _app()
+        sent: list[str] = []
+        app._on_input_callback = sent.append  # pyright: ignore[reportPrivateUsage]
+
+        app.handle_submit("/session please")
+
+        assert sent == ["/session please"]
+        assert "Session Info" not in _chat_text(app)
+
+    def test_a_with_args_command_takes_the_whole_line(self):
+        app = _app()
+        app.handle_submit("/name my session")
+        assert app.session.session_manager.get_session_name() == "my session"
+
+    def test_an_unknown_command_goes_to_the_model(self):
+        app = _app()
+        sent: list[str] = []
+        app._on_input_callback = sent.append  # pyright: ignore[reportPrivateUsage]
+        app.handle_submit("/nonesuch")
+        assert sent == ["/nonesuch"]
+
+    def test_a_command_never_reaches_the_bash_prefix(self):
+        # Order matters: the TS matches commands before `!`, so a command is
+        # never mistaken for a shell line and vice versa.
+        app = _app()
+        app.handle_submit("/hotkeys")
+        assert app._bash_task is None  # pyright: ignore[reportPrivateUsage]
+
+    def test_a_command_returns_before_the_pending_bash_flush(self):
+        # The TS flushes deferred bash rows only on a *normal* submission, at
+        # the bottom of the handler. A command returns above it, so blocks
+        # parked during the last turn stay parked — they belong above the next
+        # message, not above a keyboard reference card.
+        from cortex.code.interactive.components import BashExecutionComponent
+
+        app = _app()
+        block = BashExecutionComponent("sleep 1", app.ui)
+        app.pending_messages_container.add_child(block)
+        app.bash_execution.pending_bash_components.append(block)
+
+        app.handle_submit("/session")
+
+        assert block in app.pending_messages_container.children
+        assert block not in app.chat_container.children
+        block.set_complete(0, False)
+
+    def test_quit_shuts_the_app_down(self):
+        exits: list[int] = []
+        app = _app(on_exit=exits.append)
+        app.handle_submit("/quit")
+        assert exits == [0]
+
+    def test_debug_is_dispatched_but_not_advertised(self, monkeypatch: pytest.MonkeyPatch):
+        from cortex.code.interactive import BUILTIN_SLASH_COMMANDS
+
+        assert "/debug" in app_commands(_app())
+        assert "debug" not in {command.name for command in BUILTIN_SLASH_COMMANDS}
+
+    def test_the_table_only_holds_slash_prefixed_names(self):
+        assert all(name.startswith("/") for name in app_commands(_app()))
+
+
+def app_commands(app: InteractiveMode) -> set[str]:
+    return set(app._slash_commands)  # pyright: ignore[reportPrivateUsage]
+
+
+class TestAutocompleteProvider:
+    def test_the_editor_gets_a_provider_at_boot(self):
+        app = _app()
+        assert app.autocomplete_provider is not None
+        assert app.editor._autocomplete_provider is app.autocomplete_provider  # pyright: ignore[reportPrivateUsage]
+
+    def test_it_offers_exactly_the_commands_the_app_dispatches(self):
+        from cortex.code.interactive import BUILTIN_SLASH_COMMANDS
+
+        app = _app()
+        provider = app.autocomplete_provider
+        assert provider is not None
+        offered = {
+            command.name for command in provider.commands if isinstance(command, SlashCommand)
+        }
+        dispatched = {name.lstrip("/") for name in app_commands(app)}
+        advertised = {command.name for command in BUILTIN_SLASH_COMMANDS}
+        # Every offer is dispatchable, and every dispatchable *advertised*
+        # command is offered — `/debug` is in neither set, which is the point.
+        assert offered == dispatched & advertised
+
+    def test_descriptions_come_from_the_built_in_table(self):
+        from cortex.code.interactive import BUILTIN_SLASH_COMMANDS
+
+        table = {command.name: command.description for command in BUILTIN_SLASH_COMMANDS}
+        provider = _app().autocomplete_provider
+        assert provider is not None
+        for command in provider.commands:
+            assert isinstance(command, SlashCommand)
+            assert command.description == table[command.name]
+
+    def test_it_searches_from_the_session_cwd(self):
+        app = _app()
+        provider = app.autocomplete_provider
+        assert provider is not None
+        assert provider.base_path == app.session.session_manager.get_cwd()
+
+    def test_an_explicit_fd_path_is_used_verbatim(self):
+        app = _app(fd_path="/opt/bin/fd")
+        provider = app.autocomplete_provider
+        assert provider is not None
+        assert provider.fd_path == "/opt/bin/fd"
+
+    def test_a_missing_fd_leaves_the_provider_without_one(self, monkeypatch: pytest.MonkeyPatch):
+        # Not an error: the TS resolves fd in the background and runs without
+        # one until it lands, offering no `@` completions in the meantime.
+        monkeypatch.setattr(shutil, "which", lambda *_args, **_kwargs: None)  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType]
+        app = _app()
+        provider = app.autocomplete_provider
+        assert provider is not None
+        assert provider.fd_path is None
+
+
+class TestResolveFdPath:
+    def test_prefers_the_managed_bin_directory(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ):
+        from cortex.code.interactive import resolve_fd_path
+
+        # `fd` in *both* places, or the order under test is unobservable: with
+        # nothing on PATH either lookup order returns the managed one.
+        managed = tmp_path / "bin"
+        managed.mkdir()
+        on_path = tmp_path / "usr"
+        on_path.mkdir()
+        for directory in (managed, on_path):
+            fd = directory / "fd"
+            fd.write_text("#!/bin/sh\n")
+            fd.chmod(0o755)
+
+        monkeypatch.setattr(
+            "cortex.code.interactive.interactive_mode.get_bin_dir", lambda: str(managed)
+        )
+        monkeypatch.setenv("PATH", str(on_path))
+        assert resolve_fd_path() == str(managed / "fd")
+
+    def test_falls_back_to_the_path(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+        from cortex.code.interactive import resolve_fd_path
+
+        empty = tmp_path / "empty"
+        empty.mkdir()
+        elsewhere = tmp_path / "usr"
+        elsewhere.mkdir()
+        fd = elsewhere / "fd"
+        fd.write_text("#!/bin/sh\n")
+        fd.chmod(0o755)
+        monkeypatch.setattr(
+            "cortex.code.interactive.interactive_mode.get_bin_dir", lambda: str(empty)
+        )
+        monkeypatch.setenv("PATH", str(elsewhere))
+        assert resolve_fd_path() == str(fd)
+
+    def test_none_when_it_is_nowhere(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+        from cortex.code.interactive import resolve_fd_path
+
+        empty = tmp_path / "empty"
+        empty.mkdir()
+        monkeypatch.setattr(
+            "cortex.code.interactive.interactive_mode.get_bin_dir", lambda: str(empty)
+        )
+        monkeypatch.setenv("PATH", str(empty))
+        assert resolve_fd_path() is None

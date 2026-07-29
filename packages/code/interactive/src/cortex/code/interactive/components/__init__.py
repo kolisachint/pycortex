@@ -2,8 +2,8 @@
 
 Port of ``modes/interactive/components/``. Step 7.3 adds the custom editor and
 the user message component, 7.5 the assistant message, 7.6 the tool-execution
-block with its diff colouring and the bash-mode block; the selector components
-arrive with 7.9.
+block with its diff colouring and the bash-mode block, and 7.8 the rule the
+command output is framed between; the selector components arrive with 7.9.
 """
 
 from cortex.code.interactive.components.assistant_message import (
@@ -16,6 +16,7 @@ from cortex.code.interactive.components.bash_execution import (
 )
 from cortex.code.interactive.components.custom_editor import CustomEditor, is_plain_text
 from cortex.code.interactive.components.diff import parse_diff_line, render_diff
+from cortex.code.interactive.components.dynamic_border import DynamicBorder
 from cortex.code.interactive.components.footer import (
     FooterComponent,
     assemble_line,
@@ -44,11 +45,12 @@ from cortex.code.interactive.components.visual_truncate import (
 )
 
 __all__ = [
-    "PREVIEW_LINES",
     "AssistantMessageComponent",
     "BashExecutionComponent",
     "CustomEditor",
+    "DynamicBorder",
     "FooterComponent",
+    "PREVIEW_LINES",
     "PrefixFirstLine",
     "ToolExecutionComponent",
     "ToolExecutionOptions",

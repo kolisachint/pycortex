@@ -7,6 +7,7 @@ requires-python = ">=3.11"
 dependencies = [
     "cortexcode-ai-types>=0.0.3,<0.1.0",
     "cortexcode-cli-config>=0.0.3,<0.1.0",
+    "cortexcode-cli-prompts>=0.0.3,<0.1.0",
     "cortexcode-cli-session>=0.0.3,<0.1.0",
     "cortexcode-cli-tools>=0.0.3,<0.1.0",
     "cortexcode-tui-components>=0.0.3,<0.1.0",
@@ -28,6 +29,7 @@ packages = [
 [tool.uv.sources]
 cortexcode-ai-types = { workspace = true }
 cortexcode-cli-config = { workspace = true }
+cortexcode-cli-prompts = { workspace = true }
 cortexcode-cli-session = { workspace = true }
 cortexcode-cli-tools = { workspace = true }
 cortexcode-tui-components = { workspace = true }
