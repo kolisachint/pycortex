@@ -530,12 +530,14 @@ source = { editable = "packages/code/tools" }
 dependencies = [
     { name = "cortexcode-agent-types" },
     { name = "cortexcode-ai-types" },
+    { name = "cortexcode-cli-config" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "cortexcode-agent-types", editable = "packages/agent/types" },
     { name = "cortexcode-ai-types", editable = "packages/ai/types" },
+    { name = "cortexcode-cli-config", editable = "packages/code/config" },
 ]
 
 [[package]]

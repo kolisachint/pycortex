@@ -4,20 +4,30 @@
 Mechanical port of ``core/tools/bash.ts`` (execute path). The 100ms streaming
 update throttle is replaced with immediate update emission (there is no event
 loop timer in the port's synchronous exec), and the TUI rendering is not ported.
+
+Shell resolution, the shell environment and the process-tree kill are ports of
+``utils/shell.ts`` (``getShellConfig``, ``getShellEnv``, ``killProcessTree``);
+its ``sanitizeBinaryOutput`` went to :mod:`cortex.code.session.bash_executor`
+instead, where the output is decoded.
 """
 
 from __future__ import annotations
 
+import contextlib
 import os
 import re
+import signal as signal_module
 import subprocess
+import sys
 import threading
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Protocol
 
 from cortex.agent.types import AgentTool, AgentToolResult
 from cortex.ai.types import TextContent
+from cortex.code.config import get_bin_dir
 from cortex.code.tools.output_accumulator import OutputAccumulator
 from cortex.code.tools.truncate import (
     DEFAULT_MAX_BYTES,
@@ -56,18 +66,137 @@ class BashOperations(Protocol):
     ) -> BashExecResult: ...
 
 
+#: How long `where`/`which` gets to answer, as in the TS.
+SHELL_LOOKUP_TIMEOUT_S = 5.0
+
+#: How long the output readers get after the shell has exited, before the pipes
+#: are let go of. `EXIT_STDIO_GRACE_MS` in ``utils/child-process.ts``.
+EXIT_STDIO_GRACE_S = 0.1
+
+
+def _find_bash_on_path() -> str | None:
+    """Locate a bash on PATH (port of ``findBashOnPath``).
+
+    Shells out rather than using `shutil.which` because the two platforms are
+    deliberately asymmetric in the TS: on Windows `where` can name a path that
+    does not exist, so the answer is verified; on Unix `which`'s answer is
+    *trusted* precisely because Termux and other special filesystems make an
+    independent existence check say no to a shell that works.
+    """
+    program = "where" if sys.platform == "win32" else "which"
+    argument = "bash.exe" if sys.platform == "win32" else "bash"
+    try:
+        result = subprocess.run(
+            [program, argument],
+            capture_output=True,
+            text=True,
+            timeout=SHELL_LOOKUP_TIMEOUT_S,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0 or not result.stdout:
+        return None
+    first_match = re.split(r"\r?\n", result.stdout.strip())[0]
+    if not first_match:
+        return None
+    if sys.platform == "win32" and not os.path.exists(first_match):
+        return None
+    return first_match
+
+
 def _get_shell_config(custom_shell_path: str | None = None) -> tuple[str, list[str]]:
-    """Resolve the shell binary and its args (port of ``getShellConfig``)."""
+    """Resolve the shell binary and its args (port of ``getShellConfig``).
+
+    Resolution order, the TS's: an explicit shell path; on Windows, Git Bash in
+    its two install locations and then any bash on PATH; on Unix, `/bin/bash`,
+    then bash on PATH, then `sh`.
+
+    Note that `$SHELL` is not consulted, and never was in the TS — the tool's
+    contract is *bash*, and the model writes bash. An earlier version of this
+    port read `$SHELL`, which ran the commands under fish or zsh for anyone
+    whose login shell is one of those.
+    """
     if custom_shell_path:
         if os.path.exists(custom_shell_path):
             return custom_shell_path, ["-c"]
         raise RuntimeError(f"Custom shell path not found: {custom_shell_path}")
-    shell = os.environ.get("SHELL", "/bin/bash")
-    return shell, ["-c"]
+
+    if sys.platform == "win32":
+        candidates: list[str] = []
+        program_files = os.environ.get("ProgramFiles")
+        if program_files:
+            candidates.append(f"{program_files}\\Git\\bin\\bash.exe")
+        program_files_x86 = os.environ.get("ProgramFiles(x86)")
+        if program_files_x86:
+            candidates.append(f"{program_files_x86}\\Git\\bin\\bash.exe")
+
+        for candidate in candidates:
+            if os.path.exists(candidate):
+                return candidate, ["-c"]
+
+        # Cygwin, MSYS2, WSL — anything that put a bash on PATH.
+        bash_on_path = _find_bash_on_path()
+        if bash_on_path:
+            return bash_on_path, ["-c"]
+
+        searched = "\n".join(f"  {path}" for path in candidates)
+        raise RuntimeError(
+            "No bash shell found. Options:\n"
+            "  1. Install Git for Windows: https://git-scm.com/download/win\n"
+            "  2. Add your bash to PATH (Cygwin, MSYS2, etc.)\n"
+            "  3. Set shellPath in settings.json\n\n"
+            f"Searched Git Bash in:\n{searched}"
+        )
+
+    if os.path.exists("/bin/bash"):
+        return "/bin/bash", ["-c"]
+
+    bash_on_path = _find_bash_on_path()
+    if bash_on_path:
+        return bash_on_path, ["-c"]
+
+    return "sh", ["-c"]
 
 
 def _get_shell_env() -> dict[str, str]:
-    return dict(os.environ)
+    """The environment for a shell command (port of ``getShellEnv``).
+
+    Puts the managed-binaries directory (`fd`, `rg`) at the front of PATH. The
+    key is found case-insensitively because Windows spells it `Path`, and adding
+    a second `PATH` entry there would leave the real one untouched.
+    """
+    env = dict(os.environ)
+    bin_dir = get_bin_dir()
+    path_key = next((key for key in env if key.lower() == "path"), "PATH")
+    current_path = env.get(path_key, "")
+    entries = [entry for entry in current_path.split(os.pathsep) if entry]
+    if bin_dir not in entries:
+        env[path_key] = os.pathsep.join([bin_dir, *([current_path] if current_path else [])])
+    return env
+
+
+def kill_process_tree(pid: int) -> None:
+    """Kill a process and its children (port of ``killProcessTree``).
+
+    On Windows, killing the shell does not kill what the shell started, so
+    `taskkill /T` is the only thing that ends a timed-out command. On POSIX the
+    negative pid is the process group `start_new_session` created, with a
+    single-pid fallback for a child that has left it.
+    """
+    if sys.platform == "win32":
+        with contextlib.suppress(OSError, subprocess.SubprocessError):
+            subprocess.Popen(
+                ["taskkill", "/F", "/T", "/PID", str(pid)],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        return
+    try:
+        os.killpg(pid, signal_module.SIGKILL)
+    except (ProcessLookupError, PermissionError, OSError):
+        with contextlib.suppress(ProcessLookupError, OSError):
+            os.kill(pid, signal_module.SIGKILL)
 
 
 class _LocalBashOperations:
@@ -108,13 +237,7 @@ class _LocalBashOperations:
         aborted = threading.Event()
 
         def _kill_tree() -> None:
-            try:
-                if os.name != "nt":
-                    os.killpg(os.getpgid(proc.pid), 9)
-                else:
-                    proc.kill()
-            except (ProcessLookupError, OSError):
-                pass
+            kill_process_tree(proc.pid)
 
         timer: threading.Timer | None = None
         if timeout is not None and timeout > 0:
@@ -145,10 +268,31 @@ class _LocalBashOperations:
                 poller = threading.Thread(target=_poll_abort, daemon=True)
                 poller.start()
 
+        # Set once the shell has exited and the readers are out of grace: a
+        # descendant still holding the pipe may write more, and the snapshot has
+        # already been taken. The TS calls `stream.destroy()` for this.
+        stdio_done = threading.Event()
+
         def _pump(stream: Any) -> None:
-            for chunk in iter(lambda: stream.read(4096), b""):
-                if chunk:
-                    on_data(chunk)
+            try:
+                # `read1`, not `read`: it returns what is available instead of
+                # waiting for a full 4096 bytes, which is what node's `data`
+                # event does — and what makes the grace period below safe. With
+                # `read`, a short line sits in the buffer until EOF, so a
+                # command whose descendant holds the pipe open would have its
+                # output dropped rather than merely delayed.
+                for chunk in iter(lambda: stream.read1(4096), b""):
+                    if chunk and not stdio_done.is_set():
+                        on_data(chunk)
+            except (OSError, ValueError):
+                # The pipe went away under us; nothing left to read.
+                pass
+            finally:
+                # Closed by the thread that reads it. A `close()` from anywhere
+                # else blocks on the buffer lock this thread holds while it is
+                # inside `read1`, which is the hang all over again.
+                with contextlib.suppress(OSError, ValueError):
+                    stream.close()
 
         threads = []
         if proc.stdout is not None:
@@ -161,8 +305,20 @@ class _LocalBashOperations:
             threads.append(t)
 
         code = proc.wait()
+
+        # Port of `waitForChildProcess`. A detached descendant inherits the
+        # shell's stdout/stderr handles, so the pipe can stay open long after
+        # the shell is gone — `bash -c "server &"` is enough. Joining the
+        # readers unconditionally waits for the *descendant*: on POSIX that is
+        # as long as it runs, and on Windows a daemonised child means forever.
+        # So they get a grace period to finish, and are then abandoned; each is
+        # a daemon thread that closes its own pipe when the descendant finally
+        # lets go.
+        deadline = time.monotonic() + EXIT_STDIO_GRACE_S
         for t in threads:
-            t.join()
+            t.join(timeout=max(0.0, deadline - time.monotonic()))
+        stdio_done.set()
+
         if timer is not None:
             timer.cancel()
         stop_poll.set()

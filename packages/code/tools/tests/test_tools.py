@@ -34,6 +34,7 @@ from cortex.code.tools import (  # noqa: PLC2701
     truncate_line,
     truncate_tail,
 )
+from cortex.code.tools import bash as bash_module
 from cortex.code.tools.edit_diff import Edit, compute_edits_diff
 
 
@@ -1146,3 +1147,294 @@ class TestToolBundles:
             assert name in names
         for name in ("bash", "edit", "write"):
             assert name not in names
+
+
+class _FakeCompletedProcess:
+    """Enough of `subprocess.CompletedProcess` for the shell lookup."""
+
+    def __init__(self, returncode: int, stdout: str) -> None:
+        self.returncode = returncode
+        self.stdout = stdout
+
+
+class _ShellProbe:
+    """Fakes `os.path.exists` and the `where`/`which` lookup together.
+
+    The shell resolution is a chain of existence checks and one subprocess, and
+    both have to be faked to drive the Windows branch from a POSIX box (and the
+    POSIX branch from a machine that does have `/bin/bash`).
+    """
+
+    def __init__(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        *,
+        platform: str,
+        existing: tuple[str, ...] = (),
+        lookup_stdout: str = "",
+        lookup_returncode: int = 1,
+    ) -> None:
+        self.existing = set(existing)
+        self.lookup_stdout = lookup_stdout
+        self.lookup_returncode = lookup_returncode
+        self.lookup_calls: list[list[str]] = []
+        monkeypatch.setattr(bash_module.sys, "platform", platform)
+        monkeypatch.setattr(bash_module.os.path, "exists", self._exists)
+        monkeypatch.setattr(bash_module.subprocess, "run", self._run)
+
+    def _exists(self, path: str) -> bool:
+        return path in self.existing
+
+    def _run(self, argv: list[str], **_kwargs: Any) -> _FakeCompletedProcess:
+        self.lookup_calls.append(argv)
+        return _FakeCompletedProcess(self.lookup_returncode, self.lookup_stdout)
+
+
+class TestShellConfig:
+    """`_get_shell_config`, the port of ``getShellConfig``.
+
+    On Windows the old resolution (`$SHELL`, defaulting to `/bin/bash`) meant
+    every bash call died with `spawn /bin/bash ENOENT`; on POSIX it ran the
+    user's login shell, so a fish or zsh user got neither bash nor a warning.
+    """
+
+    def test_custom_shell_path_is_used_when_it_exists(self, monkeypatch: pytest.MonkeyPatch):
+        _ShellProbe(monkeypatch, platform="linux", existing=("/opt/my/bash",))
+        assert bash_module._get_shell_config("/opt/my/bash") == ("/opt/my/bash", ["-c"])
+
+    def test_a_missing_custom_shell_path_raises(self, monkeypatch: pytest.MonkeyPatch):
+        _ShellProbe(monkeypatch, platform="linux")
+        with pytest.raises(RuntimeError, match="Custom shell path not found: /nope/bash"):
+            bash_module._get_shell_config("/nope/bash")
+
+    def test_posix_prefers_bin_bash_over_the_login_shell(self, monkeypatch: pytest.MonkeyPatch):
+        """The TS never reads `$SHELL`, and the model writes bash, not fish."""
+        monkeypatch.setenv("SHELL", "/usr/bin/fish")
+        _ShellProbe(monkeypatch, platform="linux", existing=("/bin/bash",))
+        assert bash_module._get_shell_config() == ("/bin/bash", ["-c"])
+
+    def test_posix_falls_back_to_bash_on_path(self, monkeypatch: pytest.MonkeyPatch):
+        probe = _ShellProbe(
+            monkeypatch,
+            platform="linux",
+            lookup_stdout="/usr/local/bin/bash\n",
+            lookup_returncode=0,
+        )
+        assert bash_module._get_shell_config() == ("/usr/local/bin/bash", ["-c"])
+        assert probe.lookup_calls == [["which", "bash"]]
+
+    def test_posix_falls_back_to_sh(self, monkeypatch: pytest.MonkeyPatch):
+        _ShellProbe(monkeypatch, platform="linux")
+        assert bash_module._get_shell_config() == ("sh", ["-c"])
+
+    def test_windows_finds_git_bash(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("ProgramFiles", "C:\\Program Files")
+        monkeypatch.delenv("ProgramFiles(x86)", raising=False)
+        _ShellProbe(
+            monkeypatch,
+            platform="win32",
+            existing=("C:\\Program Files\\Git\\bin\\bash.exe",),
+        )
+        shell, args = bash_module._get_shell_config()
+        assert shell == "C:\\Program Files\\Git\\bin\\bash.exe"
+        assert args == ["-c"], "Git Bash takes -c; only cmd.exe would need /c"
+
+    def test_windows_falls_back_to_the_32_bit_install(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("ProgramFiles", "C:\\Program Files")
+        monkeypatch.setenv("ProgramFiles(x86)", "C:\\Program Files (x86)")
+        _ShellProbe(
+            monkeypatch,
+            platform="win32",
+            existing=("C:\\Program Files (x86)\\Git\\bin\\bash.exe",),
+        )
+        assert bash_module._get_shell_config()[0] == "C:\\Program Files (x86)\\Git\\bin\\bash.exe"
+
+    def test_windows_falls_back_to_bash_on_path(self, monkeypatch: pytest.MonkeyPatch):
+        """Cygwin/MSYS2. `where` prints CRLF, and may print more than one line."""
+        monkeypatch.setenv("ProgramFiles", "C:\\Program Files")
+        probe = _ShellProbe(
+            monkeypatch,
+            platform="win32",
+            existing=("C:\\msys64\\usr\\bin\\bash.exe",),
+            lookup_stdout="C:\\msys64\\usr\\bin\\bash.exe\r\nC:\\other\\bash.exe\r\n",
+            lookup_returncode=0,
+        )
+        assert bash_module._get_shell_config()[0] == "C:\\msys64\\usr\\bin\\bash.exe"
+        assert probe.lookup_calls == [["where", "bash.exe"]]
+
+    def test_windows_rejects_a_path_where_only_imagined(self, monkeypatch: pytest.MonkeyPatch):
+        """`where` reports paths that are not there — the TS verifies them."""
+        monkeypatch.setenv("ProgramFiles", "C:\\Program Files")
+        _ShellProbe(
+            monkeypatch,
+            platform="win32",
+            lookup_stdout="C:\\gone\\bash.exe\r\n",
+            lookup_returncode=0,
+        )
+        with pytest.raises(RuntimeError, match="No bash shell found"):
+            bash_module._get_shell_config()
+
+    def test_windows_says_what_it_searched(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("ProgramFiles", "C:\\Program Files")
+        monkeypatch.setenv("ProgramFiles(x86)", "C:\\Program Files (x86)")
+        _ShellProbe(monkeypatch, platform="win32")
+        with pytest.raises(RuntimeError) as error:
+            bash_module._get_shell_config()
+        message = str(error.value)
+        assert "git-scm.com/download/win" in message
+        assert "C:\\Program Files\\Git\\bin\\bash.exe" in message
+        assert "C:\\Program Files (x86)\\Git\\bin\\bash.exe" in message
+
+    def test_a_lookup_that_cannot_run_is_not_fatal(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(bash_module.sys, "platform", "linux")
+
+        def _nothing_exists(_path: str) -> bool:
+            return False
+
+        monkeypatch.setattr(bash_module.os.path, "exists", _nothing_exists)
+
+        def _explode(*_args: Any, **_kwargs: Any) -> Any:
+            raise OSError("no which on this system")
+
+        monkeypatch.setattr(bash_module.subprocess, "run", _explode)
+        assert bash_module._get_shell_config() == ("sh", ["-c"])
+
+
+class TestShellEnv:
+    """`_get_shell_env`, the port of ``getShellEnv``: `fd` and `rg` on PATH."""
+
+    def test_the_bin_dir_is_prepended_to_path(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(bash_module, "get_bin_dir", lambda: "/agent/bin")
+        monkeypatch.setattr(bash_module.os, "environ", {"PATH": f"/usr/bin{os.pathsep}/bin"})
+        env = bash_module._get_shell_env()
+        assert env["PATH"] == os.pathsep.join(["/agent/bin", "/usr/bin", "/bin"])
+
+    def test_windows_reuses_the_path_key_it_found(self, monkeypatch: pytest.MonkeyPatch):
+        """Windows spells it `Path`; adding a second `PATH` would do nothing."""
+        monkeypatch.setattr(bash_module, "get_bin_dir", lambda: "C:\\agent\\bin")
+        monkeypatch.setattr(bash_module.os, "environ", {"Path": "C:\\Windows"})
+        env = bash_module._get_shell_env()
+        assert env["Path"] == os.pathsep.join(["C:\\agent\\bin", "C:\\Windows"])
+        assert "PATH" not in env
+
+    def test_an_already_present_bin_dir_is_not_added_twice(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(bash_module, "get_bin_dir", lambda: "/agent/bin")
+        monkeypatch.setattr(
+            bash_module.os, "environ", {"PATH": os.pathsep.join(["/usr/bin", "/agent/bin"])}
+        )
+        env = bash_module._get_shell_env()
+        assert env["PATH"] == os.pathsep.join(["/usr/bin", "/agent/bin"])
+
+    def test_an_empty_path_becomes_the_bin_dir(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(bash_module, "get_bin_dir", lambda: "/agent/bin")
+        monkeypatch.setattr(bash_module.os, "environ", {})
+        assert bash_module._get_shell_env()["PATH"] == "/agent/bin"
+
+
+class TestKillProcessTree:
+    """`kill_process_tree`, the port of ``killProcessTree``.
+
+    The old code called `proc.kill()` on Windows, which kills the shell and
+    leaves everything the shell started running — so a timed-out or aborted
+    command was not actually stopped.
+    """
+
+    def test_windows_uses_taskkill_on_the_tree(self, monkeypatch: pytest.MonkeyPatch):
+        calls: list[list[str]] = []
+        monkeypatch.setattr(bash_module.sys, "platform", "win32")
+
+        def _record(argv: list[str], **_kwargs: Any) -> None:
+            calls.append(argv)
+
+        monkeypatch.setattr(bash_module.subprocess, "Popen", _record)
+        bash_module.kill_process_tree(4321)
+        assert calls == [["taskkill", "/F", "/T", "/PID", "4321"]]
+
+    def test_windows_survives_a_missing_taskkill(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(bash_module.sys, "platform", "win32")
+
+        def _explode(*_args: Any, **_kwargs: Any) -> Any:
+            raise OSError("taskkill not found")
+
+        monkeypatch.setattr(bash_module.subprocess, "Popen", _explode)
+        bash_module.kill_process_tree(4321)  # must not raise
+
+    def test_posix_kills_the_process_group(self, monkeypatch: pytest.MonkeyPatch):
+        killed: list[tuple[int, int]] = []
+        monkeypatch.setattr(bash_module.sys, "platform", "linux")
+
+        def _record_group(pid: int, sig: int) -> None:
+            killed.append((pid, sig))
+
+        monkeypatch.setattr(bash_module.os, "killpg", _record_group)
+        bash_module.kill_process_tree(4321)
+        assert killed == [(4321, bash_module.signal_module.SIGKILL)]
+
+    def test_posix_falls_back_to_the_bare_pid(self, monkeypatch: pytest.MonkeyPatch):
+        """A child that left the group is still a child worth killing."""
+        killed: list[tuple[int, int]] = []
+        monkeypatch.setattr(bash_module.sys, "platform", "linux")
+
+        def _no_group(_pid: int, _sig: int) -> None:
+            raise ProcessLookupError
+
+        def _record_pid(pid: int, sig: int) -> None:
+            killed.append((pid, sig))
+
+        monkeypatch.setattr(bash_module.os, "killpg", _no_group)
+        monkeypatch.setattr(bash_module.os, "kill", _record_pid)
+        bash_module.kill_process_tree(4321)
+        assert killed == [(4321, bash_module.signal_module.SIGKILL)]
+
+
+class TestInheritedStdioDoesNotHang:
+    """Port of ``bash-close-hang-windows.test.ts``, which the TS skips off Windows.
+
+    A descendant that inherits the shell's stdout keeps the pipe open after the
+    shell has exited. Waiting for the readers therefore waits for the
+    *descendant* — a daemonised one on Windows means forever, and this is why
+    ``waitForChildProcess`` exists. Driven here through a background job, which
+    reproduces the same shape on POSIX in three seconds rather than never.
+    """
+
+    async def test_exec_returns_when_the_shell_exits(self, tmp_path: Path) -> None:
+        import time
+
+        ops = create_local_bash_operations()
+        chunks: list[bytes] = []
+        started = time.monotonic()
+        result = ops.exec(
+            "echo started; sleep 5 &", str(tmp_path), on_data=lambda data: chunks.append(data)
+        )
+        elapsed = time.monotonic() - started
+        assert result.exit_code == 0
+        assert elapsed < 2, f"waited for the background job rather than the shell: {elapsed:.2f}s"
+        assert b"started" in b"".join(chunks), "output was dropped instead of merely delayed"
+
+    async def test_the_tool_returns_too(self, tmp_path: Path) -> None:
+        import time
+
+        bash = create_bash_tool(str(tmp_path))
+        started = time.monotonic()
+        result = await run(bash, "inherited-stdio", {"command": "echo started; sleep 5 &"})
+        elapsed = time.monotonic() - started
+        assert "started" in text_output(result)
+        assert elapsed < 2, f"the tool hung on the background job: {elapsed:.2f}s"
+
+    async def test_output_after_the_grace_period_is_dropped(self, tmp_path: Path) -> None:
+        """`exec` has returned and the snapshot is taken; the TS destroys the
+        stream here, so a late write from the descendant reaches nobody. Without
+        this the abandoned reader appends to an accumulator whose temp file has
+        already been closed."""
+        import asyncio
+
+        ops = create_local_bash_operations()
+        chunks: list[bytes] = []
+        ops.exec(
+            "(sleep 0.5; echo late) & echo early",
+            str(tmp_path),
+            on_data=lambda data: chunks.append(data),
+        )
+        assert b"early" in b"".join(chunks)
+        await asyncio.sleep(1.0)
+        assert b"late" not in b"".join(chunks), "output arrived after the command had finished"

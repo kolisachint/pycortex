@@ -2044,15 +2044,85 @@ box-drawing glyph, which takes `--status`, `--start` and `--done` with it.
 `convert_models.py`, `convert_image_models.py`) and were left alone: out of
 scope for this session, and none of them is on the path to a running app.
 
+### The bash tool was a second, independent Windows failure
+
+Checked after the terminal work, and it was **four under-ports of
+`utils/shell.ts` and `utils/child-process.ts`, not four missing enhancements** —
+the TS has cross-platform code for every one of these and the port dropped it.
+`bash.py` now carries `getShellConfig`, `getShellEnv` and `killProcessTree`
+(`sanitizeBinaryOutput` from the same TS file was already in
+`session/bash_executor.py`, where the output is decoded).
+
+1. **Shell resolution never had a Windows branch, and was wrong on POSIX too.**
+   The port was `os.environ.get("SHELL", "/bin/bash")`; the TS never reads
+   `$SHELL` at all. On Windows that meant `spawn /bin/bash ENOENT` for every
+   command; on POSIX it ran the user's *login* shell, so a fish or zsh user got
+   fish or zsh for a tool whose whole contract is bash — silently, since a
+   bash-ism just fails as a syntax error. Now: explicit `shell_path`, then Git
+   Bash under `%ProgramFiles%`/`%ProgramFiles(x86)%`, then `where bash.exe`
+   (verified — `where` prints paths that do not exist), then the TS's
+   install-Git-for-Windows error; on POSIX `/bin/bash`, then `which bash`, then
+   `sh`. The two platforms are asymmetric *on purpose* in the TS: Windows
+   verifies `where`'s answer, Unix trusts `which`'s, because Termux and other
+   special filesystems make an independent existence check say no to a shell
+   that works. That is also why this is not `shutil.which`.
+2. **`killProcessTree` was `proc.kill()` on Windows**, which kills the shell and
+   leaves everything the shell started running — a timed-out or aborted command
+   was not actually stopped. `taskkill /F /T /PID` now, and the POSIX side gained
+   the single-pid fallback the TS has for a child that left its group.
+3. **`getShellEnv` was `dict(os.environ)`** — a stub, so the managed `fd`/`rg`
+   directory was never on PATH for shell commands on any platform. The TS finds
+   the PATH key **case-insensitively**, which exists precisely because Windows
+   spells it `Path` and a second `PATH` entry there does nothing. This is the
+   one change that adds a leaf dependency: `tools` → `cortexcode-cli-config`
+   for `get_bin_dir`, matching `bash.ts`'s own `../config.js` import (config has
+   no dependencies, so there is no cycle). Left bare rather than pinned, which
+   is the code group's existing convention for every intra-group dep — the 1.8
+   lesson about bare deps applies to this whole group and is a job of its own.
+4. **THE HANG THE TS HAS A WINDOWS TEST FOR WAS PORTED BACK IN.**
+   `bash-close-hang-windows.test.ts` exists because a detached descendant
+   inherits the shell's stdout/stderr handles, so the pipe never reaches EOF
+   even after the shell exits; the TS answers with `waitForChildProcess` (wait
+   for exit, give stdio 100 ms, then destroy the streams). The port replaced it
+   with `proc.wait()` followed by an unconditional `t.join()` on the reader
+   threads — i.e. it waits for the *descendant*. Measured on Linux before the
+   fix: `bash -c "echo started; sleep 3 &"` returned after 3.01 s; on Windows a
+   daemonised child means never. Now 0.10 s.
+   Two things had to change together, and the second is not cosmetic:
+   - the readers get `EXIT_STDIO_GRACE_S` and are then abandoned (daemon
+     threads, each closing its own pipe when the descendant finally lets go) —
+     **`close()` from any other thread would block on the `BufferedReader` lock
+     the reader holds while inside a read**, which is the hang again;
+   - `stream.read(4096)` became `read1(4096)`. `read` waits for a *full* 4096
+     bytes or EOF, so with a grace period a short line sits in the buffer and
+     the output is **dropped rather than delayed** — the fix would have silently
+     traded a hang for lost output. `read1` returns what is available, which is
+     what node's `data` event does. Anything that drains a pipe on a deadline
+     needs this.
+   Both `execute_bash_with_operations` (the `!command` path) and the bash tool
+   go through the fixed code, which is exactly the two entry points the TS test
+   covers.
+
+MUTATION TESTING: 13 mutations, 12 caught on the first run. The miss was real —
+dropping the "stop delivering after the grace period" guard is invisible to
+every test that only checks what a command returned, and it lets an abandoned
+reader append to an accumulator whose temp file is already closed. Closed by a
+test that lets a background job write *after* `exec` returns. 13/13.
+
+`grep`/`find` need nothing here: this port scans in Python rather than shelling
+out to `rg`/`fd`, so there is no `.exe` to resolve.
+
 ### Not fixed here, and knowingly so
 
-- **Nobody has run this on Windows.** Every claim above is from tests with a
-  faked console; the ctypes calls themselves (`WinDLL`, `GetStdHandle`,
-  `GetConsoleMode`) are the one layer no test on Linux can exercise. Somebody
-  with a Windows box should confirm the acceptance list by hand.
-- `tools/bash.py` still defaults `SHELL` to `/bin/bash`, so the bash tool will
-  not work on Windows. It already guards `start_new_session` on `os.name`, so
-  the intent was there; finishing it is a tools-leaf job, not a TUI one.
+- **Nobody has run any of this on Windows.** Every claim above is from tests
+  with a faked console, a faked kernel32 and a monkeypatched `sys.platform`; the
+  ctypes calls themselves (`WinDLL`, `GetStdHandle`, `GetConsoleMode`) and
+  `taskkill` are the layers no test on Linux can exercise. Somebody with a
+  Windows box should confirm the acceptance list by hand.
+- `trackDetachedChildPid` / `killTrackedDetachedChildren` (`utils/shell.ts`) are
+  still unported: hoocode kills detached descendants when it takes a SIGHUP or
+  SIGTERM, and pycortex leaves them running. Independent of platform, and a
+  process-lifecycle job rather than a Windows one.
 - The Kitty query and the modifyOtherKeys fallback are still written to a
   Windows console. Both are ignored there rather than harmful, and suppressing
   them would be a behaviour difference no terminal asked for.
