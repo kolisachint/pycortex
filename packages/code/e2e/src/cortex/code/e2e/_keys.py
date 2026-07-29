@@ -30,6 +30,7 @@ KEY_SEQUENCES: dict[str, str] = {
     "ctrl+k": "\x0b",
     "ctrl+l": "\x0c",
     "ctrl+n": "\x0e",
+    "ctrl+o": "\x0f",
     "ctrl+p": "\x10",
     "ctrl+r": "\x12",
     "ctrl+u": "\x15",

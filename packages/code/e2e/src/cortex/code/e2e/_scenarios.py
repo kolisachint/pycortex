@@ -671,12 +671,270 @@ def _row_containing(harness: AppHarness, text: str) -> int:
 
 # ===========================================================================
 # 7.6 — tools
+#
+# A tool block is not a message: it is built while the model is still streaming
+# the call, updated when execution starts, again for every partial result, and a
+# last time when the result lands. So these scenarios drive a *real turn* — the
+# faux provider answers with a tool call, the agent loop runs the tool for real,
+# and what the block shows is whatever came back — rather than constructing a
+# component and calling methods on it. A unit test can prove the component draws
+# what it is told; only a turn proves it is told the right things.
 # ===========================================================================
 
-pending("tools/execution-renders", "A tool call renders with name, args and result", "7.6")
-pending("tools/diff-renders", "An edit renders as a coloured diff", "7.6")
-pending("tools/bash-renders", "A bash call streams its output into the log", "7.6")
-pending("tools/output-expand", "Ctrl+O expands and collapses truncated tool output", "7.6")
+
+def tool_turn(
+    tool: Any,
+    call_args: dict[str, Any],
+    *,
+    cwd: str = "/w/project",
+    settings: Any = None,
+    reply: str = "done.",
+) -> FauxSession:
+    """A session whose next turn calls *tool* once, then answers with *reply*.
+
+    Two queued responses, because a tool call is two round trips: the model asks
+    for the tool, the loop runs it and sends the result back, and the model
+    answers. Without the second response the turn would loop.
+    """
+    from cortex.ai.providers.faux import faux_assistant_message, faux_tool_call
+
+    faux = faux_session(cwd=cwd, settings=settings, tools=[tool])
+    faux.set_responses(
+        [
+            faux_assistant_message(faux_tool_call(tool.name, call_args, {"id": "call-1"})),
+            faux_assistant_message(reply),
+        ]
+    )
+    return faux
+
+
+def echo_tool(text_for: Callable[[dict[str, Any]], str]) -> Any:
+    """A tool that answers with whatever *text_for* makes of its arguments."""
+    from cortex.agent.types import AgentTool, AgentToolResult
+    from cortex.ai.types import TextContent
+
+    async def execute(_tool_call_id: str, params: dict[str, Any], *_rest: Any) -> Any:
+        return AgentToolResult(content=[TextContent(text=text_for(params))], details=None)
+
+    return AgentTool(
+        name="echo",
+        label="echo",
+        description="Echo a message back.",
+        parameters={
+            "type": "object",
+            "properties": {"message": {"type": "string"}},
+            "required": ["message"],
+        },
+        execute=execute,
+    )
+
+
+@scenario("tools/execution-renders", "A tool call renders with name, args and result", "7.6")
+def tools_execution_renders() -> None:
+    faux = tool_turn(
+        echo_tool(lambda params: f"echoed: {params['message']}"),
+        {"message": "hello from the tool"},
+    )
+    try:
+        with boot_shell(session=faux.session) as h:
+            h.type("say hello")
+            h.key("enter")
+            h.settle()
+
+            # The three things a tool block is for, in the order they are drawn:
+            # which tool ran, what it was asked, and what it said.
+            h.assert_shows("echo")
+            h.assert_shows('"message": "hello from the tool"')
+            h.assert_shows("echoed: hello from the tool")
+
+            # And it really ran: the transcript holds the call and its result,
+            # and the turn carried on to the model's answer afterwards.
+            roles = [getattr(m, "role", "") for m in faux.session.messages]
+            assert "toolResult" in roles, f"the tool never ran: {roles!r}\n\n{h.snapshot()}"
+            h.assert_shows("done.")
+
+            # The block is a *status* line, not just text: the dot in front of
+            # the call is coloured, and green now that the call succeeded.
+            surface = h.surface()
+            dot_rows = [
+                i for i, line in enumerate(surface.lines()) if line.lstrip().startswith("●")
+            ]
+            assert dot_rows, f"no tool status dot on screen\n\n{h.snapshot()}"
+            row = surface.grid[dot_rows[-1]]
+            dot = next(cell for cell in row if cell.char == "●")
+            assert dot.style.fg is not None, f"the status dot is not coloured\n\n{h.snapshot()}"
+    finally:
+        faux.unregister()
+
+
+@scenario("tools/diff-renders", "An edit renders as a coloured diff", "7.6")
+def tools_diff_renders() -> None:
+    import tempfile
+    from pathlib import Path
+
+    from cortex.code.tools import create_edit_tool
+
+    with tempfile.TemporaryDirectory() as workdir:
+        target = Path(workdir) / "greet.py"
+        target.write_text('def greet():\n    print("hello")\n', encoding="utf-8")
+
+        faux = tool_turn(
+            create_edit_tool(workdir),
+            {
+                "path": "greet.py",
+                "edits": [{"oldText": 'print("hello")', "newText": 'print("goodbye")'}],
+            },
+            cwd=workdir,
+            reply="renamed the greeting.",
+        )
+        try:
+            with boot_shell(session=faux.session, cwd=workdir, columns=100) as h:
+                h.type("change the greeting")
+                h.key("enter")
+                h.settle()
+
+                # The edit is on screen as a diff, not as "Successfully replaced
+                # 1 block(s)": the line that went, the line that came, and a
+                # line of context that did neither — each with its marker and
+                # the file's own line number.
+                h.assert_shows("edit", "greet.py")
+                removed = _row_containing(h, 'print("hello")')
+                added = _row_containing(h, 'print("goodbye")')
+                lines = h.surface().lines()
+                assert lines[removed].strip().startswith("-"), (
+                    f"the old line is not marked as removed\n\n{h.snapshot()}"
+                )
+                assert lines[added].strip().startswith("+"), (
+                    f"the new line is not marked as added\n\n{h.snapshot()}"
+                )
+                h.assert_shows("def greet():")
+
+                # And the file really changed — a diff drawn over an edit that
+                # did not happen is the failure this catches.
+                assert 'print("goodbye")' in target.read_text(encoding="utf-8")
+
+                # Coloured, which is the half a plain-text renderer would pass:
+                # the removed line and the added line are not the same colour,
+                # and the words that actually changed are picked out inside them.
+                surface = h.surface()
+                removed_fg = next(c.style.fg for c in surface.grid[removed] if c.char == "-")
+                added_fg = next(c.style.fg for c in surface.grid[added] if c.char == "+")
+                assert removed_fg is not None and added_fg is not None, (
+                    f"the diff is not coloured\n\n{h.snapshot()}"
+                )
+                assert removed_fg != added_fg, (
+                    f"removed and added lines are the same colour\n\n{h.snapshot()}"
+                )
+                assert any(cell.style.inverse for cell in surface.grid[added]), (
+                    f"the changed words are not picked out\n\n{h.snapshot()}"
+                )
+        finally:
+            faux.unregister()
+
+
+@scenario("tools/bash-renders", "A bash call streams its output into the log", "7.6")
+def tools_bash_renders() -> None:
+    import tempfile
+
+    from cortex.code.tools import create_bash_tool
+
+    with tempfile.TemporaryDirectory() as workdir:
+        faux = tool_turn(
+            create_bash_tool(workdir),
+            {"command": "echo first-line && echo second-line"},
+            cwd=workdir,
+            reply="that is the listing.",
+        )
+        updates: list[Any] = []
+
+        def watch(event: dict[str, Any]) -> None:
+            if event.get("type") == "tool_execution_update":
+                updates.append(event)
+
+        try:
+            with boot_shell(session=faux.session, cwd=workdir) as h:
+                faux.session.subscribe(watch)
+                h.type("run it for me")
+                h.key("enter")
+                h.settle()
+
+                # The command the model asked for, and both lines the shell
+                # printed, in the log under the prompt.
+                h.assert_shows("bash")
+                h.assert_shows("echo first-line && echo second-line")
+                h.assert_shows("first-line")
+                h.assert_shows("second-line")
+                h.assert_shows("that is the listing.")
+
+                # It arrived as *output*, not as a finished payload the block
+                # was handed at the end: the tool reports partial results while
+                # it runs, and the block is what turns those into lines.
+                assert updates, f"the block never saw a partial result\n\n{h.snapshot()}"
+        finally:
+            faux.unregister()
+
+
+@scenario("tools/output-expand", "Ctrl+O expands and collapses truncated tool output", "7.6")
+def tools_output_expand() -> None:
+    from cortex.code.config import SettingsManager
+    from cortex.code.config.settings_storage import InMemorySettingsStorage
+
+    # `peek` is the display level whose whole point is that the body is off
+    # screen until asked for, which is what makes the expand key's effect
+    # something a scenario can *see* rather than something it has to read off a
+    # flag. (Under `standard` the same key switches a truncated preview for the
+    # full result — but truncation lives in the per-tool renderers, which this
+    # port does not have; see the notes for 7.6.)
+    settings = SettingsManager.from_storage(InMemorySettingsStorage())
+    settings.set_tool_output_display("peek")
+
+    faux = tool_turn(
+        echo_tool(lambda params: f"the whole answer to {params['message']}"),
+        {"message": "everything"},
+        settings=settings,
+    )
+    try:
+        with boot_shell(session=faux.session, settings=settings, rows=30) as h:
+            h.type("tell me everything")
+            h.key("enter")
+            h.settle()
+
+            block = _tool_block(h)
+            assert not block.expanded, "the block started expanded"
+            # The call is on screen; the result it hides is not, and the caret
+            # is what says there is something behind it.
+            h.assert_shows("echo", "▸")
+            h.assert_hides("the whole answer to everything")
+
+            # Ctrl+O does not aim at a block — it flips every one in the log,
+            # which is why the app holds the setting and hands it to blocks
+            # created later.
+            h.key("ctrl+o")
+            assert h.app.tool_output_expanded, "the app did not record the expansion"
+            assert block.expanded, f"ctrl+o did not expand the block\n\n{h.snapshot()}"
+            h.assert_shows("the whole answer to everything", "▾")
+
+            # And it is a toggle, not a one-way door.
+            h.key("ctrl+o")
+            assert not h.app.tool_output_expanded, "the app did not record the collapse"
+            assert not block.expanded, f"ctrl+o did not collapse the block\n\n{h.snapshot()}"
+            h.assert_hides("the whole answer to everything", scrollback=False)
+    finally:
+        faux.unregister()
+
+
+def _tool_block(harness: AppHarness) -> Any:
+    """The last tool block in the chat log."""
+    from cortex.code.interactive import ToolExecutionComponent
+
+    blocks = [
+        child
+        for child in harness.app.chat_container.children
+        if isinstance(child, ToolExecutionComponent)
+    ]
+    assert blocks, f"no tool block in the chat log\n\n{harness.snapshot()}"
+    return blocks[-1]
+
 
 # ===========================================================================
 # 7.7 — footer and status

@@ -380,7 +380,7 @@ visible capability at a time.
       `message_update` events already arrive, and 7.4 draws only the finished
       message — a loader runs during the turn, markdown renders styled.
       verify: leaf-populated, e2e-scenarios, no-stubs
-- [ ] **7.6 tool execution UI** — `components/{tool-execution,diff,bash-execution}.ts`,
+- [x] **7.6 tool execution UI** — `components/{tool-execution,diff,bash-execution}.ts`,
       `bash-execution-controller.ts` → `packages/code/interactive/`. Tool calls
       render with args and results, edits render as diffs, bash streams, Ctrl+O
       expands truncated output.

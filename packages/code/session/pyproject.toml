@@ -8,6 +8,7 @@ dependencies = [
     "cortexcode-agent-agent>=0.0.3,<0.1.0",
     "cortexcode-ai-types>=0.0.3,<0.1.0",
     "cortexcode-cli-config>=0.0.3,<0.1.0",
+    "cortexcode-cli-tools>=0.0.3,<0.1.0",
 ]
 
 [tool.cortex]
@@ -17,6 +18,7 @@ publish = true
 cortexcode-agent-agent = { workspace = true }
 cortexcode-ai-types = { workspace = true }
 cortexcode-cli-config = { workspace = true }
+cortexcode-cli-tools = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
 packages = [

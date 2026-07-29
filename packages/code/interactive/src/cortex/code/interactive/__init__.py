@@ -2,10 +2,15 @@
 
 Port of ``packages/coding-agent/src/modes/interactive/``. Step 7.2 lands the
 shell — the component tree, the startup banner, the editor prompt, the footer and
-the Ctrl+C exit path. Chat, streaming, tools, commands and overlays follow in
-7.3–7.9.
+the Ctrl+C exit path; 7.3 the editor and chat log, 7.4 the session bridge, 7.5
+streaming, and 7.6 the tool blocks, their diffs and bash mode. Commands and
+overlays follow in 7.7–7.9.
 """
 
+from cortex.code.interactive.bash_execution_controller import (
+    BashExecutionController,
+    BashExecutionControllerDeps,
+)
 from cortex.code.interactive.brand import (
     BRAND_MARK,
     BRAND_NAME,
@@ -14,7 +19,15 @@ from cortex.code.interactive.brand import (
     GIT_DIRTY_MARK,
     SEGMENT_SEP,
 )
-from cortex.code.interactive.components import FooterComponent, FooterState
+from cortex.code.interactive.components import (
+    BashExecutionComponent,
+    FooterComponent,
+    FooterState,
+    ToolExecutionComponent,
+    ToolExecutionOptions,
+    ToolExecutionResult,
+    render_diff,
+)
 from cortex.code.interactive.interactive_mode import (
     InteractiveMode,
     InteractiveModeOptions,
@@ -30,6 +43,13 @@ from cortex.code.interactive.keybindings import (
     order_keybindings_config,
 )
 from cortex.code.interactive.theme import Theme, get_theme
+from cortex.code.interactive.tool_renderers import (
+    BUILT_IN_TOOL_RENDERERS,
+    ToolRenderContext,
+    ToolRenderer,
+    ToolRenderResultOptions,
+    resolve_tool_renderer,
+)
 from cortex.code.interactive.wordmark import (
     WORDMARK,
     WORDMARK_COMPACT,
@@ -41,27 +61,39 @@ from cortex.code.interactive.wordmark import (
 __all__ = [
     "BRAND_MARK",
     "BRAND_NAME",
+    "BUILT_IN_TOOL_RENDERERS",
     "CATEGORY_GLYPH",
     "GIT_BRANCH_GLYPH",
     "GIT_DIRTY_MARK",
+    "KEYBINDINGS",
     "SEGMENT_SEP",
     "WORDMARK",
     "WORDMARK_COMPACT",
     "WORDMARK_GLYPH",
+    "AppKeybinding",
+    "BashExecutionComponent",
+    "BashExecutionController",
+    "BashExecutionControllerDeps",
     "CompactWordmarkOptions",
     "FooterComponent",
     "FooterState",
     "InteractiveMode",
     "InteractiveModeOptions",
-    "KEYBINDINGS",
-    "AppKeybinding",
     "KeybindingsManager",
     "Theme",
+    "ToolExecutionComponent",
+    "ToolExecutionOptions",
+    "ToolExecutionResult",
+    "ToolRenderContext",
+    "ToolRenderResultOptions",
+    "ToolRenderer",
     "build_app_root",
     "build_compact_wordmark",
     "format_display_path",
     "get_theme",
     "migrate_keybindings_config",
     "order_keybindings_config",
+    "render_diff",
+    "resolve_tool_renderer",
     "run_interactive_mode",
 ]

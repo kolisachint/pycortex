@@ -1,5 +1,5 @@
 {
-  "generated_from": "643b1d9",
+  "generated_from": "329d092",
   "note": "Written by scripts/tui_e2e.py. Consumed by scripts/migrate_next.py --status. A Phase 7 step cannot be ticked while it still owns unmet scenarios.",
   "passing": [
     "chat/abort-turn",
@@ -19,7 +19,11 @@
     "shell/ctrl-c-exits",
     "shell/editor-prompt",
     "shell/footer-present",
-    "shell/resize-reflows"
+    "shell/resize-reflows",
+    "tools/bash-renders",
+    "tools/diff-renders",
+    "tools/execution-renders",
+    "tools/output-expand"
   ],
   "unmet": [
     {
@@ -117,30 +121,6 @@
       "status": "pending",
       "blocked_by": "7.10",
       "title": "`--continue` restores the previous transcript on screen"
-    },
-    {
-      "id": "tools/bash-renders",
-      "status": "pending",
-      "blocked_by": "7.6",
-      "title": "A bash call streams its output into the log"
-    },
-    {
-      "id": "tools/diff-renders",
-      "status": "pending",
-      "blocked_by": "7.6",
-      "title": "An edit renders as a coloured diff"
-    },
-    {
-      "id": "tools/execution-renders",
-      "status": "pending",
-      "blocked_by": "7.6",
-      "title": "A tool call renders with name, args and result"
-    },
-    {
-      "id": "tools/output-expand",
-      "status": "pending",
-      "blocked_by": "7.6",
-      "title": "Ctrl+O expands and collapses truncated tool output"
     }
   ]
 }

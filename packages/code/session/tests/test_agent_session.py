@@ -367,3 +367,123 @@ async def _wait_until_streaming(session: AgentSession, passes: int = 100) -> Non
             return
         await asyncio.sleep(0)
     raise AssertionError("the turn never started")
+
+
+class TestBashExecution:
+    """`executeBash` / `recordBashResult` — the `!command` path (7.6)."""
+
+    def _result(self, output: str = "hi", exit_code: int | None = 0):
+        from cortex.code.session.bash_executor import BashResult
+
+        return BashResult(output=output, exit_code=exit_code, cancelled=False, truncated=False)
+
+    def test_an_idle_session_records_the_row_immediately(self, faux: Any):
+        session = _session(faux)
+        session.record_bash_result("ls", self._result())
+        roles = [m.get("role") if isinstance(m, dict) else m.role for m in session.messages]
+        assert "bashExecution" in roles
+        assert not session.has_pending_bash_messages
+
+    def test_the_row_carries_the_command_and_its_output(self, faux: Any):
+        session = _session(faux)
+        session.record_bash_result("ls -la", self._result("a\nb"))
+        row = session.messages[-1]
+        assert row["command"] == "ls -la"
+        assert row["output"] == "a\nb"
+        assert row["exit_code"] == 0
+
+    async def test_a_row_finished_mid_turn_waits_for_the_turn(self, faux: Any):
+        """Ordering, not tidiness: a bash row slipped between a tool call and
+        its result makes the next request to the provider malformed."""
+        session = _session(faux)
+        released = asyncio.Event()
+
+        async def slow(*_args: object):
+            await released.wait()
+            return faux_assistant_message("done")
+
+        faux.set_responses([slow])
+        turn = asyncio.ensure_future(session.prompt("go"))
+        for _ in range(50):
+            if session.is_streaming:
+                break
+            await asyncio.sleep(0)
+
+        session.record_bash_result("ls", self._result())
+        assert session.has_pending_bash_messages
+        roles = [m.get("role") if isinstance(m, dict) else m.role for m in session.messages]
+        assert "bashExecution" not in roles, "the row landed in the middle of the turn"
+
+        released.set()
+        await turn
+        await _run_until_idle(session)
+
+        # The next prompt is what flushes it, as in the TS.
+        faux.set_responses([faux_assistant_message("and again")])
+        await session.prompt("next")
+        await _run_until_idle(session)
+        roles = [m.get("role") if isinstance(m, dict) else m.role for m in session.messages]
+        assert "bashExecution" in roles, "the deferred row was never flushed"
+        assert not session.has_pending_bash_messages
+
+    def test_exclude_from_context_is_recorded_on_the_row(self, faux: Any):
+        session = _session(faux)
+        session.record_bash_result("cat secrets", self._result(), exclude_from_context=True)
+        assert session.messages[-1]["exclude_from_context"] is True
+
+    async def test_execute_bash_runs_the_command_and_records_it(self, faux: Any):
+        session = _session(faux)
+        chunks: list[str] = []
+
+        class Ops:
+            def exec(self, command: str, cwd: str, *, on_data: Any, **_: Any) -> Any:
+                on_data(b"the output\n")
+
+                class Result:
+                    exit_code = 0
+
+                return Result()
+
+        result = await session.execute_bash("echo hi", chunks.append, operations=Ops())
+        assert "the output" in result.output
+        assert chunks == ["the output\n"]
+        assert session.messages[-1]["command"] == "echo hi"
+        assert not session.is_bash_running
+
+    async def test_the_shell_prefix_from_settings_is_applied(self, faux: Any):
+        settings = _settings()
+        settings.set_shell_command_prefix("shopt -s expand_aliases")
+        session = create_agent_session(
+            cwd="/w/project",
+            settings_manager=settings,
+            session_manager=SessionManager("/w/project", "", persist=False),
+            model=faux.get_model(),
+        ).session
+
+        seen: list[str] = []
+
+        class Ops:
+            def exec(self, command: str, cwd: str, *, on_data: Any, **_: Any) -> Any:
+                seen.append(command)
+
+                class Result:
+                    exit_code = 0
+
+                return Result()
+
+        await session.execute_bash("ls", operations=Ops())
+        assert seen == ["shopt -s expand_aliases\nls"]
+        # The row records what the user typed, not what the shell was handed.
+        assert session.messages[-1]["command"] == "ls"
+
+    async def test_aborting_a_bash_command_cancels_it(self, faux: Any):
+        session = _session(faux)
+
+        class Ops:
+            def exec(self, command: str, cwd: str, *, on_data: Any, signal: Any = None, **_: Any):
+                session.abort_bash()
+                raise RuntimeError("aborted")
+
+        result = await session.execute_bash("sleep 100", operations=Ops())
+        assert result.cancelled
+        assert not session.is_bash_running

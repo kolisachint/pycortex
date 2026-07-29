@@ -54,6 +54,7 @@ from cortex.code.config import (
     format_no_model_selected_message,
 )
 from cortex.code.config.auth_guidance import UNKNOWN_PROVIDER
+from cortex.code.session.bash_executor import BashResult, execute_bash_with_operations
 
 __all__ = [
     "AgentSession",
@@ -156,6 +157,9 @@ class AgentSession:
         #: Pending follow-up messages, for UI display. Removed when delivered.
         self._follow_up_messages: list[str] = []
         self._last_assistant_message: Any = None
+        #: Bash rows that finished mid-turn, waiting for the turn to end.
+        self._pending_bash_messages: list[dict[str, Any]] = []
+        self._bash_abort_controller: Any = None
 
         # Always subscribe to agent events for internal handling (session
         # persistence, and the queue bookkeeping the UI reads).
@@ -377,6 +381,10 @@ class AgentSession:
                     preflight_result(True)
                 return
 
+            # Any bash rows deferred during the last turn belong in the
+            # transcript before this one starts.
+            self._flush_pending_bash_messages()
+
             # Validate model.
             if self.model is None:
                 raise RuntimeError(format_no_model_selected_message())
@@ -448,6 +456,103 @@ class AgentSession:
 
     def get_follow_up_messages(self) -> list[str]:
         return list(self._follow_up_messages)
+
+    # =====================================================================
+    # Bash execution
+    # =====================================================================
+
+    async def execute_bash(
+        self,
+        command: str,
+        on_chunk: Callable[[str], None] | None = None,
+        *,
+        exclude_from_context: bool = False,
+        operations: Any = None,
+    ) -> BashResult:
+        """Run *command* and record what it printed in the transcript.
+
+        This is the `!command` prompt mode's path, not the bash tool's. The
+        shell prefix and shell path from settings apply — ``shopt -s
+        expand_aliases`` and friends, so a user's aliases work here the way they
+        do in their own terminal.
+        """
+        # Imported here for the reason `create_agent_session` imports the agent
+        # here: this leaf needs no agent runtime, only the object it is handed.
+        from cortex.agent.agent import AbortController
+        from cortex.code.tools import create_local_bash_operations
+
+        self._bash_abort_controller = AbortController()
+
+        prefix = self.settings_manager.get_shell_command_prefix()
+        shell_path = self.settings_manager.get_shell_path()
+        resolved_command = f"{prefix}\n{command}" if prefix else command
+
+        try:
+            result = await execute_bash_with_operations(
+                resolved_command,
+                self.session_manager.get_cwd(),
+                operations if operations is not None else create_local_bash_operations(shell_path),
+                on_chunk=on_chunk,
+                signal=self._bash_abort_controller.signal,
+            )
+            self.record_bash_result(command, result, exclude_from_context=exclude_from_context)
+            return result
+        finally:
+            self._bash_abort_controller = None
+
+    def record_bash_result(
+        self,
+        command: str,
+        result: BashResult,
+        *,
+        exclude_from_context: bool = False,
+    ) -> None:
+        """Put a finished bash command into session history.
+
+        Deferred while the agent is streaming: the transcript is mid-turn, and
+        slipping a ``bashExecution`` row between a tool call and its result is
+        how the next request to the provider becomes malformed.
+        """
+        bash_message: dict[str, Any] = {
+            "role": "bashExecution",
+            "command": command,
+            "output": result.output,
+            "exit_code": result.exit_code,
+            "cancelled": result.cancelled,
+            "truncated": result.truncated,
+            "full_output_path": result.full_output_path,
+            "timestamp": int(time.time() * 1000),
+            "exclude_from_context": exclude_from_context,
+        }
+
+        if self.is_streaming:
+            self._pending_bash_messages.append(bash_message)
+            return
+
+        self.agent.state.messages.append(bash_message)
+        self.session_manager.append_message(bash_message)
+
+    def _flush_pending_bash_messages(self) -> None:
+        """Move deferred bash rows into the transcript, in order."""
+        if not self._pending_bash_messages:
+            return
+        for bash_message in self._pending_bash_messages:
+            self.agent.state.messages.append(bash_message)
+            self.session_manager.append_message(bash_message)
+        self._pending_bash_messages = []
+
+    def abort_bash(self) -> None:
+        """Cancel the running bash command, if there is one."""
+        if self._bash_abort_controller is not None:
+            self._bash_abort_controller.abort()
+
+    @property
+    def is_bash_running(self) -> bool:
+        return self._bash_abort_controller is not None
+
+    @property
+    def has_pending_bash_messages(self) -> bool:
+        return len(self._pending_bash_messages) > 0
 
     # =====================================================================
     # Aborting
