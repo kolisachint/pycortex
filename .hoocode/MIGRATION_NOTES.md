@@ -1804,3 +1804,120 @@ it. `core/footer-data-provider.ts` (300) + the rest of `components/footer.ts`
 - 5.6's `publish = false` on `code/_meta` is still untouched, for the reason
   7.1, 7.2, 7.5 and 7.6 all gave: flipping it puts `cortexcode-code` on PyPI,
   which is a release decision.
+
+## 7.8 slash commands + autocomplete — DONE
+
+The editor got a command line. `core/slash-commands.ts` (41) +
+`command-executor.ts` (630, six of thirteen handlers) + `dynamic-border.ts` (24)
++ `utils/changelog.ts` (99) → `packages/code/interactive/`, with
+`AgentSession.get_session_stats` / `set_session_name` →
+`packages/code/session/`: 3 e2e scenarios, 514 + 97 tests across the two leaves,
+34/35 mutations caught.
+
+1. **The corpus named two commands hoocode does not have, and neither was a
+   port waiting to happen.** `slash-commands.ts` lists twenty-two built-ins and
+   `help` is not among them — what lists the built-in commands *is* the `/`
+   menu, which `commands/slash-autocomplete` checks against the table itself, so
+   `commands/help` ports `/hotkeys` (the reference card a user actually reaches
+   for) and says so in its docstring. Same shape as 7.7's dropped dirty mark:
+   the scenario's title changed rather than the port growing an alias nobody
+   wrote.
+2. **`/clear` is 7.10's, and it is the runtime half that puts it there.**
+   hoocode's chat-emptying command is `/new`, and its handler — named
+   `handleClear`, for what it does to the screen — is two calls:
+   `runtimeHost.newSession()` and `renderCurrentSessionState()`. The first is
+   `AgentSessionRuntime`'s session-*replacement* half, which **7.4 already
+   deferred to 7.10 in `cortex.code.session.runtime`'s own docstring**; the
+   second rebuilds a transcript from session entries, which is `session/resume`
+   — 7.10's other scenario — under a different name. Nothing in
+   `command-executor.ts` was holding it up. The scenario moved to the step that
+   builds what it needs, with the reasoning recorded at the scenario, in the
+   plan and here; 7.8 shipping something that empties a container and calls it a
+   session would have been the 5.2 failure again.
+3. **Advertising and dispatching are separated, and that is a deviation with a
+   reason.** The TS has a handler for all twenty-two built-ins, so
+   `createBaseAutocompleteProvider` can map the table straight into the menu.
+   Here seven handlers are waiting on later steps, and an advertised command
+   with no handler does not no-op — it falls through the submit handler and is
+   **sent to the model as a prompt**. So the table is ported whole (it is the
+   file the step names, and the descriptions are user-visible strings) and the
+   menu is `[c for c in BUILTIN_SLASH_COMMANDS if f"/{c.name}" in dispatch]`.
+   Five entries today: `/name`, `/session`, `/changelog`, `/hotkeys`, `/quit`.
+   `/debug` is dispatched but *not* advertised — it is absent from the TS's
+   table too.
+4. **THE HARNESS WAS DELIVERING KEYSTROKES OFF THE EVENT LOOP, AND IT MADE
+   AUTOCOMPLETE STRUCTURALLY INVISIBLE.** `AppHarness.type()` called
+   `terminal.send_input()` straight from the scenario thread, so every input
+   handler ran with no running loop — and `Editor._request_autocomplete`
+   resolves `asyncio.get_running_loop()` to debounce and to schedule the
+   provider call, returning silently when there is none (1.13's note 4). `/`
+   and `@` were therefore inert in the corpus while working in a real terminal,
+   where a tty reader delivers on the loop. `_deliver()` now runs the write
+   inside `loop.run_until_complete`, which is what a real tty does. Mutating it
+   back is caught by both new menu scenarios. **Every earlier scenario still
+   passes**, which is the evidence the change is a fix and not a rewrite.
+5. `pump()` and `settle()` both key off the app's own busy flag, and
+   autocomplete is invisible to it: no turn is in flight, so `settle()` returns
+   at once and `pump()` runs one pass. Hence `AppHarness.wait_for(predicate)`,
+   which pumps until the *screen* says what the scenario expects and raises
+   `TimeoutError` with a snapshot otherwise. Any later step driving async UI
+   that is not a turn wants this rather than a sleep.
+6. **`fd` is resolved, never downloaded.** The TS's `ensureTool("fd", …)`
+   fetches the binary on first run and streams progress into the footer; that is
+   a tool-binary manager, not this step. `resolve_fd_path()` ports the
+   resolution half — managed bin dir first (where `ensureTool` puts it), then
+   `PATH` — and `None` is a *supported state*, not an error: the TS never awaits
+   its download, so a just-started app offers no `@` completions either. The
+   provider has no non-fd fallback at all, so `commands/file-mention` plants a
+   stub `fd` in a temp dir and passes it through the new
+   `InteractiveModeOptions.fd_path` seam.
+7. `CommandContext` is a **Protocol**, not a dataclass, because the TS builds it
+   out of getters (`get session() { return self.session }`) so a handler always
+   reads the live session rather than one captured at construction. The app
+   satisfies it with properties and gets that for free. Two callbacks are
+   positional-only in the protocol: the app names its parameter
+   `warning_message`, and pyright rejects a name mismatch on a protocol method.
+8. `toLocaleString` and `toFixed(4)` are `f"{value:,}"` and `f"{value:.4f}"`.
+   The separator is hard-coded rather than locale-derived on purpose — a number
+   that renders one way in CI and another on a French laptop is a difference
+   nobody asked for, and node runs with its default locale in practice.
+9. **`SessionManager.append_session_info` already existed** and I wrote a second
+   one; ruff's F811 caught it. Check for the method before adding a
+   "prerequisite" — the manager is 1,100 lines and its API is wider than the
+   parts previous steps have used.
+10. MUTATION TESTING: 35 mutations across the table, the executor, the
+    changelog parser, the border, the dispatch and the harness; 29 caught on the
+    first honest run. All five survivors were real and are closed by
+    *discriminating* cases: the `fd` lookup order is unobservable unless `fd` is
+    in **both** places; `/session`'s two cache lines each need their own zero
+    case (a scenario where only one is spent cannot tell `> 0` from `>= 0` on
+    the other); `/hotkeys` needed a *rebound* submit key, since every row
+    otherwise renders its own default and "the default is on screen" cannot tell
+    a generated row from a hard-coded one; and the changelog strip needed its
+    pattern fixed rather than its test. A sixth was added while analysing them —
+    a command falling through to the pending-bash flush — and is caught.
+11. One mutant stays uncaught and is **equivalent**: making the command lookup
+    skip lines starting with `!`. No built-in command name starts with `!`, so
+    the guard can never reject anything the table would have matched. The
+    ordering that *is* observable — a command returning above the
+    pending-bash flush — is tested directly.
+
+### Found here, deliberately not fixed
+
+- **`/copy` needs a clipboard, not a clipboard call.** `utils/clipboard.ts` is a
+  native addon plus OSC 52, Wayland/X11 tool probing and an SSH check. Out of
+  scope for a command step; it is a leaf of its own when someone wants it.
+- **`/share` shells out to `gh`** and wants `BorderedLoader` (an editor-replacing
+  cancellable loader) which is not ported. Both are 7.9-shaped.
+- **The autocomplete provider has three sources it will never see today.**
+  `createBaseAutocompleteProvider` also maps prompt templates, extension
+  commands and skill commands into the menu; `session.prompt_templates`, the
+  extension runner and the resource loader are all unported, so `slash_commands`
+  is the whole list. `setup_autocomplete_provider` is a method rather than four
+  inline lines precisely because those (and 7.9's provider wrappers) re-run it.
+- **`/hotkeys` has no Extensions section.** The TS appends a table of
+  extension-registered shortcuts; with no extension runner there is nothing to
+  append, so the section is absent rather than empty.
+- 5.6's `publish = false` on `code/_meta` is still untouched, for the reason
+  7.1, 7.2, 7.5, 7.6 and 7.7 all gave: flipping it puts `cortexcode-code` on
+  PyPI, which is a release decision.

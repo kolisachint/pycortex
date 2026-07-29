@@ -159,15 +159,55 @@ class AppHarness:
             self.loop.run_until_complete(asyncio.sleep(0.001))
         self.render()
 
+    def wait_for(self, predicate: Callable[[], bool], *, timeout: float = 2.0) -> None:
+        """Pump until `predicate` holds, rendering a frame between passes.
+
+        `pump()` and `settle()` both key off the app's own "am I busy" flag, and
+        some work the screen depends on is invisible to it. Autocomplete is the
+        case that needs this: the editor debounces the request, runs it as a
+        task and may shell out to `fd`, none of which makes the *app* busy — a
+        turn is not in flight, so `settle()` returns at once and `pump()` runs a
+        single pass. Waiting on the screen instead is the honest form: the
+        scenario says what it expects to see and this gets it there or fails.
+
+        Raises `TimeoutError` rather than returning quietly, so a scenario that
+        would otherwise assert against a stale frame reports the wait.
+        """
+        deadline = time.monotonic() + timeout
+        while True:
+            self.render()
+            if predicate():
+                return
+            if time.monotonic() >= deadline:
+                raise TimeoutError(f"condition not met within {timeout}s\n\n{self.snapshot()}")
+            self.loop.run_until_complete(asyncio.sleep(0.001))
+
+    def _deliver(self, data: str) -> None:
+        """Hand `data` to the app's input listeners **from inside the loop**.
+
+        A real tty delivers keystrokes through a reader on the event loop, so
+        every handler runs with a loop already running. Several of them care:
+        the editor's autocomplete resolves `asyncio.get_running_loop()` to
+        debounce and to schedule the provider call, and quietly does nothing
+        when there is none. Calling `send_input` straight from the scenario
+        thread would put the app in that state permanently and make `/` and `@`
+        look inert here while working in the terminal.
+        """
+
+        async def deliver() -> None:
+            self.terminal.send_input(data)
+
+        self.loop.run_until_complete(deliver())
+
     def send(self, data: str) -> None:
         """Feed raw bytes as if the terminal produced them, then render."""
-        self.terminal.send_input(data)
+        self._deliver(data)
         self.pump()
 
     def type(self, text: str) -> None:
         """Type literal text. One `send` per character, as a real tty delivers."""
         for char in text:
-            self.terminal.send_input(char)
+            self._deliver(char)
         self.pump()
 
     def key(self, name: str) -> None:

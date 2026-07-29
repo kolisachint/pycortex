@@ -387,16 +387,25 @@ visible capability at a time.
 - [x] **7.7 footer + status** — `core/footer-data-provider.ts`, `components/footer.ts`
       in full → `packages/code/interactive/`. Model, token usage, context meter,
       git branch and dirty mark.
-- [ ] **7.8 slash commands + autocomplete** — `command-executor.ts`,
+- [x] **7.8 slash commands + autocomplete** — `command-executor.ts`,
       `core/slash-commands.ts`, `@`-mention providers → `packages/code/interactive/`.
-      `/` opens command autocomplete, `/help` and `/clear` work, `@` inserts a path.
+      `/` opens command autocomplete, the commands it offers work, `@` inserts a
+      path. **hoocode has no `/help` and no `/clear`**: the built-in commands are
+      listed by the `/` menu itself, the reference card is `/hotkeys`, and the
+      command that empties the chat log is `/new` — whose handler needs the
+      session-replacement runtime 7.4 deferred to 7.10, so `commands/clear` moves
+      there with it. Only the built-ins with a handler are advertised; the rest
+      arrive with the machinery they reach for (7.9–7.11).
 - [ ] **7.9 overlays + selectors** — `components/{model-selector,session-selector,
       settings-selector,theme-selector}.ts`, `model-controller.ts` →
       `packages/code/interactive/`. Overlays open, change state, and Escape restores
-      editor focus.
+      editor focus. Wires `/settings`, `/model`, `/scoped-models`, `/fork`,
+      `/tree` and `/resume` into 7.8's command table.
 - [ ] **7.10 session persistence** — `core/session-manager.ts` wiring into interactive
       mode → `packages/code/session/`. `--continue` restores the transcript on
-      screen; a turn survives quit and relaunch.
+      screen; a turn survives quit and relaunch. The same machinery — the runtime's
+      session-replacement half plus `renderCurrentSessionState` — is what `/new`,
+      `/clone` and `/import` need, so those land here too.
 - [ ] **7.11 auth + model registry** — `core/{model-registry,model-resolver,auth-storage}.ts`,
       `login-controller.ts` → `packages/code/config/`, `packages/code/interactive/`.
       `/login` opens the provider picker; a missing key explains itself.

@@ -1072,12 +1072,146 @@ def footer_context_meter() -> None:
 
 # ===========================================================================
 # 7.8 — slash commands
+#
+# Two of these carry a name hoocode does not have, and both are ported to the
+# command that does the thing rather than to the name. There is no `/help` in
+# `slash-commands.ts`; the built-in commands are listed by the `/` menu, which
+# `commands/slash-autocomplete` already checks, and the reference card the user
+# reaches for is `/hotkeys`. `/clear` is the harder one — see its scenario.
 # ===========================================================================
 
-pending("commands/slash-autocomplete", "Typing `/` opens the command autocomplete", "7.8")
-pending("commands/help", "`/help` lists the built-in commands", "7.8")
-pending("commands/clear", "`/clear` empties the chat log", "7.8")
-pending("commands/file-mention", "`@` opens file autocomplete and inserts a path", "7.8")
+
+def _menu_rows(harness: AppHarness) -> list[str]:
+    """The autocomplete rows, selection marker stripped.
+
+    The menu is drawn between the editor's lower border and the footer, one row
+    per suggestion, with `→ ` on the selected one and two spaces on the rest.
+    """
+    lines = [line.rstrip() for line in harness.surface().lines()]
+    footer = next((i for i, line in enumerate(lines) if line.startswith("⬢ ")), len(lines))
+    borders = [i for i, line in enumerate(lines[:footer]) if line and set(line) == {"─"}]
+    if not borders:
+        return []
+    return [line.lstrip("→ ") for line in lines[borders[-1] + 1 : footer] if line.strip()]
+
+
+@scenario("commands/slash-autocomplete", "Typing `/` opens the command autocomplete", "7.8")
+def commands_slash_autocomplete() -> None:
+    """`/` opens the menu, typing filters it, Escape closes it.
+
+    The menu is asynchronous — the editor debounces, then runs the provider as a
+    task — so every assertion goes through `wait_for`, which is the difference
+    between checking the screen and checking the frame that happened to be up
+    when the key was released.
+    """
+    from cortex.code.interactive import BUILTIN_SLASH_COMMANDS
+
+    advertised = {command.name for command in BUILTIN_SLASH_COMMANDS}
+
+    with boot_shell() as h:
+        h.type("/")
+        h.wait_for(lambda: len(_menu_rows(h)) > 1)
+
+        rows = _menu_rows(h)
+        # Every row is a built-in command, with the description the table gives
+        # it — the menu is the table, not a list this scenario wrote down.
+        names = [row.split()[0] for row in rows]
+        assert names, f"the menu opened empty\n\n{h.snapshot()}"
+        unknown = [name for name in names if name not in advertised]
+        assert not unknown, f"the menu offers commands that are not built in: {unknown!r}"
+        assert "hotkeys" in names, f"the menu is missing /hotkeys: {names!r}\n\n{h.snapshot()}"
+        h.assert_shows("Show all keyboard shortcuts", scrollback=False)
+
+        # Typing filters it down to the one match, and the editor still holds
+        # what was typed.
+        h.type("sess")
+        h.wait_for(lambda: len(_menu_rows(h)) == 1)
+        assert _menu_rows(h)[0].startswith("session "), (
+            f"the menu did not filter to /session: {_menu_rows(h)!r}\n\n{h.snapshot()}"
+        )
+        h.assert_shows("> /sess", scrollback=False)
+
+        # Escape closes the menu without submitting or clearing the line.
+        h.key("escape")
+        h.wait_for(lambda: not _menu_rows(h))
+        h.assert_shows("> /sess", scrollback=False)
+
+
+@scenario("commands/help", "`/hotkeys` lists the keyboard shortcuts", "7.8")
+def commands_help() -> None:
+    """hoocode has no `/help`, and this scenario's original name is the only
+    place one was ever mentioned.
+
+    `slash-commands.ts` lists twenty-two commands and none of them is `help`;
+    what lists the built-in commands is the `/` menu, which the scenario above
+    checks against the table itself. The command a user reaches for when they
+    want to be told how to drive the app is `/hotkeys`, and that is what this
+    ports — `CommandExecutor.handle_hotkeys`, keys and all. Inventing a `/help`
+    alias would be an enhancement, and this migration does not do those.
+    """
+    with boot_shell() as h:
+        h.type("/hotkeys")
+        h.key("enter")
+
+        # The card renders as markdown: a heading per section, and the keys read
+        # back off the live keybindings rather than written into the table.
+        h.assert_shows("Keyboard Shortcuts", "Navigation", "Editing", "Send message")
+        h.assert_shows("Slash commands", "Run bash command")
+        # And the command consumed the line rather than sending it to the model.
+        assert _prompt_row(h) >= 0, f"/hotkeys left the editor dirty\n\n{h.snapshot()}"
+        h.assert_hides("> /hotkeys")
+
+
+# `/clear` is 7.10's, and it is the runtime half that puts it there.
+#
+# hoocode's command that empties the chat log is `/new`, and its handler
+# (`CommandExecutor.handleClear`, named for what it does to the screen) is two
+# calls: `runtimeHost.newSession()` and `renderCurrentSessionState()`. The first
+# is `AgentSessionRuntime`'s session-*replacement* half, which 7.4 deferred to
+# 7.10 in `cortex.code.session.runtime`'s own docstring; the second rebuilds the
+# transcript from a session's entries, which is `session/resume` — 7.10's other
+# scenario — under a different name. Neither is `command-executor.ts` work that
+# 7.8 was holding up, so the scenario moves to the step that builds what it
+# needs rather than 7.8 shipping something that empties a container and calls it
+# a session.
+pending("commands/clear", "`/new` empties the chat log", "7.10")
+
+
+@scenario("commands/file-mention", "`@` opens file autocomplete and inserts a path", "7.8")
+def commands_file_mention() -> None:
+    """`@` searches with `fd`, and this scenario brings its own.
+
+    The provider shells out to `fd` and has no fallback — `fd_path` unset means
+    no `@` completions at all, which is the state hoocode itself is in until its
+    background download settles. A scenario cannot depend on the machine running
+    it having `fd` installed, so it plants a stub that answers with a fixed
+    listing: what is under test here is the app wiring `@` to the provider and
+    the provider's answer reaching the line, not fd's own search.
+    """
+    import stat
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as workspace:
+        fd_stub = os.path.join(workspace, "fd")
+        with open(fd_stub, "w") as handle:
+            handle.write("#!/bin/sh\nprintf '%s\\n' src/ src/renderer.py README.md\n")
+        os.chmod(fd_stub, os.stat(fd_stub).st_mode | stat.S_IXUSR)
+
+        with boot_shell(fd_path=fd_stub) as h:
+            h.type("look at @rend")
+            h.wait_for(lambda: bool(_menu_rows(h)))
+
+            rows = _menu_rows(h)
+            assert any("renderer.py" in row for row in rows), (
+                f"the file menu does not offer the match: {rows!r}\n\n{h.snapshot()}"
+            )
+
+            # Tab accepts the selection, and the path lands in the line in place
+            # of the `@rend` that was being typed — the rest of the line intact.
+            h.key("tab")
+            h.wait_for(lambda: h.contains("@src/renderer.py", scrollback=False))
+            h.assert_shows("> look at @src/renderer.py", scrollback=False)
+
 
 # ===========================================================================
 # 7.9 — overlays and selectors

@@ -487,3 +487,73 @@ class TestBashExecution:
         result = await session.execute_bash("sleep 100", operations=Ops())
         assert result.cancelled
         assert not session.is_bash_running
+
+
+class TestSessionName:
+    """`/name` writes through the session; the manager owns the value."""
+
+    def test_a_fresh_session_has_no_name(self):
+        assert _session().session_name is None
+
+    def test_setting_a_name_reads_back(self):
+        session = _session()
+        session.set_session_name("ada")
+        assert session.session_name == "ada"
+
+    def test_the_latest_entry_wins(self):
+        session = _session()
+        session.set_session_name("first")
+        session.set_session_name("second")
+        assert session.session_name == "second"
+
+    def test_a_name_is_stripped(self):
+        session = _session()
+        session.set_session_name("  padded  ")
+        assert session.session_name == "padded"
+
+    def test_a_blank_name_clears_it(self):
+        # `getSessionName` treats a whitespace-only entry as unset, which is how
+        # a name is removed without a delete entry.
+        session = _session()
+        session.set_session_name("ada")
+        session.set_session_name("   ")
+        assert session.session_name is None
+
+    def test_the_name_is_an_entry_not_a_message(self):
+        session = _session()
+        session.set_session_name("ada")
+        entries = session.session_manager.get_entries()
+        assert [entry["type"] for entry in entries] == ["session_info"]
+        assert session.messages == []
+
+
+class TestSessionStats:
+    def test_an_empty_session_counts_nothing(self):
+        stats = _session().get_session_stats()
+        assert (stats.total_messages, stats.user_messages, stats.assistant_messages) == (0, 0, 0)
+        assert stats.tokens.total == 0
+
+    def test_it_names_the_session_it_came_from(self):
+        session = _session()
+        assert session.get_session_stats().session_id == session.session_id
+
+    def test_an_unpersisted_session_has_no_file(self):
+        assert _session().get_session_stats().session_file is None
+
+    async def test_a_turn_is_counted(self, faux: Any):
+        faux.set_responses([faux_assistant_message("hello back")])
+        session = _session(faux)
+        await session.prompt("hello")
+        await _run_until_idle(session)
+
+        stats = session.get_session_stats()
+        assert stats.user_messages == 1
+        assert stats.assistant_messages == 1
+        assert stats.total_messages == 2
+        assert stats.tokens.total > 0, "a completed turn reported no tokens"
+
+    def test_it_carries_the_context_usage(self, faux: Any):
+        session = _session(faux)
+        stats = session.get_session_stats()
+        assert stats.context_usage is not None
+        assert stats.context_usage.context_window > 0

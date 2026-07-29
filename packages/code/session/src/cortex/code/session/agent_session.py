@@ -55,7 +55,12 @@ from cortex.code.config import (
 )
 from cortex.code.config.auth_guidance import UNKNOWN_PROVIDER
 from cortex.code.session.bash_executor import BashResult, execute_bash_with_operations
-from cortex.code.session.stats import ContextUsage, compute_context_usage
+from cortex.code.session.stats import (
+    ContextUsage,
+    SessionStats,
+    compute_context_usage,
+    compute_session_stats,
+)
 
 __all__ = [
     "AgentSession",
@@ -369,6 +374,26 @@ class AgentSession:
             session_manager=self.session_manager,
             messages=self.messages,
         )
+
+    def get_session_stats(self) -> SessionStats:
+        """Aggregate counts, tokens and cost for this session. What ``/session`` prints."""
+        return compute_session_stats(
+            messages=self.messages,
+            session_file=self.session_file,
+            session_id=self.session_id,
+            context_usage=self.get_context_usage(),
+        )
+
+    def set_session_name(self, name: str) -> None:
+        """Set a display name for the current session.
+
+        The name is a session-file entry rather than session state: the manager
+        owns it, and reading it back goes through
+        :attr:`session_name`. The TS emits ``session_info_changed`` here; this
+        port's event union has no such member yet — nothing subscribes to it,
+        and the footer re-derives the name on the next frame anyway.
+        """
+        self.session_manager.append_session_info(name)
 
     # =====================================================================
     # Prompting
