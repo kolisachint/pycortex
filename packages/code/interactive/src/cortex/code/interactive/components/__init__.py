@@ -18,7 +18,6 @@ from cortex.code.interactive.components.custom_editor import CustomEditor, is_pl
 from cortex.code.interactive.components.diff import parse_diff_line, render_diff
 from cortex.code.interactive.components.footer import (
     FooterComponent,
-    FooterState,
     assemble_line,
     context_gauge,
     format_tokens,
@@ -50,7 +49,6 @@ __all__ = [
     "BashExecutionComponent",
     "CustomEditor",
     "FooterComponent",
-    "FooterState",
     "PrefixFirstLine",
     "ToolExecutionComponent",
     "ToolExecutionOptions",

@@ -22,11 +22,14 @@ from cortex.code.interactive.brand import (
 from cortex.code.interactive.components import (
     BashExecutionComponent,
     FooterComponent,
-    FooterState,
     ToolExecutionComponent,
     ToolExecutionOptions,
     ToolExecutionResult,
     render_diff,
+)
+from cortex.code.interactive.footer_data_provider import (
+    FooterDataProvider,
+    ReadonlyFooterDataProvider,
 )
 from cortex.code.interactive.interactive_mode import (
     InteractiveMode,
@@ -41,6 +44,14 @@ from cortex.code.interactive.keybindings import (
     KeybindingsManager,
     migrate_keybindings_config,
     order_keybindings_config,
+)
+from cortex.code.interactive.startup_progress import (
+    DownloadProgress,
+    ErrorProgress,
+    StartupProgress,
+    StartupProgressStore,
+    WorkProgress,
+    startup_progress,
 )
 from cortex.code.interactive.theme import Theme, get_theme
 from cortex.code.interactive.tool_renderers import (
@@ -75,11 +86,16 @@ __all__ = [
     "BashExecutionController",
     "BashExecutionControllerDeps",
     "CompactWordmarkOptions",
+    "DownloadProgress",
+    "ErrorProgress",
     "FooterComponent",
-    "FooterState",
+    "FooterDataProvider",
     "InteractiveMode",
     "InteractiveModeOptions",
     "KeybindingsManager",
+    "ReadonlyFooterDataProvider",
+    "StartupProgress",
+    "StartupProgressStore",
     "Theme",
     "ToolExecutionComponent",
     "ToolExecutionOptions",
@@ -87,6 +103,7 @@ __all__ = [
     "ToolRenderContext",
     "ToolRenderResultOptions",
     "ToolRenderer",
+    "WorkProgress",
     "build_app_root",
     "build_compact_wordmark",
     "format_display_path",
@@ -96,4 +113,5 @@ __all__ = [
     "render_diff",
     "resolve_tool_renderer",
     "run_interactive_mode",
+    "startup_progress",
 ]

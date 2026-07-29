@@ -73,7 +73,7 @@ from cortex.code.config import APP_NAME, APP_TITLE, VERSION, SettingsManager
 from cortex.code.interactive.bash_execution_controller import BashExecutionController
 from cortex.code.interactive.components.assistant_message import AssistantMessageComponent
 from cortex.code.interactive.components.custom_editor import CustomEditor
-from cortex.code.interactive.components.footer import FooterComponent, FooterState
+from cortex.code.interactive.components.footer import FooterComponent
 from cortex.code.interactive.components.tool_execution import (
     ToolExecutionComponent,
     ToolExecutionOptions,
@@ -81,7 +81,9 @@ from cortex.code.interactive.components.tool_execution import (
     ToolOutputDisplayLevel,
 )
 from cortex.code.interactive.components.user_message import UserMessageComponent
+from cortex.code.interactive.footer_data_provider import FooterDataProvider
 from cortex.code.interactive.keybindings import KeybindingsManager
+from cortex.code.interactive.startup_progress import startup_progress
 from cortex.code.interactive.theme import get_editor_theme, get_markdown_theme, get_theme
 from cortex.code.interactive.tool_renderers import resolve_tool_renderer
 from cortex.code.interactive.wordmark import CompactWordmarkOptions, build_compact_wordmark
@@ -113,6 +115,12 @@ LIVE_TOOL_WINDOW = 50
 #: arrive far faster than this, and every application re-lexes the growing tail
 #: block, so applying one per delta makes streaming cost O(message²).
 STREAM_RENDER_THROTTLE_MS = 100
+
+#: How often a startup-progress burst is allowed to repaint the footer. A
+#: download streams byte counts in bursts and each repaint reassembles the whole
+#: component tree, so the store's subscriber is throttled the same way the TS's
+#: task-panel subscriber is.
+TASK_RENDER_THROTTLE_MS = 50
 
 
 def _throttled(ms: int, fn: Callable[[], None]) -> Callable[[], None]:
@@ -324,13 +332,9 @@ class InteractiveMode:
         self.editor.prompt_color = lambda text: get_theme().fg("accent", text)
         self.editor_container.add_child(self.editor)
 
-        self.footer = FooterComponent(
-            FooterState(
-                cwd=format_display_path(self.cwd),
-                auto_compact_enabled=True,
-                compaction_reserve_tokens=self.settings_manager.get_compaction_reserve_tokens(),
-            )
-        )
+        self.footer_data_provider = FooterDataProvider(self.session.session_manager.get_cwd())
+        self.footer = FooterComponent(self.session, self.footer_data_provider)
+        self._unsubscribe_startup_progress: Callable[[], None] | None = None
 
         self._is_initialized = False
         self._is_shutting_down = False
@@ -432,6 +436,7 @@ class InteractiveMode:
         self.setup_key_handlers()
         self.setup_editor_submit_handler()
         self.setup_session_listener()
+        self.setup_footer_watchers()
         self.update_terminal_title()
         self._is_initialized = True
 
@@ -439,6 +444,42 @@ class InteractiveMode:
         """Subscribe to the session, so its events reach the screen."""
         if self._unsubscribe_session is None:
             self._unsubscribe_session = self.session.subscribe(self.handle_session_event)
+
+    def setup_footer_watchers(self) -> None:
+        """Repaint when the footer's own sources move under it.
+
+        Two of them: the git branch, which changes when someone switches branch
+        in another terminal, and the startup-progress store, which ticks while
+        first-run downloads and the index build run. Neither is a session event,
+        so neither reaches the screen through :meth:`handle_session_event`.
+
+        The branch callback arrives on the provider's watcher thread (the TS gets
+        it on the event loop, where ``fs.watch`` lives), so it hops back to the
+        loop before touching the TUI.
+        """
+        loop = self._running_loop()
+
+        def repaint_from_thread() -> None:
+            if loop is None:
+                return
+            try:
+                loop.call_soon_threadsafe(self.ui.request_render)
+            except RuntimeError:
+                # The loop is gone: the app shut down while the watcher was
+                # mid-poll. Nothing left to repaint.
+                pass
+
+        self.footer_data_provider.on_branch_change(repaint_from_thread)
+        self._unsubscribe_startup_progress = startup_progress.subscribe(
+            _throttled(TASK_RENDER_THROTTLE_MS, self.ui.request_render)
+        )
+
+    @staticmethod
+    def _running_loop() -> asyncio.AbstractEventLoop | None:
+        try:
+            return asyncio.get_running_loop()
+        except RuntimeError:
+            return None
 
     def update_terminal_title(self) -> None:
         """Update terminal title with session name and cwd."""
@@ -942,6 +983,12 @@ class InteractiveMode:
     def stop(self) -> None:
         """Tear the app down and hand the terminal back."""
         self.footer.dispose()
+        # The provider owns the git watcher thread and its timers; left running,
+        # they outlive the terminal they were repainting.
+        self.footer_data_provider.dispose()
+        if self._unsubscribe_startup_progress is not None:
+            self._unsubscribe_startup_progress()
+            self._unsubscribe_startup_progress = None
         # The loader animates off a repeating timer; leaving it running holds a
         # callback on the event loop after the TUI has let go of the terminal.
         self.stop_working_loader()

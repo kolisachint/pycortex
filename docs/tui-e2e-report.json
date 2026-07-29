@@ -1,5 +1,5 @@
 {
-  "generated_from": "329d092",
+  "generated_from": "fa14d97",
   "note": "Written by scripts/tui_e2e.py. Consumed by scripts/migrate_next.py --status. A Phase 7 step cannot be ticked while it still owns unmet scenarios.",
   "passing": [
     "chat/abort-turn",
@@ -9,6 +9,9 @@
     "chat/markdown-rendering",
     "chat/streaming-incremental",
     "chat/user-message-renders",
+    "footer/context-meter",
+    "footer/git-branch",
+    "footer/model-and-tokens",
     "harness/receives-input",
     "harness/renders-a-frame",
     "harness/resize-repaints",
@@ -67,24 +70,6 @@
       "status": "pending",
       "blocked_by": "7.12",
       "title": "A clean install boots, prompts, answers and exits cleanly"
-    },
-    {
-      "id": "footer/context-meter",
-      "status": "pending",
-      "blocked_by": "7.7",
-      "title": "Footer shows remaining context budget"
-    },
-    {
-      "id": "footer/git-branch",
-      "status": "pending",
-      "blocked_by": "7.7",
-      "title": "Footer shows the git branch and dirty mark"
-    },
-    {
-      "id": "footer/model-and-tokens",
-      "status": "pending",
-      "blocked_by": "7.7",
-      "title": "Footer shows the active model and token usage"
     },
     {
       "id": "overlay/escape-closes",

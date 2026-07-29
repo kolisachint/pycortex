@@ -121,36 +121,82 @@ def compute_session_stats(
 
 
 def compute_context_usage(
-    context_window: int,
+    model: Any,
+    session_manager: Any,
     messages: list[AgentMessage],
-    has_post_compaction_usage: bool = True,
 ) -> ContextUsage | None:
     """Estimate current context-window usage.
 
     After compaction, the last assistant usage reflects pre-compaction context
     size, so usage is only trusted from an assistant that responded after the
-    latest compaction boundary.
+    latest compaction boundary. When no such assistant exists yet, tokens are
+    reported as ``None`` — unknown until the next LLM response, which is what
+    the footer draws as ``?``.
     """
+    from cortex.agent.compaction import calculate_context_tokens, estimate_context_tokens
+    from cortex.code.session.manager import get_latest_compaction_entry
+
+    if model is None:
+        return None
+
+    context_window = getattr(model, "context_window", 0) or 0
     if context_window <= 0:
         return None
 
-    if not has_post_compaction_usage:
-        return ContextUsage(tokens=None, context_window=context_window, percent=None)
+    branch_entries = session_manager.get_branch()
+    latest_compaction = get_latest_compaction_entry(branch_entries)
 
-    # Estimate tokens from messages
-    estimate_tokens = 0
-    for message in messages:
-        if message.role == "assistant":
-            usage = message.usage
-            estimate_tokens += usage.input + usage.output
+    if latest_compaction is not None:
+        # Is there a valid assistant usage after the compaction boundary?
+        compaction_index = len(branch_entries) - 1 - branch_entries[::-1].index(latest_compaction)
+        has_post_compaction_usage = False
+        for index in range(len(branch_entries) - 1, compaction_index, -1):
+            entry = branch_entries[index]
+            if entry.get("type") != "message":
+                continue
+            assistant = entry.get("message") or {}
+            if _entry_field(assistant, "role") != "assistant":
+                continue
+            if _entry_field(assistant, "stop_reason") in ("aborted", "error"):
+                break
+            usage = _entry_field(assistant, "usage")
+            if usage is not None and _context_tokens(usage, calculate_context_tokens) > 0:
+                has_post_compaction_usage = True
+            break
 
-    percent = (estimate_tokens / context_window) * 100 if context_window > 0 else None
+        if not has_post_compaction_usage:
+            return ContextUsage(tokens=None, context_window=context_window, percent=None)
+
+    estimate = estimate_context_tokens(messages)
+    percent = (estimate.tokens / context_window) * 100
 
     return ContextUsage(
-        tokens=estimate_tokens,
+        tokens=estimate.tokens,
         context_window=context_window,
         percent=percent,
     )
+
+
+def _entry_field(message: Any, name: str) -> Any:
+    """A field off a session entry's message, stored as a dict or held as a model."""
+    if isinstance(message, dict):
+        return message.get(name)
+    return getattr(message, name, None)
+
+
+def _context_tokens(usage: Any, calculate: Any) -> int:
+    """Context tokens for a usage that may still be the dict the session file holds."""
+    if isinstance(usage, dict):
+        total = usage.get("total_tokens") or 0
+        if total:
+            return int(total)
+        return int(
+            (usage.get("input") or 0)
+            + (usage.get("output") or 0)
+            + (usage.get("cache_read") or 0)
+            + (usage.get("cache_write") or 0)
+        )
+    return int(calculate(usage))
 
 
 def collect_user_messages_for_forking(

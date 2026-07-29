@@ -165,7 +165,14 @@ class TestBuildAppRoot:
 
     def test_footer_reports_the_cwd(self):
         app = _app()
-        assert app.footer.state.cwd == "/w/project"
+        # The footer reads the cwd off the session it was handed (7.7), so this
+        # is the app wiring the two together rather than a value copied at boot.
+        assert "⬢ BUILD" in app.footer.render(80)[0]
+        assert "/w/project" in app.footer.render(80)[0]
+
+    def test_the_footer_data_provider_follows_the_session_cwd(self):
+        app = _app()
+        assert app.footer_data_provider.get_git_branch() is None
 
 
 class TestBanner:

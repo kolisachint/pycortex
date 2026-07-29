@@ -384,7 +384,7 @@ visible capability at a time.
       `bash-execution-controller.ts` → `packages/code/interactive/`. Tool calls
       render with args and results, edits render as diffs, bash streams, Ctrl+O
       expands truncated output.
-- [ ] **7.7 footer + status** — `core/footer-data-provider.ts`, `components/footer.ts`
+- [x] **7.7 footer + status** — `core/footer-data-provider.ts`, `components/footer.ts`
       in full → `packages/code/interactive/`. Model, token usage, context meter,
       git branch and dirty mark.
 - [ ] **7.8 slash commands + autocomplete** — `command-executor.ts`,

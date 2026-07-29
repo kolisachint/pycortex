@@ -18,12 +18,15 @@ scenario answers "does the screen show the thing", which a stub cannot fake.
 
 from __future__ import annotations
 
+import os
+import re
 import traceback
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Literal
 
 from cortex.code.e2e._harness import AppHarness
+from cortex.code.interactive import BRAND_MARK
 from cortex.tui.render import TUI
 
 __all__ = [
@@ -170,6 +173,7 @@ def faux_session(
     settings: Any = None,
     stream_fn: Any = None,
     tools: list[Any] | None = None,
+    models: list[Any] | None = None,
 ) -> FauxSession:
     """Build the session the shell scenarios prompt against.
 
@@ -184,11 +188,15 @@ def faux_session(
     screen does **between** two deltas needs to own when the second one arrives,
     and the faux provider streams whole responses on its own schedule; see
     `chat/streaming-incremental`.
+
+    `models` overrides the faux model definitions. The footer's context meter is
+    the reason it exists: the default model declares a 128k window, and no turn a
+    scenario can afford to run moves a gauge scaled to that.
     """
     from cortex.ai.providers.faux import register_faux_provider
     from cortex.code.session import SessionManager, create_agent_session
 
-    registration = register_faux_provider()
+    registration = register_faux_provider(models=models)
     created = create_agent_session(
         cwd=cwd,
         settings_manager=settings,
@@ -275,8 +283,10 @@ def shell_footer_present() -> None:
         footer_rows = [i for i, line in enumerate(lines) if line.startswith("⬢ ")]
         assert footer_rows, f"no footer line on screen\n\n{h.snapshot()}"
         assert footer_rows[0] > _prompt_row(h), f"footer is above the editor\n\n{h.snapshot()}"
-        # The footer reports where you are and what model is answering.
-        h.assert_shows("⬢ BUILD  /w/project", "no-model")
+        # The footer reports where you are and what model is answering. Both are
+        # read off the live session (7.7): before it, the second half of this
+        # line was the hard-coded `no-model`.
+        h.assert_shows("⬢ BUILD  /w/project", "faux-1")
 
 
 @scenario("shell/resize-reflows", "Resizing reflows the shell without corruption", "7.2")
@@ -938,11 +948,127 @@ def _tool_block(harness: AppHarness) -> Any:
 
 # ===========================================================================
 # 7.7 — footer and status
+#
+# The footer is the one part of the screen with no event of its own: nothing
+# tells it a turn cost 300 tokens or that HEAD moved, it re-derives everything
+# from the session and the data provider on every frame. So these scenarios
+# drive the app and read the two footer lines back — the only way to tell a
+# footer that reports from one that was handed a snapshot at boot, which is
+# exactly what 7.2 shipped.
 # ===========================================================================
 
-pending("footer/model-and-tokens", "Footer shows the active model and token usage", "7.7")
-pending("footer/git-branch", "Footer shows the git branch and dirty mark", "7.7")
-pending("footer/context-meter", "Footer shows remaining context budget", "7.7")
+
+def _footer_lines(harness: AppHarness) -> list[str]:
+    """The footer's two fixed lines: identity, then session vitals."""
+    lines = harness.surface().lines()
+    for index, line in enumerate(lines):
+        if line.startswith(f"{BRAND_MARK} "):
+            return [text.rstrip() for text in lines[index : index + 2]]
+    raise AssertionError(f"no footer on screen\n\n{harness.snapshot()}")
+
+
+@scenario("footer/model-and-tokens", "Footer shows the active model and token usage", "7.7")
+def footer_model_and_tokens() -> None:
+    from cortex.ai.providers.faux import faux_assistant_message
+
+    faux = faux_session()
+    faux.set_responses([faux_assistant_message("She wrote the first algorithm.")])
+    try:
+        with boot_shell(session=faux.session) as h:
+            # The model answering is named before anything has been asked of it,
+            # and nothing has been spent yet — no arrows on the vitals line.
+            _, vitals = _footer_lines(h)
+            assert vitals.endswith("faux-1"), f"the model is not named: {vitals!r}"
+            assert "↑" not in vitals and "↓" not in vitals, (
+                f"tokens are counted before the first turn: {vitals!r}"
+            )
+
+            h.type("who was ada?")
+            h.key("enter")
+            h.settle()
+
+            # The turn is paid for: sent and received counts, both non-zero, and
+            # the model is still named.
+            _, vitals = _footer_lines(h)
+            sent = re.search(r"↑([\d.]+k?)", vitals)
+            received = re.search(r"↓([\d.]+k?)", vitals)
+            assert sent and received, f"the turn's tokens are not on the footer: {vitals!r}"
+            assert float(sent.group(1).rstrip("k")) > 0, f"nothing was sent: {vitals!r}"
+            assert float(received.group(1).rstrip("k")) > 0, f"nothing came back: {vitals!r}"
+            assert vitals.endswith("faux-1"), f"the model went missing mid-turn: {vitals!r}"
+    finally:
+        faux.unregister()
+
+
+@scenario("footer/git-branch", "Footer shows the git branch it is working on", "7.7")
+def footer_git_branch() -> None:
+    """The dirty mark in this scenario's original title has no source to port.
+
+    `brand.ts` defines `GIT_DIRTY_MARK` and nothing in the TS ever renders it —
+    the footer shows the branch and stops there. Feature parity means this does
+    too; inventing a `git status` call here would be an enhancement, and the
+    corpus is not the place to smuggle one in.
+    """
+    import tempfile
+
+    from cortex.code.interactive import GIT_BRANCH_GLYPH
+
+    with tempfile.TemporaryDirectory() as parent:
+        repo = os.path.join(parent, "repo")
+        os.makedirs(os.path.join(repo, ".git"))
+        with open(os.path.join(repo, ".git", "HEAD"), "w") as handle:
+            handle.write("ref: refs/heads/parity\n")
+
+        faux = faux_session(cwd=repo)
+        try:
+            with boot_shell(cwd=repo, session=faux.session) as h:
+                identity, _ = _footer_lines(h)
+                assert f"{GIT_BRANCH_GLYPH} parity" in identity, (
+                    f"the branch is not on the footer: {identity!r}\n\n{h.snapshot()}"
+                )
+        finally:
+            faux.unregister()
+
+    # And a directory that is not a repository says nothing at all, rather than
+    # showing an empty glyph or the branch of whatever repo the app was started
+    # from.
+    with boot_shell() as h:
+        identity, _ = _footer_lines(h)
+        assert GIT_BRANCH_GLYPH not in identity, f"a branch outside a repo: {identity!r}"
+
+
+@scenario("footer/context-meter", "Footer shows remaining context budget", "7.7")
+def footer_context_meter() -> None:
+    from cortex.ai.providers.faux import faux_assistant_message
+
+    # An untouched session against the default model: the gauge is empty, and it
+    # says how big the window is and where auto-compaction will trip.
+    with boot_shell() as h:
+        _, vitals = _footer_lines(h)
+        assert vitals.startswith("▱▱▱▱▱▱▱▱ 0.0% 128k auto@"), (
+            f"the context meter is not at rest: {vitals!r}\n\n{h.snapshot()}"
+        )
+
+    # Now a model with a 2k window, so one affordable turn is a visible slice of
+    # it: the gauge fills and the percentage follows.
+    faux = faux_session(models=[{"id": "faux-small", "context_window": 2000, "max_tokens": 512}])
+    faux.set_responses([faux_assistant_message("She wrote the first algorithm. " * 40)])
+    try:
+        with boot_shell(session=faux.session) as h:
+            h.type("who was ada?")
+            h.key("enter")
+            h.settle()
+
+            _, vitals = _footer_lines(h)
+            assert vitals.startswith("▰"), (
+                f"the turn did not move the gauge: {vitals!r}\n\n{h.snapshot()}"
+            )
+            percent = re.search(r"([\d.]+)% 2\.0k", vitals)
+            assert percent, f"the meter has no percentage of a 2k window: {vitals!r}"
+            assert 0 < float(percent.group(1)) < 100, f"implausible context fill: {vitals!r}"
+    finally:
+        faux.unregister()
+
 
 # ===========================================================================
 # 7.8 — slash commands

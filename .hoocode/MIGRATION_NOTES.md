@@ -1693,3 +1693,114 @@ scenarios, 382 + 80 tests across the two leaves, 45/47 mutations caught.
 - 5.6's `publish = false` on `code/_meta` is still untouched, for the reason 7.1,
   7.2 and 7.5 all gave: flipping it puts `cortexcode-code` on PyPI, which is a
   release decision.
+
+## 7.7 footer + status — DONE
+
+The footer stopped being a picture of the app at boot and started reporting on
+it. `core/footer-data-provider.ts` (300) + the rest of `components/footer.ts`
+(290) → `packages/code/interactive/`, with `utils/fs-watch.ts` and
+`core/startup-progress.ts` as their unavoidable companions and
+`AgentSession.getContextUsage` → `packages/code/session/`: 3 e2e scenarios,
+442 + 86 tests across the two leaves, 19/19 mutations caught.
+
+1. **7.2's footer was a projection, and every field of it was a lie by
+   omission.** `FooterState` was populated once in `InteractiveMode.__init__`
+   and never again, so the model read `no-model` while a model was answering,
+   the token counters sat at zero through a paid turn, and the context gauge was
+   empty at 90% full. The component now holds `(session, footer_data)` and
+   re-derives all of it per frame, as the TS does — which is the whole design:
+   the footer has no event of its own, and any snapshot is stale by the next
+   delta. `FooterState` is deleted rather than deprecated; nothing outside the
+   footer had ever held one.
+2. **`getContextUsage` did not exist, and `computeContextUsage` was not the
+   TS's.** `stats.py`'s version took `(context_window, messages,
+   has_post_compaction_usage)` and estimated by summing `input + output` across
+   every assistant message — which double-counts every turn, because each
+   response's `input` already contains the whole prior conversation. The TS
+   takes `(model, sessionManager, messages)`, walks the branch for a compaction
+   boundary itself, and delegates to `estimateContextTokens` (last usage +
+   an estimate of what trails it). Rewritten to that signature and that
+   arithmetic; nothing called the old one but the export list, which is why it
+   could stay wrong through four steps. `code/session` gains a dependency on
+   `agent/compaction` for the estimator.
+3. **Node watches, Python polls.** `fs.watch` is inotify behind an emitter and
+   the standard library has no equivalent, so `fs_watch.PathWatcher` samples the
+   path on a thread and diffs `(mtime_ns, size, inode)` per directory entry. The
+   inode is not decoration: git writes HEAD atomically (write temp, rename), and
+   a rename that lands inside the filesystem's timestamp granularity is
+   invisible by mtime and size alone — `test_a_rename_with_the_same_size_and_
+   mtime_is_still_seen` forces exactly that case with `os.utime`. The TS's
+   `watchFile(tables.list, {interval: 250})`, its second belt-and-braces watch
+   on the same file, collapses into the first: both are polls here.
+4. **The provider's callbacks arrive on the wrong thread, and the TS's cannot.**
+   `fs.watch` and `setTimeout` both land on node's loop, so `onBranchChange`
+   there is already on the UI thread. Here it fires from the watcher thread or a
+   `threading.Timer`, and `ui.request_render()` from either would race the
+   renderer — so `setup_footer_watchers` hops back with
+   `loop.call_soon_threadsafe`, guarded for the loop that has already closed,
+   the same shape `bash_executor` uses.
+5. **The sync/async split in the branch resolver is a test-visible contract,
+   not an implementation detail.** The TS reads the branch with `spawnSync` once
+   (the footer needs an answer *this frame*) and with `execFile` on every
+   refresh after it (a branch switch must not stall the render loop). Both are
+   `subprocess.run` here, one called from the UI thread and one from the
+   watcher's — kept as two functions because "which one ran" is what the ported
+   tests assert, and collapsing them would silently allow the blocking one back
+   into the refresh path.
+6. **`.invalid` is a real branch name, and it means "ask git".** A reftable repo
+   writes `ref: refs/heads/.invalid` into HEAD as a compatibility stub, so the
+   only cheap read the provider has says nothing. That is the one case that
+   shells out — and if git cannot answer either, the answer is `detached`, not
+   `None`, because `None` means "not a repository" and would drop the branch off
+   the footer entirely.
+7. **Both stores the footer reads are process-wide singletons.** `startup_
+   progress` is ported as one (the TS's `startupProgress`), and it is why
+   `test_footer.py` has an autouse fixture that empties it: a test that leaves an
+   entry behind adds a third line to every footer rendered after it, and the
+   failure surfaces in an unrelated test.
+8. **The subagent counter is a seam, not a count.** `activeSubagentCount()`
+   filters `taskStore.list()`, and `core/task-store.ts` (392 lines) is not in
+   this step's file list. `set_task_source()` is where it will plug in; the
+   filter — `source == "subagent" and status == "in_progress"` — is ported and
+   tested, so what is missing is the list, not the logic.
+9. **The corpus asked for a dirty mark that has no source.** `brand.ts` exports
+   `GIT_DIRTY_MARK = "*"` and **nothing in the TS ever renders it**. Feature
+   parity means the port does not either, so `footer/git-branch` checks the
+   branch and says why in its docstring; the scenario's title lost "and dirty
+   mark" rather than the port growing a `git status` call nobody wrote.
+10. **`shell/footer-present` (7.2) had to change, and that is the good outcome.**
+    It asserted `no-model` on a shell booted against a real faux session — the
+    exact symptom of a footer that reports nothing. It now asserts `faux-1`.
+11. MUTATION TESTING: 19 mutations across the component, the provider, the
+    watcher and the context-usage estimate; 14 caught on the first run. All five
+    survivors were real gaps and are closed: the startup bar's `Math.round`
+    (both halves of the bar are `·` and only the colour separates them, so the
+    test had to read the *styled* line), the assistant-only filter on usage
+    entries (the user entry in the test had no usage, so dropping the role check
+    changed nothing), `toFixed` on the cost (0.125 rounds the same both ways;
+    0.0625 does not), the inode in the watcher's stamp (3), and the
+    post-compaction check in `compute_context_usage`, which had no test at all.
+    19/19.
+
+### Found here, deliberately not fixed
+
+- **Nothing sets an extension status.** `set_extension_status` /
+  `clear_extension_statuses` are ported and the footer renders the line, but the
+  TS reaches them through `ctx.ui.setStatus()` on the extension runner, and
+  `code/extensions` has not ported one. Same for `set_available_provider_count`
+  (the model controller's, 7.11) and `set_active_mode` (the extension API's):
+  the footer reads them, the app never writes them, so the mode is always
+  `BUILD` and the provider prefix never appears.
+- **Nothing fills the startup-progress store.** Its writers are the first-run
+  tool downloads in `main.ts` and the semantic-index build in
+  `core/embsearch/` — neither ported. The store, the subscription and the bar
+  are here and tested; on a real run the lines simply never appear.
+- **`setCwd` is wired to nothing.** The TS calls it when `/cd` or a session load
+  moves the session; neither command exists yet (7.8, 7.10). The method and its
+  watcher rebuild are ported and tested.
+- **The provider count needs more than one provider to show.** With a single
+  configured provider the TS hides the `(provider)` prefix, so the port's
+  hard-zero count is indistinguishable from the common case on screen.
+- 5.6's `publish = false` on `code/_meta` is still untouched, for the reason
+  7.1, 7.2, 7.5 and 7.6 all gave: flipping it puts `cortexcode-code` on PyPI,
+  which is a release decision.
