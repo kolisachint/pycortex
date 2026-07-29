@@ -42,6 +42,15 @@ the TS's), so markdown renders styled as it arrives instead of appearing whole a
 the end; a :class:`~cortex.tui.components.Loader` runs in the status container for
 as long as the agent is working.
 
+Step 7.6 gave the turn a body. Tool calls are blocks in the log now
+(:class:`~cortex.code.interactive.components.tool_execution.ToolExecutionComponent`),
+built the moment the model names a tool and updated three more times as the
+arguments complete, execution starts and the result lands; ``app.tools.expand``
+(Ctrl+O) expands every one of them at once; and a ``!`` prefix on a submission
+runs the line as a shell command instead of sending it, streaming its output into
+a :class:`~cortex.code.interactive.components.bash_execution.BashExecutionComponent`
+through :class:`~cortex.code.interactive.bash_execution_controller.BashExecutionController`.
+
 Shutdown is a callback, not ``process.exit``. The TS exits the process from
 inside ``shutdown()``; doing that here would make the exit path the one thing the
 end-to-end corpus could never watch. :meth:`InteractiveMode.shutdown` tears down
@@ -59,13 +68,22 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Protocol, cast
 
+from cortex.ai.types import TextContent
 from cortex.code.config import APP_NAME, APP_TITLE, VERSION, SettingsManager
+from cortex.code.interactive.bash_execution_controller import BashExecutionController
 from cortex.code.interactive.components.assistant_message import AssistantMessageComponent
 from cortex.code.interactive.components.custom_editor import CustomEditor
 from cortex.code.interactive.components.footer import FooterComponent, FooterState
+from cortex.code.interactive.components.tool_execution import (
+    ToolExecutionComponent,
+    ToolExecutionOptions,
+    ToolExecutionResult,
+    ToolOutputDisplayLevel,
+)
 from cortex.code.interactive.components.user_message import UserMessageComponent
 from cortex.code.interactive.keybindings import KeybindingsManager
 from cortex.code.interactive.theme import get_editor_theme, get_markdown_theme, get_theme
+from cortex.code.interactive.tool_renderers import resolve_tool_renderer
 from cortex.code.interactive.wordmark import CompactWordmarkOptions, build_compact_wordmark
 from cortex.tui.components import EditorOptions, Loader, MarkdownTheme, Spacer, Text
 from cortex.tui.keys import set_keybindings
@@ -83,6 +101,13 @@ __all__ = [
 #: Two Ctrl+C presses closer together than this exit; further apart, the second
 #: is treated as another "clear the editor".
 SIGINT_EXIT_WINDOW_MS = 500
+
+#: How many finished tool blocks stay live at the bottom of the transcript.
+#: Everything above that is frozen — its lines captured, its result payload and
+#: image copies released (see :meth:`ToolExecutionComponent.freeze`). Generous
+#: on purpose: nothing near the viewport is ever frozen, and the cap only bounds
+#: what a long tool-heavy session costs the view layer.
+LIVE_TOOL_WINDOW = 50
 
 #: How often the streaming assistant message re-parses its markdown. Deltas
 #: arrive far faster than this, and every application re-lexes the growing tail
@@ -172,6 +197,23 @@ def _message_text(message: Any) -> str:
             text = block.get("text", "") if isinstance(block, dict) else block.text
             parts.append(str(text))
     return "".join(parts)
+
+
+def _content_field(block: Any, name: str) -> Any:
+    """One field of a content block, dict or model."""
+    if isinstance(block, dict):
+        return block.get(name)
+    return getattr(block, name, None)
+
+
+def _tool_calls_of(message: Any) -> list[Any]:
+    """The ``toolCall`` blocks of an assistant message, in order."""
+    content = (
+        message.get("content") if isinstance(message, dict) else getattr(message, "content", None)
+    )
+    if not content or isinstance(content, str):
+        return []
+    return [block for block in content if _content_field(block, "type") == "toolCall"]
 
 
 def _create_unpersisted_session(cwd: str, settings_manager: SettingsManager) -> Any:
@@ -319,6 +361,18 @@ class InteractiveMode:
             STREAM_RENDER_THROTTLE_MS, self._render_streaming_message
         )
 
+        # Tool state (7.6): the blocks for calls that have not finished yet, and
+        # the two settings that decide how much of a finished one is on screen.
+        self.pending_tools: dict[str, ToolExecutionComponent] = {}
+        self.tool_output_expanded = False
+        self.tool_output_display: ToolOutputDisplayLevel = cast(
+            ToolOutputDisplayLevel, self.settings_manager.get_tool_output_display()
+        )
+        self.bash_execution = BashExecutionController(cast(Any, self))
+        self._bash_task: asyncio.Future[None] | None = None
+        #: Set while a `!command` is scheduled or running. See :meth:`is_busy`.
+        self._bash_pending = False
+
     @property
     def terminal(self) -> AppTerminal:
         """The TUI's terminal, seen through the app-level surface."""
@@ -434,8 +488,14 @@ class InteractiveMode:
                 self._turn_pending = False
 
     def is_busy(self) -> bool:
-        """Whether a submission is in flight — on its way to the session, or streaming."""
-        return self._turn_pending or bool(self.session.is_streaming)
+        """Whether the app is working — a turn in flight, or a `!command` running.
+
+        A bash command is not a turn: the session is not streaming and nothing
+        is pending on its way to the model, but the app is anything but idle, and
+        a driver that treats it as idle stops pumping while the shell is still
+        writing into the screen.
+        """
+        return self._turn_pending or self._bash_pending or bool(self.session.is_streaming)
 
     # ------------------------------------------------------------------
     # Key handling
@@ -444,14 +504,15 @@ class InteractiveMode:
     def setup_key_handlers(self) -> None:
         """Bind the app actions the editor dispatches.
 
-        The TS registers eighteen of these in ``setupKeyHandlers``; the other
-        sixteen drive a model controller, a task panel, selectors and an external
-        editor, none of which exist before 7.6–7.9. What is here is what there is
-        something to do: clear the editor, exit from an empty one, and abort a
-        turn.
+        The TS registers eighteen of these in ``setupKeyHandlers``; the rest
+        drive a model controller, a task panel, selectors and an external editor,
+        none of which exist before 7.7–7.9. What is here is what there is
+        something to do: clear the editor, exit from an empty one, abort a turn,
+        and expand tool output.
         """
         self.editor.on_escape = self.handle_escape
         self.editor.on_action("app.clear", self.handle_ctrl_c)
+        self.editor.on_action("app.tools.expand", self.toggle_tool_output_expansion)
         self.editor.on_ctrl_d = self.handle_ctrl_d
 
     def handle_escape(self) -> None:
@@ -499,22 +560,39 @@ class InteractiveMode:
 
         The TS builds the slash-command table here and the handler consults it
         before anything else, along with the bash-mode (``!``) prefix, the
-        compaction queue and the streaming steer path. Commands are 7.8, bash is
-        7.6 and the session — with its queue and its streaming flag — is 7.4; the
-        submission itself is all this step owes.
+        compaction queue and the streaming steer path. Commands are 7.8 and the
+        session — with its queue and its streaming flag — is 7.4; the submission
+        and the bash prefix are what this handler owes.
         """
         self.editor.on_submit = self.handle_submit
 
     def handle_submit(self, text: str) -> None:
         """A submitted line: remember it and hand it to the loop.
 
-        Nothing is drawn here. The text goes to ``session.prompt()``, the session
-        emits a ``user`` message event, and :meth:`handle_session_event` draws it
-        — the long way round the TS takes, so a message the session refused
-        never appears as though it were sent.
+        Nothing is drawn here for a prompt. The text goes to
+        ``session.prompt()``, the session emits a ``user`` message event, and
+        :meth:`handle_session_event` draws it — the long way round the TS takes,
+        so a message the session refused never appears as though it were sent.
+
+        A ``!`` prefix is the exception: that is bash mode, and it never reaches
+        the model. ``!!`` runs the command without putting its output in the
+        model's context.
         """
         text = text.strip()
         if not text:
+            return
+
+        # Deferred bash rows from the last turn belong above whatever comes next.
+        self.bash_execution.flush_pending_bash_components()
+
+        if text.startswith("!"):
+            self.editor.add_to_history(text)
+            self.clear_editor()
+            exclude_from_context = text.startswith("!!")
+            command = text[2:] if exclude_from_context else text[1:]
+            command = command.strip()
+            if command:
+                self.run_bash_command(command, exclude_from_context)
             return
 
         callback = self._on_input_callback
@@ -523,6 +601,48 @@ class InteractiveMode:
             self._turn_pending = True
             callback(text)
         self.editor.add_to_history(text)
+
+    def run_bash_command(self, command: str, exclude_from_context: bool = False) -> None:
+        """Start a `!command` on the event loop and let the block track it.
+
+        ``_bash_pending`` is set here rather than read off the session, for the
+        same reason ``_turn_pending`` exists: between scheduling the coroutine
+        and it reaching ``execute_bash`` the session looks idle, and a driver
+        that pumps one pass and then asks "are you busy?" would stop right
+        there.
+        """
+        self._bash_pending = True
+        task = asyncio.ensure_future(
+            self.bash_execution.handle_bash_command(command, exclude_from_context)
+        )
+
+        def finished(_task: asyncio.Future[None]) -> None:
+            self._bash_pending = False
+
+        task.add_done_callback(finished)
+        self._bash_task = task
+
+    # ------------------------------------------------------------------
+    # Tool output
+    # ------------------------------------------------------------------
+
+    def toggle_tool_output_expansion(self) -> None:
+        self.set_tools_expanded(not self.tool_output_expanded)
+
+    def set_tools_expanded(self, expanded: bool) -> None:
+        """Expand or collapse every expandable block in the log at once.
+
+        One global flag rather than per-block state, as in the TS: the key is not
+        aimed at anything, so "expand" has to mean the same thing everywhere or
+        pressing it twice would leave the log in a state the user cannot reason
+        about. New blocks are created at the current setting.
+        """
+        self.tool_output_expanded = expanded
+        for child in [*self.chat_container.children, *self.pending_messages_container.children]:
+            setter = getattr(child, "set_expanded", None)
+            if callable(setter):
+                setter(expanded)
+        self.ui.request_render()
 
     async def get_user_input(self) -> str:
         """Wait for the next submission. Port of the TS's ``getUserInput``."""
@@ -551,9 +671,9 @@ class InteractiveMode:
 
         The TS switch has twenty-odd cases. The ones with something to drive here
         are the turn's start and end (the loader and the terminal progress
-        indicator), and the messages themselves. Tool execution (7.6), the queue
-        display (7.7), compaction and auto-retry (their controllers are unwired)
-        are the rest, and each arrives with the component that shows it.
+        indicator), the messages themselves, and the tool calls inside them. The
+        queue display (7.7), compaction and auto-retry (their controllers are
+        unwired) are the rest, and each arrives with the component that shows it.
         """
         event_type = event.get("type")
 
@@ -575,6 +695,7 @@ class InteractiveMode:
                 self.chat_container.remove_child(self.streaming_component)
                 self.streaming_component = None
                 self.streaming_message = None
+            self.pending_tools.clear()
             self.ui.request_render()
         elif event_type == "message_start":
             message = event.get("message")
@@ -597,11 +718,100 @@ class InteractiveMode:
             if self.streaming_component is not None and _role_of(message) == "assistant":
                 self.streaming_message = message
                 self.schedule_streaming_render()
+                # A tool call is part of the assistant message, so its block is
+                # created here rather than on `tool_execution_start`: the model
+                # names the tool before the loop has decided to run it, and the
+                # block is what shows the arguments filling in.
+                for content in _tool_calls_of(message):
+                    tool_call_id = str(_content_field(content, "id") or "")
+                    existing = self.pending_tools.get(tool_call_id)
+                    if existing is None:
+                        self.add_tool_component(
+                            str(_content_field(content, "name") or ""),
+                            tool_call_id,
+                            _content_field(content, "arguments"),
+                        )
+                    else:
+                        existing.update_args(_content_field(content, "arguments"))
                 self.ui.request_render()
         elif event_type == "message_end":
             message = event.get("message")
             if _role_of(message) == "assistant":
                 self.finish_assistant_message(message)
+        elif event_type == "tool_execution_start":
+            tool_call_id = str(event.get("tool_call_id") or "")
+            component = self.pending_tools.get(tool_call_id)
+            if component is None:
+                component = self.add_tool_component(
+                    str(event.get("tool_name") or ""), tool_call_id, event.get("args")
+                )
+            component.mark_execution_started()
+            self.ui.request_render()
+        elif event_type == "tool_execution_update":
+            component = self.pending_tools.get(str(event.get("tool_call_id") or ""))
+            if component is not None:
+                partial = event.get("partial_result")
+                component.update_result(
+                    ToolExecutionResult(
+                        content=list(getattr(partial, "content", None) or []),
+                        details=getattr(partial, "details", None),
+                        is_error=False,
+                    ),
+                    True,
+                )
+                self.ui.request_render()
+        elif event_type == "tool_execution_end":
+            tool_call_id = str(event.get("tool_call_id") or "")
+            component = self.pending_tools.get(tool_call_id)
+            if component is not None:
+                result = event.get("result")
+                component.update_result(
+                    ToolExecutionResult(
+                        content=list(getattr(result, "content", None) or []),
+                        details=getattr(result, "details", None),
+                        is_error=bool(event.get("is_error")),
+                    )
+                )
+                del self.pending_tools[tool_call_id]
+                self.trim_transcript_memory()
+                self.ui.request_render()
+
+    def add_tool_component(
+        self, tool_name: str, tool_call_id: str, args: Any
+    ) -> ToolExecutionComponent:
+        """Build a block for a tool call and put it in the chat log."""
+        component = ToolExecutionComponent(
+            tool_name,
+            tool_call_id,
+            args,
+            ToolExecutionOptions(
+                show_images=self.settings_manager.get_show_images(),
+                image_width_cells=self.settings_manager.get_image_width_cells(),
+                display_level=self.tool_output_display,
+            ),
+            resolve_tool_renderer(self.session, tool_name),
+            self.ui,
+            self.session.cwd,
+        )
+        component.set_expanded(self.tool_output_expanded)
+        self.chat_container.add_child(component)
+        self.pending_tools[tool_call_id] = component
+        return component
+
+    def trim_transcript_memory(self) -> None:
+        """Freeze finished tool blocks that have scrolled well out of the way.
+
+        Runs on tool completion — infrequent, and only ever reaching blocks far
+        above the viewport. The session data stays intact, so a later full
+        rebuild restores full fidelity to anything frozen here.
+        """
+        freezable = [
+            child
+            for child in self.chat_container.children
+            if isinstance(child, ToolExecutionComponent) and child.is_freezable()
+        ]
+        for component in freezable[: max(0, len(freezable) - LIVE_TOOL_WINDOW)]:
+            component.freeze()
 
     def _render_streaming_message(self) -> None:
         """The throttle's body: redraw the in-flight message, segmented."""
@@ -619,18 +829,41 @@ class InteractiveMode:
         exactly where the TS reads it, and written onto the message so the
         component renders it — that line is the only thing on screen that says
         the Escape was heard.
+
+        This is also where the *unstarted* tool calls are settled. A message that
+        ended in an abort or an error has tool blocks on screen that will never
+        run, so they are failed with the same message; a message that ended
+        cleanly has blocks whose arguments are now final, which is what an edit's
+        renderer needs before it can compute a diff preview.
         """
         if self.streaming_component is None:
             return
         self.streaming_message = message
-        if getattr(message, "stop_reason", None) == "aborted":
+        error_message: str | None = None
+        stop_reason = getattr(message, "stop_reason", None)
+        if stop_reason == "aborted":
             retry_attempt = self.session.retry_attempt
-            message.error_message = (
+            error_message = (
                 f"Aborted after {retry_attempt} retry attempt{'s' if retry_attempt > 1 else ''}"
                 if retry_attempt > 0
                 else "Operation aborted"
             )
+            message.error_message = error_message
         self.streaming_component.update_content(message)
+
+        if stop_reason in ("aborted", "error"):
+            failure = error_message or str(getattr(message, "error_message", None) or "Error")
+            for component in self.pending_tools.values():
+                component.update_result(
+                    ToolExecutionResult(
+                        content=[TextContent(text=failure)], details=None, is_error=True
+                    )
+                )
+            self.pending_tools.clear()
+        else:
+            for component in self.pending_tools.values():
+                component.set_args_complete()
+
         self.streaming_component = None
         self.streaming_message = None
         self.footer.invalidate()

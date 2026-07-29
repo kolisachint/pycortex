@@ -1546,3 +1546,150 @@ scenarios, 36 + 258 tests across the two leaves.
 - 5.6's `publish = false` on `code/_meta` is still untouched, for the reason 7.1
   and 7.2 both gave: flipping it puts `cortexcode-code` on PyPI, which is a
   release decision.
+
+## 7.6 tool execution UI — DONE
+
+`pycortex` now shows what the agent *did*, not only what it said.
+`components/{tool-execution,diff,bash-execution}.ts` + `bash-execution-controller.ts`
+(1,002 lines, plus `visual-truncate.ts` and `keybinding-hints.ts` which the first
+two import) → `packages/code/interactive/`, with `core/bash-executor.ts` (159) and
+`AgentSession.executeBash`/`recordBashResult` → `packages/code/session/`: 4 e2e
+scenarios, 382 + 80 tests across the two leaves, 45/47 mutations caught.
+
+1. **The renderer seam is most of the component, and this port has almost none
+   of the renderers.** `ToolExecutionComponent` draws a status dot, an indent,
+   and whatever the tool's `renderCall`/`renderResult` returns. In the TS those
+   come from `createAllToolDefinitions(cwd)[name]` — every built-in tool ships a
+   pair. `code/tools` ported `core/tools/*.ts` at *execute* level only (its own
+   docstring says so), so there is nothing to resolve. Rather than deleting the
+   seam, `tool_renderers.py` is the Python spelling of it (`ToolRenderer`,
+   `ToolRenderContext`, `resolve_tool_renderer`'s field-by-field merge), and
+   `BUILT_IN_TOOL_RENDERERS` holds exactly one entry.
+2. **That one entry is `edit`, and it had to be.** `diff.ts` is in this step's
+   file list and its only caller in the TS is `edit.ts`'s renderers; "edits
+   render as diffs" is what the step promises, and `tools/diff-renders` cannot
+   pass without it. Everything else falls to `_format_tool_execution` — name,
+   arguments as JSON, text output — which is what the TS falls back to for a tool
+   nobody wrote a renderer for, and is exactly what `tools/execution-renders`
+   asks to see. **Porting the other renderers (`read`, `bash`, `grep`, `ls`,
+   `find`, `write`, `search`, `todo`, `subagent`: several thousand lines) is not
+   in 7.6's file list and is not done here.** See "deliberately not fixed".
+3. **`computeEditsDiff` is a promise there and a call here.** The TS's
+   `renderCall` fires the diff computation and repaints from a `.then` via
+   `context.invalidate()`. `cortex.code.tools.compute_edits_diff` is
+   synchronous, so the preview is computed inline — but the `preview_args_key`
+   guard is *not* decoration: without it every render re-reads the file off
+   disk, and the block re-renders on every delta. `test_the_preview_is_computed_
+   once_per_set_of_arguments` counts the reads.
+4. **The dot and the caret are built twice, and the first round of tests only
+   watched one.** `update_display` composes them for a block that has a
+   renderer; `_format_tool_execution` composes them again for one that does not.
+   Every display-level and status-dot test drove the fallback, so
+   `partial-result-settles-the-dot` and `peek-has-no-caret` both survived
+   mutation against the renderer path. `label_renderer()` and the four
+   `test_a_rendered_block_*` cases close it.
+5. **The three tool backgrounds are indistinguishable in 256 colours.**
+   `toolPendingBg`/`toolSuccessBg`/`toolErrorBg` are `#1a1a24`/`#1a241a`/`#241a1a`
+   and all quantise to index 16, so a test that reads the escape bytes cannot
+   tell a successful edit from a failed one — while a true-colour terminal can.
+   `header_bg()` records the theme *key* instead.
+6. **`renderResult` is handed `{content, details}`, not the block's result.**
+   The TS spreads `{...event.result, isError: event.isError}` into the component
+   and then passes only the first two fields down; `is_error` reaches a renderer
+   through the context. `ToolExecutionResult` is the stored form and
+   `result_payload()` is the passed one, and a test pins that `is_error` does not
+   leak through.
+7. **A tool block is created by `message_update`, not by `tool_execution_start`.**
+   The model names the tool while it is still streaming the arguments, which is
+   the whole reason the block can show them filling in. `tool_execution_start`
+   creates one only if it has not seen the call — a replay, or a background tool.
+   Mutating the "have I seen this id" check to `None` left `len(pending_tools)`
+   at 1 (it is keyed on the id) while the *log* grew a block per delta; the test
+   counts blocks in the chat container now, not entries in the map.
+8. **`message_end` settles the tools the turn is not going to run.** An aborted
+   or errored message fails every pending block with the same wording; a clean
+   one calls `set_args_complete()`, which is what unlocks the edit preview. Left
+   out, a block spins a yellow dot for the rest of the session over a tool that
+   will never run.
+9. **`hideComponent` is unreachable in the TS and stays unreachable here.**
+   Every branch of the call-renderer section sets `hasContent = true`, so a
+   renderer returning an empty container still leaves the dot on screen. Ported
+   as written; the test asserts the dot, not the disappearance.
+10. **`executeBash` had to come with the controller, or the controller was a
+    stub.** `AgentSession` had no bash surface at all, so
+    `bash_execution_controller.py` would have called into nothing.
+    `core/bash-executor.ts` → `session/bash_executor.py` plus `execute_bash` /
+    `record_bash_result` / `abort_bash` / the deferred-row queue. `BashOperations.
+    exec` blocks (it waits on a child), so it runs under `asyncio.to_thread` and
+    chunks come back through `loop.call_soon_threadsafe` — calling it inline
+    would freeze the UI for the length of the command and then paint all of its
+    output at once, which is the one thing a *streaming* executor must not do.
+    The `call_soon_threadsafe` is guarded: an app shut down mid-command closes
+    the loop while the child is still writing, and the reader thread has nobody
+    to raise at.
+11. **A `!command` is not a turn, and `is_busy()` had to learn that.** The
+    session is not streaming and nothing is pending on its way to the model, so
+    the first smoke run stopped pumping while the shell was still writing and
+    the screen showed a spinner over an empty block. `_bash_pending` is set when
+    the command is *scheduled* (not when it reaches `execute_bash`), for the
+    same reason `_turn_pending` exists.
+12. **`recordBashResult` defers while the agent streams.** Not tidiness:
+    a `bashExecution` row slipped between a tool call and its result makes the
+    next request to the provider malformed. Flushed at the top of the next
+    `prompt()`, as in the TS, and the components move from the pending area to
+    the chat on the next submit.
+13. **`diffWords` ignores whitespace; `diffWordsWithSpace` does not.** There is
+    no `diff` package here, so `_diff_words` is that shape over `difflib` with
+    whitespace tokens comparing equal to each other — which is what stops a
+    re-indent from lighting up a whole line. The leading-whitespace strip on the
+    first changed part is the other half: when the old line was indented and the
+    new one is not, the first *removed* part is pure whitespace, and inverting it
+    paints a block of background over an edit nobody made.
+14. **The ANSI regex needs OSC before the loose two-character escape.** `ESC ]`
+    matches `\x1b[@-Z\\-_]` too, and alternation is ordered, so a window-title
+    sequence left its payload (`0;title`) on screen until the terminated OSC form
+    was offered first. Both copies (the block's and the executor's) have it.
+15. MUTATION TESTING: 47 mutations across the diff, the block, the renderer
+    seam, the bash block, the controller, the executor and the app wiring; 35
+    caught on the first honest run. Ten of the twelve misses were real gaps and
+    are closed above (4, 5, 7, plus: the ANSI test asserted on text its own
+    `plain()` helper had already stripped; the spill test could not tell an
+    early temp file from a late one, so it now checks that `line-0` is in the
+    file and *not* in the returned tail; `record_bash_result` had no test at
+    all). 45/47.
+16. Two survivors are **equivalent**. `diff/whitespace-tokens-compare-by-value`:
+    with exact comparison the first changed part becomes the whitespace run,
+    which the leading-whitespace strip then removes — same bytes out.
+    `tool/frozen-block-keeps-rebuilding`: `render()` returns `_frozen_lines`
+    before reaching `super().render()`, so a rebuilt tree is never drawn; the
+    guard is there to keep `_release_heavy_state()` from being undone, which is a
+    memory property and not a visible one.
+
+### Found here, deliberately not fixed
+
+- **The other built-in tool renderers.** `read`, `bash`, `grep`, `ls`, `find`,
+  `write`, `search`, `todo` and `subagent` each carry a `renderCall`/`renderResult`
+  in `core/tools/*.ts`; none is ported. Consequences: a `bash` tool call shows its
+  output as plain text rather than the shell-styled block, and **nothing
+  truncates a long result**, so the `standard` display level's "expand a
+  truncated preview" half of Ctrl+O has nothing to expand. The key still works —
+  `tools/output-expand` drives it against a `peek` block, where the reveal is
+  visible — and `set_expanded` reaches every block, so the day a truncating
+  renderer lands it needs no wiring. Adding them is a step, not a footnote.
+- **`maybeConvertImagesForKitty`.** `utils/image-convert.ts` is not ported, so a
+  non-PNG image result under the kitty protocol is skipped rather than converted.
+  The skip is the TS's own guard; the conversion that would rescue it is absent.
+- **`session.getToolDefinition`.** `resolve_tool_renderer` asks for it and
+  handles its absence, but `AgentSession` has no tool registry — that is the
+  extension runner's, and `code/extensions` has not ported it. An extension
+  cannot register a renderer yet; the seam it will arrive through is here.
+- **`extensionRunner.emitUserBash`.** The controller's first branch in the TS
+  lets an extension answer a `!command` itself (a remote shell, a sandbox). Same
+  reason: no runner. The normal path is what runs.
+- **`ToolExecutionComponent.freeze` is wired but nothing shrinks the tree.**
+  `trim_transcript_memory` runs on tool completion and freezes past
+  `LIVE_TOOL_WINDOW`, which is the TS's; the TS also drops frozen components
+  from the container on a theme rebuild, which is 7.9's.
+- 5.6's `publish = false` on `code/_meta` is still untouched, for the reason 7.1,
+  7.2 and 7.5 all gave: flipping it puts `cortexcode-code` on PyPI, which is a
+  release decision.

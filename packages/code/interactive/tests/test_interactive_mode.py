@@ -22,6 +22,7 @@ from cortex.code.interactive import (
     build_app_root,
     format_display_path,
 )
+from cortex.code.interactive.components import ToolExecutionComponent
 from cortex.code.interactive.theme import get_markdown_theme
 from cortex.tui.keys import set_keybindings
 from cortex.tui.render import TUI
@@ -845,3 +846,344 @@ class TestEscape:
             await turn
         finally:
             registration.unregister()
+
+
+def _tool_call_message(
+    name: str = "grep", args: dict[str, object] | None = None, call_id: str = "call-1"
+):
+    from cortex.ai.providers.faux import faux_assistant_message, faux_tool_call
+
+    return faux_assistant_message(
+        faux_tool_call(name, args if args is not None else {"pattern": "needle"}, {"id": call_id})
+    )
+
+
+def _tool_blocks(app: InteractiveMode) -> list[ToolExecutionComponent]:
+    """The tool blocks in the chat log, in order."""
+    return [c for c in app.chat_container.children if isinstance(c, ToolExecutionComponent)]
+
+
+def _tool_result(text: str):
+    from cortex.agent.types import AgentToolResult
+    from cortex.ai.types import TextContent
+
+    return AgentToolResult(content=[TextContent(text=text)], details=None)
+
+
+class TestToolBlocks:
+    """The `tool_execution_*` branches, and the tool calls inside a message."""
+
+    def test_a_streamed_tool_call_creates_its_block(self):
+        app = _app()
+        message = _tool_call_message()
+        app.handle_session_event({"type": "message_start", "message": message})
+        app.handle_session_event({"type": "message_update", "message": message})
+        assert list(app.pending_tools) == ["call-1"]
+        assert "grep" in _chat_text(app)
+
+    def test_a_second_update_does_not_create_a_second_block(self):
+        app = _app()
+        message = _tool_call_message()
+        app.handle_session_event({"type": "message_start", "message": message})
+        app.handle_session_event({"type": "message_update", "message": message})
+        app.handle_session_event({"type": "message_update", "message": message})
+        assert len(app.pending_tools) == 1
+        # The map would still hold one — it is keyed on the call id — while the
+        # log grew a block per delta. The chat log is where this shows.
+        assert len(_tool_blocks(app)) == 1
+
+    def test_a_later_update_refreshes_the_arguments(self):
+        app = _app()
+        app.handle_session_event({"type": "message_start", "message": _tool_call_message()})
+        app.handle_session_event(
+            {"type": "message_update", "message": _tool_call_message(args={"pattern": "a"})}
+        )
+        app.handle_session_event(
+            {"type": "message_update", "message": _tool_call_message(args={"pattern": "abc"})}
+        )
+        assert '"pattern": "abc"' in _chat_text(app)
+
+    def test_an_execution_start_with_no_block_yet_creates_one(self):
+        """A tool the app never saw streamed — a replay, or a background call."""
+        app = _app()
+        app.handle_session_event(
+            {
+                "type": "tool_execution_start",
+                "tool_call_id": "call-9",
+                "tool_name": "read",
+                "args": {"path": "x.py"},
+            }
+        )
+        assert list(app.pending_tools) == ["call-9"]
+        assert "read" in _chat_text(app)
+
+    def test_a_partial_result_shows_while_the_tool_runs(self):
+        app = _app()
+        app.handle_session_event(
+            {"type": "tool_execution_start", "tool_call_id": "c", "tool_name": "bash", "args": {}}
+        )
+        app.handle_session_event(
+            {
+                "type": "tool_execution_update",
+                "tool_call_id": "c",
+                "partial_result": _tool_result("half the output"),
+            }
+        )
+        assert "half the output" in _chat_text(app)
+        assert app.pending_tools["c"].is_partial, "a partial result settled the block"
+
+    def test_the_end_settles_the_block_and_forgets_it(self):
+        app = _app()
+        app.handle_session_event(
+            {"type": "tool_execution_start", "tool_call_id": "c", "tool_name": "bash", "args": {}}
+        )
+        app.handle_session_event(
+            {
+                "type": "tool_execution_end",
+                "tool_call_id": "c",
+                "result": _tool_result("all the output"),
+                "is_error": False,
+            }
+        )
+        assert app.pending_tools == {}
+        assert "all the output" in _chat_text(app)
+
+    def test_an_end_for_an_unknown_call_is_ignored(self):
+        app = _app()
+        app.handle_session_event(
+            {
+                "type": "tool_execution_end",
+                "tool_call_id": "nobody",
+                "result": _tool_result("x"),
+                "is_error": False,
+            }
+        )
+        assert app.chat_container.children == []
+
+    def test_a_finished_message_completes_the_arguments(self):
+        app = _app()
+        message = _tool_call_message()
+        app.handle_session_event({"type": "message_start", "message": message})
+        app.handle_session_event({"type": "message_update", "message": message})
+        block = app.pending_tools["call-1"]
+        assert not block.args_complete
+        app.handle_session_event({"type": "message_end", "message": message})
+        assert block.args_complete, "the block never learned its arguments were final"
+
+    def test_an_aborted_message_fails_the_tools_it_never_ran(self):
+        from cortex.ai.providers.faux import faux_assistant_message, faux_tool_call
+
+        app = _app()
+        message = _tool_call_message()
+        app.handle_session_event({"type": "message_start", "message": message})
+        app.handle_session_event({"type": "message_update", "message": message})
+        aborted = faux_assistant_message(
+            faux_tool_call("grep", {"pattern": "needle"}, {"id": "call-1"}),
+            stop_reason="aborted",
+        )
+        app.handle_session_event({"type": "message_end", "message": aborted})
+        # Left pending, the block would spin a yellow dot for the rest of the
+        # session over a tool that is never going to run.
+        assert app.pending_tools == {}
+        assert "Operation aborted" in _chat_text(app)
+
+    def test_agent_end_drops_any_block_still_pending(self):
+        app = _app()
+        app.handle_session_event(
+            {"type": "tool_execution_start", "tool_call_id": "c", "tool_name": "bash", "args": {}}
+        )
+        app.handle_session_event({"type": "agent_end"})
+        assert app.pending_tools == {}
+
+    def test_blocks_are_created_at_the_current_expansion(self):
+        app = _app()
+        app.set_tools_expanded(True)
+        app.handle_session_event(
+            {"type": "tool_execution_start", "tool_call_id": "c", "tool_name": "bash", "args": {}}
+        )
+        assert app.pending_tools["c"].expanded
+
+    def test_the_display_level_comes_from_settings(self):
+        settings = _settings()
+        settings.set_tool_output_display("peek")
+        app = _app(settings=settings)
+        app.handle_session_event(
+            {"type": "tool_execution_start", "tool_call_id": "c", "tool_name": "bash", "args": {}}
+        )
+        assert app.pending_tools["c"].display_level == "peek"
+
+    def test_old_finished_blocks_are_frozen(self):
+        from cortex.code.interactive.interactive_mode import LIVE_TOOL_WINDOW
+
+        app = _app()
+        for index in range(LIVE_TOOL_WINDOW + 3):
+            call_id = f"c{index}"
+            app.handle_session_event(
+                {
+                    "type": "tool_execution_start",
+                    "tool_call_id": call_id,
+                    "tool_name": "bash",
+                    "args": {},
+                }
+            )
+            app.handle_session_event(
+                {
+                    "type": "tool_execution_end",
+                    "tool_call_id": call_id,
+                    "result": _tool_result(f"output {index}"),
+                    "is_error": False,
+                }
+            )
+        blocks = _tool_blocks(app)
+        # The oldest three are past the window; everything nearer the viewport
+        # is untouched, which is the whole point of the window being generous.
+        assert not blocks[0].is_freezable(), "the oldest block was not frozen"
+        assert blocks[-1].is_freezable(), "a block near the viewport was frozen"
+
+
+class TestToolExpansion:
+    def test_ctrl_o_toggles_the_setting(self):
+        app = _app()
+        assert not app.tool_output_expanded
+        app.toggle_tool_output_expansion()
+        assert app.tool_output_expanded
+        app.toggle_tool_output_expansion()
+        assert not app.tool_output_expanded
+
+    def test_the_key_is_wired_to_the_editor(self):
+        app = _app()
+        assert "app.tools.expand" in app.editor.action_handlers
+
+    def test_ctrl_o_reaches_the_handler_through_the_editor(self):
+        terminal = FakeTerminal()
+        app = _app(terminal)
+        app.ui.start()
+        terminal.send_input("\x0f")
+        assert app.tool_output_expanded, "ctrl+o did not reach the app"
+        app.stop()
+
+    def test_expanding_reaches_every_block_in_the_log(self):
+        app = _app()
+        for call_id in ("a", "b"):
+            app.handle_session_event(
+                {
+                    "type": "tool_execution_start",
+                    "tool_call_id": call_id,
+                    "tool_name": "bash",
+                    "args": {},
+                }
+            )
+        blocks = _tool_blocks(app)
+        app.set_tools_expanded(True)
+        assert all(block.expanded for block in blocks)
+
+    def test_expanding_reaches_parked_bash_blocks_too(self):
+        from cortex.code.interactive.components import BashExecutionComponent
+
+        app = _app()
+        block = BashExecutionComponent("sleep 1", app.ui)
+        app.pending_messages_container.add_child(block)
+        app.set_tools_expanded(True)
+        assert block.expanded
+        block.set_complete(0, False)
+
+
+class TestBashMode:
+    def test_a_bang_prefix_runs_a_command_instead_of_prompting(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        app = _app()
+        ran: list[tuple[str, bool]] = []
+        monkeypatch.setattr(
+            app,
+            "run_bash_command",
+            lambda command, exclude: ran.append((command, exclude)),  # pyright: ignore[reportUnknownLambdaType]
+        )
+        served: list[str] = []
+        app._on_input_callback = served.append  # pyright: ignore[reportPrivateUsage]
+
+        app.handle_submit("!ls -la")
+
+        assert ran == [("ls -la", False)]
+        assert served == [], "the command was sent to the model as well"
+
+    def test_a_double_bang_excludes_the_output_from_context(self, monkeypatch: pytest.MonkeyPatch):
+        app = _app()
+        ran: list[tuple[str, bool]] = []
+        monkeypatch.setattr(
+            app,
+            "run_bash_command",
+            lambda command, exclude: ran.append((command, exclude)),  # pyright: ignore[reportUnknownLambdaType]
+        )
+        app.handle_submit("!!git log")
+        assert ran == [("git log", True)]
+
+    def test_a_bare_bang_runs_nothing(self, monkeypatch: pytest.MonkeyPatch):
+        app = _app()
+        ran: list[object] = []
+        monkeypatch.setattr(app, "run_bash_command", lambda *args: ran.append(args))  # pyright: ignore[reportUnknownLambdaType]
+        app.handle_submit("!")
+        assert ran == []
+
+    def test_the_command_is_remembered_and_the_editor_cleared(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        app = _app()
+        monkeypatch.setattr(app, "run_bash_command", lambda *args: None)  # pyright: ignore[reportUnknownLambdaType]
+        app.editor.set_text("!ls")
+        app.handle_submit("!ls")
+        assert app.editor.get_text() == ""
+        app.editor.handle_input("\x1b[A")  # up: history recall
+        assert app.editor.get_text() == "!ls"
+
+    def test_submitting_flushes_blocks_parked_during_the_last_turn(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        from cortex.code.interactive.components import BashExecutionComponent
+
+        app = _app()
+        block = BashExecutionComponent("sleep 1", app.ui)
+        app.pending_messages_container.add_child(block)
+        app.bash_execution.pending_bash_components.append(block)
+        app._on_input_callback = lambda _text: None  # pyright: ignore[reportPrivateUsage]
+
+        app.handle_submit("what next?")
+
+        assert block in app.chat_container.children
+        assert not app.pending_messages_container.children
+        block.set_complete(0, False)
+
+    async def test_a_bash_command_runs_and_lands_in_the_log(self):
+        """The whole `!` path against a fake shell — the wiring, end to end."""
+        app = _app()
+
+        class Ops:
+            def exec(self, command: str, cwd: str, *, on_data: object, **_: object) -> object:
+                on_data(b"from the shell\n")  # type: ignore[operator]
+
+                class Result:
+                    exit_code = 0
+
+                return Result()
+
+        async def execute_bash(
+            command: str, on_chunk: Callable[[str], None] | None = None, **kwargs: object
+        ):
+            from cortex.code.session.bash_executor import execute_bash_with_operations
+
+            return await execute_bash_with_operations(
+                command, "/w/project", Ops(), on_chunk=on_chunk
+            )
+
+        app.session.execute_bash = execute_bash  # type: ignore[method-assign]
+
+        app.handle_submit("!echo hi")
+        # The app has to look busy from the moment the command is scheduled, or
+        # a driver that pumps once and asks would stop before it started.
+        assert app.is_busy(), "a scheduled bash command left the app looking idle"
+        assert app._bash_task is not None  # pyright: ignore[reportPrivateUsage]
+        await app._bash_task  # pyright: ignore[reportPrivateUsage]
+
+        assert "from the shell" in _chat_text(app)
+        assert "$ echo hi" in _chat_text(app)
+        assert not app.is_busy()

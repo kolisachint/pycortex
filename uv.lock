@@ -434,9 +434,12 @@ name = "cortexcode-cli-interactive"
 version = "0.0.1"
 source = { editable = "packages/code/interactive" }
 dependencies = [
+    { name = "cortexcode-ai-types" },
     { name = "cortexcode-cli-config" },
     { name = "cortexcode-cli-session" },
+    { name = "cortexcode-cli-tools" },
     { name = "cortexcode-tui-components" },
+    { name = "cortexcode-tui-images" },
     { name = "cortexcode-tui-keys" },
     { name = "cortexcode-tui-render" },
     { name = "cortexcode-tui-terminal" },
@@ -445,9 +448,12 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cortexcode-ai-types", editable = "packages/ai/types" },
     { name = "cortexcode-cli-config", editable = "packages/code/config" },
     { name = "cortexcode-cli-session", editable = "packages/code/session" },
+    { name = "cortexcode-cli-tools", editable = "packages/code/tools" },
     { name = "cortexcode-tui-components", editable = "packages/tui/components" },
+    { name = "cortexcode-tui-images", editable = "packages/tui/images" },
     { name = "cortexcode-tui-keys", editable = "packages/tui/keys" },
     { name = "cortexcode-tui-render", editable = "packages/tui/render" },
     { name = "cortexcode-tui-terminal", editable = "packages/tui/terminal" },
@@ -497,6 +503,7 @@ dependencies = [
     { name = "cortexcode-agent-agent" },
     { name = "cortexcode-ai-types" },
     { name = "cortexcode-cli-config" },
+    { name = "cortexcode-cli-tools" },
 ]
 
 [package.metadata]
@@ -504,6 +511,7 @@ requires-dist = [
     { name = "cortexcode-agent-agent", editable = "packages/agent/agent" },
     { name = "cortexcode-ai-types", editable = "packages/ai/types" },
     { name = "cortexcode-cli-config", editable = "packages/code/config" },
+    { name = "cortexcode-cli-tools", editable = "packages/code/tools" },
 ]
 
 [[package]]

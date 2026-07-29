@@ -229,6 +229,9 @@ class Theme:
     def underline(self, text: str) -> str:
         return f"\x1b[4m{text}\x1b[24m"
 
+    def inverse(self, text: str) -> str:
+        return f"\x1b[7m{text}\x1b[27m"
+
 
 @dataclass(frozen=True)
 class _ThemeJson:
