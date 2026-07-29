@@ -1,10 +1,13 @@
 {
-  "generated_from": "3d18d79",
+  "generated_from": "643b1d9",
   "note": "Written by scripts/tui_e2e.py. Consumed by scripts/migrate_next.py --status. A Phase 7 step cannot be ticked while it still owns unmet scenarios.",
   "passing": [
     "chat/abort-turn",
     "chat/assistant-round-trip",
     "chat/error-surface",
+    "chat/loader-while-busy",
+    "chat/markdown-rendering",
+    "chat/streaming-incremental",
     "chat/user-message-renders",
     "harness/receives-input",
     "harness/renders-a-frame",
@@ -30,24 +33,6 @@
       "status": "pending",
       "blocked_by": "7.11",
       "title": "A missing API key explains itself instead of crashing"
-    },
-    {
-      "id": "chat/loader-while-busy",
-      "status": "pending",
-      "blocked_by": "7.5",
-      "title": "A loader runs during the turn and clears after"
-    },
-    {
-      "id": "chat/markdown-rendering",
-      "status": "pending",
-      "blocked_by": "7.5",
-      "title": "Assistant markdown renders styled, not raw"
-    },
-    {
-      "id": "chat/streaming-incremental",
-      "status": "pending",
-      "blocked_by": "7.5",
-      "title": "Assistant text appears progressively while streaming"
     },
     {
       "id": "commands/clear",

@@ -35,11 +35,12 @@ Step 7.4 closed the loop it was all pointing at: submissions now go to an
   progress indicator over the turn;
 * Escape aborts an in-flight turn.
 
-The assistant message is the honest shortfall: the TS renders it into an
-``AssistantMessageComponent`` that grows as the deltas arrive, and that component
-is step **7.5** along with the loader and the markdown styling. Until then a
-finished turn appends its text — or its error — as a plain line, so the round
-trip is visible without pretending the streaming UI exists.
+Step 7.5 made the turn something you watch rather than wait for. The assistant
+message is built on ``message_start`` and fed the growing message on every
+``message_update``, through a 100 ms leading+trailing throttle (:func:`_throttled`,
+the TS's), so markdown renders styled as it arrives instead of appearing whole at
+the end; a :class:`~cortex.tui.components.Loader` runs in the status container for
+as long as the agent is working.
 
 Shutdown is a callback, not ``process.exit``. The TS exits the process from
 inside ``shutdown()``; doing that here would make the exit path the one thing the
@@ -59,13 +60,14 @@ from pathlib import Path
 from typing import Any, Protocol, cast
 
 from cortex.code.config import APP_NAME, APP_TITLE, VERSION, SettingsManager
+from cortex.code.interactive.components.assistant_message import AssistantMessageComponent
 from cortex.code.interactive.components.custom_editor import CustomEditor
 from cortex.code.interactive.components.footer import FooterComponent, FooterState
 from cortex.code.interactive.components.user_message import UserMessageComponent
 from cortex.code.interactive.keybindings import KeybindingsManager
 from cortex.code.interactive.theme import get_editor_theme, get_markdown_theme, get_theme
 from cortex.code.interactive.wordmark import CompactWordmarkOptions, build_compact_wordmark
-from cortex.tui.components import EditorOptions, MarkdownTheme, Spacer, Text
+from cortex.tui.components import EditorOptions, Loader, MarkdownTheme, Spacer, Text
 from cortex.tui.keys import set_keybindings
 from cortex.tui.render import TUI, Container
 from cortex.tui.terminal import ProcessTerminal
@@ -81,6 +83,47 @@ __all__ = [
 #: Two Ctrl+C presses closer together than this exit; further apart, the second
 #: is treated as another "clear the editor".
 SIGINT_EXIT_WINDOW_MS = 500
+
+#: How often the streaming assistant message re-parses its markdown. Deltas
+#: arrive far faster than this, and every application re-lexes the growing tail
+#: block, so applying one per delta makes streaming cost O(message²).
+STREAM_RENDER_THROTTLE_MS = 100
+
+
+def _throttled(ms: int, fn: Callable[[], None]) -> Callable[[], None]:
+    """Leading+trailing throttle. Port of the TS's ``throttled``.
+
+    The first call runs immediately, calls landing inside the window coalesce
+    into one trailing run with the latest state. Without a running loop there is
+    no window to coalesce into and every call runs — which is right for a
+    synchronous driver, and is what makes the throttle invisible to a test that
+    is not asserting on it.
+    """
+    timer: list[Any] = [None]
+    pending = [False]
+
+    def run() -> None:
+        fn()
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+
+        def expire() -> None:
+            timer[0] = None
+            if pending[0]:
+                pending[0] = False
+                run()
+
+        timer[0] = loop.call_later(ms / 1000, expire)
+
+    def schedule() -> None:
+        if timer[0] is not None:
+            pending[0] = True
+            return
+        run()
+
+    return schedule
 
 
 class AppTerminal(Protocol):
@@ -261,6 +304,20 @@ class InteractiveMode:
         #: yet but the app is anything but idle, which is the difference a test
         #: driving the app one keystroke at a time has to be able to see.
         self._turn_pending = False
+
+        # Streaming state (7.5): the component the deltas are drawn into, the
+        # message they carry, and the loader that says the agent is working.
+        self.streaming_component: AssistantMessageComponent | None = None
+        self.streaming_message: Any | None = None
+        self.loading_animation: Loader | None = None
+        self.working_visible = True
+        self.working_message: str | None = None
+        self.default_working_message = "Working..."
+        self.hide_thinking_block = False
+        self.hidden_thinking_label = "Thinking..."
+        self.schedule_streaming_render = _throttled(
+            STREAM_RENDER_THROTTLE_MS, self._render_streaming_message
+        )
 
     @property
     def terminal(self) -> AppTerminal:
@@ -493,61 +550,128 @@ class InteractiveMode:
         """Draw what the session reports. Port of ``handleSessionEvent``.
 
         The TS switch has twenty-odd cases. The ones with something to drive here
-        are the turn's start and end (the terminal progress indicator), and the
-        messages themselves. Tool execution (7.6), the queue display (7.7),
-        compaction and auto-retry (their controllers are unwired) are the rest,
-        and each arrives with the component that shows it.
+        are the turn's start and end (the loader and the terminal progress
+        indicator), and the messages themselves. Tool execution (7.6), the queue
+        display (7.7), compaction and auto-retry (their controllers are unwired)
+        are the rest, and each arrives with the component that shows it.
         """
         event_type = event.get("type")
 
         if event_type == "agent_start":
             if self.settings_manager.get_show_terminal_progress():
                 self.terminal.set_progress(True)
+            self.stop_working_loader()
+            if self.working_visible:
+                self.loading_animation = self.create_working_loader()
+                self.status_container.add_child(self.loading_animation)
             self.ui.request_render()
         elif event_type == "agent_end":
             if self.settings_manager.get_show_terminal_progress():
                 self.terminal.set_progress(False)
+            self.stop_working_loader()
+            # A turn that produced nothing leaves an empty component behind; the
+            # TS drops it rather than leaving a blank hole in the log.
+            if self.streaming_component is not None:
+                self.chat_container.remove_child(self.streaming_component)
+                self.streaming_component = None
+                self.streaming_message = None
             self.ui.request_render()
         elif event_type == "message_start":
             message = event.get("message")
-            if _role_of(message) == "user":
+            role = _role_of(message)
+            if role == "user":
                 self.render_user_message(_message_text(message))
+            elif role == "assistant":
+                self.streaming_component = AssistantMessageComponent(
+                    None,
+                    self.hide_thinking_block,
+                    self.get_markdown_theme_with_settings(),
+                    self.hidden_thinking_label,
+                )
+                self.streaming_message = message
+                self.chat_container.add_child(self.streaming_component)
+                self.streaming_component.update_content(cast(Any, message))
+                self.ui.request_render()
+        elif event_type == "message_update":
+            message = event.get("message")
+            if self.streaming_component is not None and _role_of(message) == "assistant":
+                self.streaming_message = message
+                self.schedule_streaming_render()
+                self.ui.request_render()
         elif event_type == "message_end":
             message = event.get("message")
             if _role_of(message) == "assistant":
-                self.render_assistant_message(message)
+                self.finish_assistant_message(message)
 
-    def render_assistant_message(self, message: Any) -> None:
-        """Append a finished assistant message to the chat log.
+    def _render_streaming_message(self) -> None:
+        """The throttle's body: redraw the in-flight message, segmented."""
+        if self.streaming_component is None or self.streaming_message is None:
+            return
+        # streaming=True: large blocks render segmented so only the tail chunk
+        # re-parses; `message_end` renders the canonical form directly.
+        self.streaming_component.update_content(self.streaming_message, True)
+        self.ui.request_render()
 
-        **This is 7.5's component, drawn flat.** The TS builds an
-        ``AssistantMessageComponent`` on ``message_start`` and feeds it every
-        delta; what a user sees at the end of a turn is the same text, so the
-        text is what lands here until that component is ported. The error and
-        aborted branches are the TS's, including the wording it puts on an
-        aborted turn — which is the only thing on screen that says the Escape
-        was heard.
+    def finish_assistant_message(self, message: Any) -> None:
+        """Draw the finished assistant message. The ``message_end`` branch.
+
+        The aborted wording is the TS's, read off ``session.retry_attempt``
+        exactly where the TS reads it, and written onto the message so the
+        component renders it — that line is the only thing on screen that says
+        the Escape was heard.
         """
-        stop_reason = getattr(message, "stop_reason", None)
-        error_message: str | None = None
-        if stop_reason == "aborted":
+        if self.streaming_component is None:
+            return
+        self.streaming_message = message
+        if getattr(message, "stop_reason", None) == "aborted":
             retry_attempt = self.session.retry_attempt
-            error_message = (
+            message.error_message = (
                 f"Aborted after {retry_attempt} retry attempt{'s' if retry_attempt > 1 else ''}"
                 if retry_attempt > 0
                 else "Operation aborted"
             )
-        elif stop_reason == "error":
-            error_message = getattr(message, "error_message", None) or "Error"
+        self.streaming_component.update_content(message)
+        self.streaming_component = None
+        self.streaming_message = None
+        self.footer.invalidate()
+        self.ui.request_render()
 
-        text = _message_text(message)
-        if self.chat_container.children:
-            self.chat_container.add_child(Spacer(1))
+    # ------------------------------------------------------------------
+    # The working loader
+    # ------------------------------------------------------------------
+
+    def get_working_loader_message(self) -> str:
+        return (
+            self.working_message
+            if self.working_message is not None
+            else (self.default_working_message)
+        )
+
+    def create_working_loader(self) -> Loader:
         theme = get_theme()
-        if text:
-            self.chat_container.add_child(Text(text, 0, 0))
-        if error_message is not None:
-            self.chat_container.add_child(Text(theme.fg("error", error_message), 0, 0))
+        return Loader(
+            self.ui,
+            lambda text: theme.fg("accent", text),
+            lambda text: theme.fg("muted", text),
+            self.get_working_loader_message(),
+        )
+
+    def stop_working_loader(self) -> None:
+        if self.loading_animation is not None:
+            self.loading_animation.stop()
+            self.loading_animation = None
+        self.status_container.clear()
+
+    def set_working_visible(self, visible: bool) -> None:
+        self.working_visible = visible
+        if not visible:
+            self.stop_working_loader()
+            self.ui.request_render()
+            return
+        if self.session.is_streaming and self.loading_animation is None:
+            self.status_container.clear()
+            self.loading_animation = self.create_working_loader()
+            self.status_container.add_child(self.loading_animation)
         self.ui.request_render()
 
     def render_user_message(self, text: str) -> None:
@@ -585,6 +709,9 @@ class InteractiveMode:
     def stop(self) -> None:
         """Tear the app down and hand the terminal back."""
         self.footer.dispose()
+        # The loader animates off a repeating timer; leaving it running holds a
+        # callback on the event loop after the TUI has let go of the terminal.
+        self.stop_working_loader()
         if self._unsubscribe_session is not None:
             self._unsubscribe_session()
             self._unsubscribe_session = None

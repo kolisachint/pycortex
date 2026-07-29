@@ -1414,10 +1414,135 @@ Escape aborts and says so; a provider error renders instead of crashing.
   Python.
 - **`_execute_tool_calls` raises**, so a model that asks for a tool ends the turn
   with an error naming step 7.5. No tools are registered yet, so nothing can
-  reach it in a normal run.
+  reach it in a normal run. *(Closed by 7.5.)*
 - **`agent/loop` has no `BackgroundTaskManager`**, so the inner loop's condition
   is `has_more_tool_calls or pending_messages` rather than the TS's three-way
-  test. Background tools arrive with tool execution (7.5).
+  test. Background tools arrive with tool execution (7.5). *(Closed by 7.5.)*
+- 5.6's `publish = false` on `code/_meta` is still untouched, for the reason 7.1
+  and 7.2 both gave: flipping it puts `cortexcode-code` on PyPI, which is a
+  release decision.
+
+## 7.5 streaming turns — DONE
+
+`pycortex` now answers a word at a time. `components/assistant-message.ts` (286)
+→ `packages/code/interactive/components/assistant_message.py` (~300) wired into
+`interactive-mode.ts`'s `message_start`/`message_update`/`message_end` branches
+and its working loader, plus the whole of `executeToolCalls` and everything under
+it (`agent-loop.ts` 410–1027, ~600 lines) → `packages/agent/loop`: 3 e2e
+scenarios, 36 + 258 tests across the two leaves.
+
+1. **The step is two halves that never meet, and only one of them is on screen.**
+   The plan pairs them because the TS file pairs them: `message_update` carries a
+   partial assistant message *and* the tool calls being streamed into it. The
+   tool half has no UI until 7.6, so what 7.5 delivers visibly is the streaming
+   text; what it delivers underneath is a loop that can run a tool at all.
+   `_execute_tool_calls` no longer raises, so `TestToolCalls` went from "assert
+   the stub names the step" to fourteen tests that run tools.
+2. **`AgentToolCall` was aliased to `Tool`, which is the wrong type.** The TS
+   spells it `Extract<AssistantMessage["content"][number], {type:"toolCall"}>` —
+   the *call* (`id`, `arguments`), not the *definition* (`description`,
+   `parameters`). Nothing outside `agent/types` referenced it, so nothing had
+   noticed; it is `ToolCall` now, and every signature in the tool-execution port
+   depends on that being right.
+3. **Background tools are the reason `runLoop`'s condition is three-way.** With
+   `has_more_tool_calls or pending_messages`, a turn that dispatched a background
+   tool exits before the tool finishes and its result is never delivered. The
+   port now has `_BackgroundTaskManager` (`pending_count`/`spawn`/`drain_results`/
+   `wait_for_next`) and the `await background.wait_for_next()` branch that parks
+   the loop instead of spinning an empty turn.
+   - `wait_for_next` returning early does not fail a test — it **hangs** the
+     loop, which is why the mutation runner needs `subprocess.run(timeout=)`.
+     It cost a mutated module left on disk: `pkill` sends SIGTERM, `finally` does
+     not run, and the next green pytest was lying. The runner restores the file
+     on `BaseException` now, and 1.12's `> file, never | head` rule was not
+     enough on its own.
+4. **`emit` for a streaming tool must start when the tool calls back, not when
+   it returns.** The TS pushes each `emit(...)` *promise* onto a list and awaits
+   them all afterwards; a Python `self._emit(...)` coroutine that is stored and
+   awaited later does not run until then, which would batch a bash tool's whole
+   output into one update at the end. `asyncio.ensure_future` is the faithful
+   spelling — the emit starts on the next pass, the handles are awaited before
+   `_execute_prepared_tool_call` returns.
+5. **Two orders in one function, both deliberate.** `executeToolCallsParallel`
+   emits `tool_execution_end` in *completion* order (the UI wants to strike each
+   tool off as it lands) and the tool-result messages in assistant *source*
+   order (the transcript must answer each call in place).
+   `test_parallel_calls_end_in_completion_order_and_answer_in_source_order`
+   gates two tools against each other so the two orders are provably different.
+6. **The streaming redraw is throttled, and the throttle is visible from the
+   corpus.** `STREAM_RENDER_THROTTLE_MS = 100`, leading+trailing, ported as
+   `_throttled`. `text_start` spends the leading edge, so the first *delta* lands
+   inside the window and its redraw is the trailing run — a scenario that only
+   pumps ready callbacks never sees it, because pumping does not advance time.
+   `chat/streaming-incremental` therefore calls `h.settle(timeout=0.25)` while
+   the stream is gated open. Without the throttle (mutation:
+   `throttle-has-no-leading-edge`) the first delta never draws at all.
+7. **A scenario about the middle of a turn needs to own the middle.**
+   `faux_session(stream_fn=…)` replaces the byte source and nothing else — real
+   model, real preflight, real loop — and `gated_text_stream` emits `start`,
+   `text_start`, one delta, then waits on an `asyncio.Event` the scenario holds.
+   The faux provider streams whole responses on its own schedule, which is right
+   for 7.4's round trip and useless for "is half of it on screen".
+   The negative half of that scenario is load-bearing: without
+   `assert_hides("wrote the first algorithm")` it would pass against an app that
+   draws nothing until `message_end`.
+8. **`message_end` is the end of something that started.** It draws nothing on
+   its own — the component is built by `message_start` — so the 7.4-era unit
+   tests that sent only a `message_end` were testing a path the session never
+   takes. `_assistant_turn()` sends both, and a test now pins that an orphan
+   `message_end` draws nothing (the TS's `if (this.streamingComponent)` guard,
+   which stops a replayed message appearing twice).
+9. **The aborted wording moved into the message.** `finish_assistant_message`
+   writes `error_message` onto the message and lets the component render it,
+   as the TS does. The component's own default ("Operation aborted") covers the
+   common case, so the app-level branch is only reachable when
+   `session.retry_attempt > 0` — always 0 until the retry controller is wired,
+   which is why the mutation survived until a test faked the property.
+10. **No spacer before an assistant message.** `AssistantMessageComponent` opens
+    with a `Spacer(1)` of its own when it has anything to show, which is why the
+    TS's `addMessageToChat` adds one for a user message and not for this one.
+    Getting this wrong is a blank line per turn, forever.
+11. The TS's aborted branch is `if (hasVisibleContent) { addChild(new Spacer(1)) }
+    else { addChild(new Spacer(1)) }` — two identical arms. Collapsed to one.
+12. MUTATION TESTING: 45 mutations across tool execution, the background
+    manager, the component, the segmenter and the wiring; 38 caught on the first
+    honest run. Six of the seven misses were real gaps and are closed by
+    *discriminating* cases: a throwing `background` predicate (must fall back to
+    foreground), `create_background_placeholder`, a background tool that
+    **fails** (the follow-up header says "failed"), an `after_tool_call` that
+    throws, the retry wording above, and argument validation — that last one
+    needed two changes, since `{}` is falsy (so a "skip validation" mutant still
+    validated it) and a tool handed the wrong keys throws anyway (so `is_error`
+    proves nothing): the case now passes `{"valeu": "typo"}` and asserts the
+    message says `Validation failed for tool "echo"`. 44/45.
+13. One mutant stays uncaught and is **equivalent**: dropping the
+    `len(finalized_calls) > 0` guard in `_should_terminate_tool_batch` (so an
+    empty batch would "all" terminate). Both call sites are entered only with a
+    non-empty foreground partition and append one outcome per call, so the
+    function is never called with an empty list. The guard is the TS's, and
+    defensive in both.
+14. **pty smoke run**: boot the `pycortex` console script under `pty.openpty()`,
+    type, Enter, Ctrl+D — banner, echo, the turn answered on screen, `CSI ?25h`
+    / `CSI ?2004l`, exit 0. It cannot reach the new code: with no provider
+    configured the preflight refuses the turn before `agent_start`, so neither
+    the loader nor a delta is involved. The loader and the throttle *are*
+    exercised on a real event loop with real timers — by the corpus, whose
+    harness owns one (`chat/loader-while-busy`, `settle()`).
+
+### Found here, deliberately not fixed
+
+- **Nothing registers a tool yet.** `_execute_tool_calls` works and is tested
+  against tools a test supplies, but `AgentSession` has no tool registry (7.6's),
+  so a running `pycortex` still cannot call one. The step delivers the mechanism,
+  not the toolbox.
+- **`hide_thinking_block` and the working message have no key or command.** The
+  component and the loader both take them, and `set_hide_thinking_block` /
+  `set_working_visible` exist, but the TS reaches them through
+  `app.thinking.toggle` and the extension API — 7.6 and later. Defaults are what
+  a user gets.
+- **The `agent_end` chime, terminal progress on retry, and the auto-compaction /
+  auto-retry loaders** are still absent: their controllers are unwired (7.4's
+  note), and each brings its own status-container branch.
 - 5.6's `publish = false` on `code/_meta` is still untouched, for the reason 7.1
   and 7.2 both gave: flipping it puts `cortexcode-code` on PyPI, which is a
   release decision.

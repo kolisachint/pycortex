@@ -517,6 +517,17 @@ def _chat_text(app: InteractiveMode, width: int = 80) -> str:
     return "\n".join(lines)
 
 
+def _assistant_turn(app: InteractiveMode, message: object) -> None:
+    """The event sequence a real assistant turn produces, minus the deltas.
+
+    A finished message reaches the screen through `message_start` (which builds
+    the component) and `message_end` (which fills it in). Sending only the end,
+    as the tests did before 7.5, tests a path the session never takes.
+    """
+    app.handle_session_event({"type": "message_start", "message": message})
+    app.handle_session_event({"type": "message_end", "message": message})
+
+
 def _faux_app(terminal: FakeTerminal | None = None, **overrides: object):
     """An app whose session answers from `ai/provider-faux` instead of the network.
 
@@ -569,7 +580,11 @@ class TestSessionBridge:
                 await asyncio.sleep(0)
             assert [getattr(m, "role", "") for m in app.session.messages] == ["user", "assistant"]
             rendered = [type(child).__name__ for child in app.chat_container.children]
-            assert rendered == ["UserMessageComponent", "Spacer", "Text"], rendered
+            # No spacer between them: `AssistantMessageComponent` opens with one
+            # of its own when it has anything to show, which is why the TS's
+            # `addMessageToChat` adds one for a user message and not for this.
+            assert rendered == ["UserMessageComponent", "AssistantMessageComponent"], rendered
+            assert "pong" in _chat_text(app)
             loop_task.cancel()
         finally:
             registration.unregister()
@@ -610,22 +625,16 @@ class TestSessionEvents:
         from cortex.ai.providers.faux import faux_assistant_message
 
         app = _app()
-        app.handle_session_event(
-            {"type": "message_end", "message": faux_assistant_message("the answer")}
-        )
+        _assistant_turn(app, faux_assistant_message("the answer"))
         assert "the answer" in _chat_text(app), "the assistant text is not in the chat log"
 
     def test_an_error_turn_draws_its_error_message(self):
         from cortex.ai.providers.faux import faux_assistant_message
 
         app = _app()
-        app.handle_session_event(
-            {
-                "type": "message_end",
-                "message": faux_assistant_message(
-                    "", stop_reason="error", error_message="Provider is overloaded"
-                ),
-            }
+        _assistant_turn(
+            app,
+            faux_assistant_message("", stop_reason="error", error_message="Provider is overloaded"),
         )
         assert "Provider is overloaded" in _chat_text(app)
 
@@ -633,23 +642,55 @@ class TestSessionEvents:
         from cortex.ai.providers.faux import faux_assistant_message
 
         app = _app()
-        app.handle_session_event(
-            {"type": "message_end", "message": faux_assistant_message("", stop_reason="error")}
-        )
+        _assistant_turn(app, faux_assistant_message("", stop_reason="error"))
         assert "Error" in _chat_text(app)
 
     def test_an_aborted_turn_says_so(self):
         from cortex.ai.providers.faux import faux_assistant_message
 
         app = _app()
-        app.handle_session_event(
-            {
-                "type": "message_end",
-                "message": faux_assistant_message("half", stop_reason="aborted"),
-            }
-        )
+        _assistant_turn(app, faux_assistant_message("half", stop_reason="aborted"))
         assert "half" in _chat_text(app), "the partial answer was thrown away"
         assert "Operation aborted" in _chat_text(app)
+
+    def test_an_abort_after_a_retry_counts_the_attempts(self, monkeypatch: pytest.MonkeyPatch):
+        """The wording the *app* owns, as opposed to the component's default.
+
+        `AgentSession.retry_attempt` is 0 until the retry controller is wired
+        (7.x), so this is the only place the branch can be reached — and without
+        it the app would say "Operation aborted" after two silent retries.
+        """
+        from cortex.ai.providers.faux import faux_assistant_message
+
+        app = _app()
+        monkeypatch.setattr(type(app.session), "retry_attempt", property(lambda self: 2))
+        _assistant_turn(app, faux_assistant_message("half", stop_reason="aborted"))
+        assert "Aborted after 2 retry attempts" in _chat_text(app)
+
+    def test_a_single_retry_is_not_pluralised(self, monkeypatch: pytest.MonkeyPatch):
+        from cortex.ai.providers.faux import faux_assistant_message
+
+        app = _app()
+        monkeypatch.setattr(type(app.session), "retry_attempt", property(lambda self: 1))
+        _assistant_turn(app, faux_assistant_message("half", stop_reason="aborted"))
+        assert "Aborted after 1 retry attempt" in _chat_text(app)
+        assert "attempts" not in _chat_text(app)
+
+    def test_a_message_end_with_no_streaming_component_draws_nothing(self):
+        """`message_end` is the *end* of something that started. It is not a draw.
+
+        The TS guards on `this.streamingComponent`, and it has to: an assistant
+        message the app never saw start (a replayed transcript, an event that
+        arrived after `agent_end` tore the component down) would otherwise
+        appear a second time.
+        """
+        from cortex.ai.providers.faux import faux_assistant_message
+
+        app = _app()
+        app.handle_session_event(
+            {"type": "message_end", "message": faux_assistant_message("orphan")}
+        )
+        assert app.chat_container.children == []
 
     def test_a_user_message_end_is_not_drawn_twice(self):
         from cortex.ai.types import TextContent, UserMessage
@@ -659,6 +700,63 @@ class TestSessionEvents:
         app.handle_session_event({"type": "message_start", "message": message})
         app.handle_session_event({"type": "message_end", "message": message})
         assert len(app.chat_container.children) == 1
+
+    def test_a_delta_redraws_the_message_in_place(self):
+        """The component is built once and fed; it is not rebuilt per delta."""
+        from cortex.ai.providers.faux import faux_assistant_message
+
+        app = _app()
+        app.handle_session_event({"type": "message_start", "message": faux_assistant_message("")})
+        component = app.chat_container.children[0]
+        app.handle_session_event(
+            {"type": "message_update", "message": faux_assistant_message("half a")}
+        )
+        assert "half a" in _chat_text(app)
+        app.handle_session_event(
+            {"type": "message_update", "message": faux_assistant_message("half a sentence")}
+        )
+        assert "half a sentence" in _chat_text(app)
+        assert app.chat_container.children == [component], "the component was replaced"
+
+    def test_a_delta_after_the_turn_ended_is_ignored(self):
+        """`streamingComponent` is the guard, and it is cleared on `message_end`."""
+        from cortex.ai.providers.faux import faux_assistant_message
+
+        app = _app()
+        _assistant_turn(app, faux_assistant_message("final"))
+        app.handle_session_event(
+            {"type": "message_update", "message": faux_assistant_message("late delta")}
+        )
+        assert "late delta" not in _chat_text(app)
+        assert "final" in _chat_text(app)
+
+    def test_a_turn_that_produced_nothing_leaves_no_hole(self):
+        """`agent_end` drops a streaming component that never got a `message_end`."""
+        from cortex.ai.providers.faux import faux_assistant_message
+
+        app = _app()
+        app.handle_session_event({"type": "message_start", "message": faux_assistant_message("")})
+        assert len(app.chat_container.children) == 1
+        app.handle_session_event({"type": "agent_end"})
+        assert app.chat_container.children == []
+
+    async def test_the_loader_runs_for_the_turn_and_clears_after(self):
+        app = _app()
+        app.handle_session_event({"type": "agent_start"})
+        assert [type(c).__name__ for c in app.status_container.children] == ["Loader"]
+        rendered = "\n".join(app.status_container.children[0].render(80))
+        assert "Working..." in rendered
+        assert any(frame in rendered for frame in ("⠋", "⠙", "⠹")), rendered
+
+        app.handle_session_event({"type": "agent_end"})
+        assert app.status_container.children == []
+
+    async def test_a_hidden_loader_stays_hidden_for_the_next_turn(self):
+        """`workingVisible` gates the loader; an extension turns it off."""
+        app = _app()
+        app.set_working_visible(False)
+        app.handle_session_event({"type": "agent_start"})
+        assert app.status_container.children == []
 
     def test_the_turn_raises_and_lowers_the_terminal_progress_indicator(self):
         terminal = FakeTerminal()
