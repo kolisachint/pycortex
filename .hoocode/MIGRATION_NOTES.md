@@ -1921,3 +1921,208 @@ The editor got a command line. `core/slash-commands.ts` (41) +
 - 5.6's `publish = false` on `code/_meta` is still untouched, for the reason
   7.1, 7.2, 7.5, 7.6 and 7.7 all gave: flipping it puts `cortexcode-code` on
   PyPI, which is a release decision.
+
+## Windows support — bug-fix session, NOT a plan step
+
+`uv run pycortex` on Windows rendered the first frame and then ignored every
+key, Ctrl+C included. No box was ticked and `migrate_next.py --done` was not
+run; this section exists so the next session does not re-derive any of it.
+
+**The report was of a hang; the tree was worse than that.** The brief described
+`_enable_raw_mode` returning early on `sys.platform == "win32"` and a resize
+handler with a "detected via polling instead" comment. Neither existed:
+`terminal.py` imported `select`, `termios` and `tty` **unconditionally** and
+called `signal.SIGWINCH` unguarded, so on Windows the module raised ImportError
+before any of the class ran. There was no Windows path to fix — there was one to
+write. (Whatever produced that brief was reading a different tree; check the
+file, not the description.)
+
+1. **`_windows.py` is the new leaf-private module, and the OS surface is three
+   ctypes calls plus `msvcrt`.** Raw mode is `SetConsoleMode` with
+   `ENABLE_LINE_INPUT`/`ENABLE_ECHO_INPUT`/`ENABLE_PROCESSED_INPUT` cleared —
+   the third is the one that matters most, because it is what turns Ctrl+C from
+   a `CTRL_C_EVENT` back into a `\x03` keystroke, and `handle_ctrl_c` reads a
+   keystroke — plus `ENABLE_VIRTUAL_TERMINAL_INPUT` so arrows arrive as the
+   escape sequences `StdinBuffer` and `cortex.tui.keys` already parse, and
+   `ENABLE_VIRTUAL_TERMINAL_PROCESSING` on stdout so the renderer's cursor moves
+   mean anything. `std_handle` / `get_console_mode` / `set_console_mode` are
+   deliberately thin and module-level: they are the seam every test replaces, so
+   the logic above them runs on Linux.
+2. **`_stdin_fd` stays -1 on Windows, on purpose.** A console handle is not a
+   descriptor `select` or either event loop can watch — the proactor loop has no
+   `add_reader` at all and the selector loop only accepts sockets — so every
+   read path keys off `self._console` instead, and `_install_stdin_reader`
+   always takes the thread branch there. `_reader_loop` is still recorded, which
+   is what lets the thread marshal.
+3. **What the thread reads is delivered by the loop, never by the thread.**
+   `_deliver_stdin` queues under a lock and `call_soon_threadsafe`s a flush;
+   rendering is single-threaded and driving the editor from the reader would
+   repaint from underneath it. `_on_loop_thread()` is False *only* for the two
+   Windows threads: the POSIX loop path is called by the loop itself, and the
+   POSIX thread fallback has no loop at all — which is how POSIX behaviour stays
+   unchanged through a shared helper.
+4. **`getwch` returns UTF-16 code units, so an emoji is two calls.** Python has
+   no decoder for that; `_combine_surrogate_pairs` round-trips through
+   `utf-16-le`/`surrogatepass`, and a trailing high half is held over for the
+   next read rather than delivered (the same job the incremental decoder does
+   for a split UTF-8 sequence on POSIX).
+5. **`kbhit()` before every `getwch()`, always.** A bare `getwch` blocks and
+   there is nothing to wake it out of, so `stop()` could never join the reader.
+   Latency comes from the 5 ms `kbhit` poll instead; `wait_readable` is the
+   `select.select` stand-in and has the same signature-shaped contract.
+6. **The legacy branch is not speculative padding.** A console that refuses
+   `ENABLE_VIRTUAL_TERMINAL_INPUT` (conhost before 1809) still accepts the
+   raw-mode bits, and then reports arrows as `\x00`/`\xe0` + a scan code;
+   `LEGACY_EXTENDED_KEYS` translates the ten keys the editor binds. Under VT
+   input the same `\x00` is Ctrl+Space and must pass through — hence the
+   `vt_input` flag on `SavedConsole` rather than sniffing the byte.
+7. **Resize is a polling thread (250 ms), because there is no SIGWINCH.**
+   `start()` calls the handler once directly where POSIX raises SIGWINCH at
+   itself. The poll fires through the same marshalling as input.
+8. **Only modes this process wrote are restored.** stdout's VT flag is recorded
+   *only* when it was off beforehand, so stopping under Windows Terminal does
+   not turn off something the terminal had already enabled. Note the mutation
+   for this is invisible on the screen — both paths end on a mode with VT set —
+   so the test asserts on what was *recorded*, not on where the console ended up.
+
+### A pre-existing flaky hang, found by hammering this leaf and fixed here
+
+`test_swallows_pending_input_rather_than_forwarding_it` hung **3 runs in 25 on
+unmodified `main`** (proved by stashing every change and stress-running it).
+`drain_input` reads stdin itself, and when `start()` was called outside an event
+loop the pump thread is reading it too: `_wait_readable` says there is data,
+whichever reader loses the race parks in a blocking `os.read`, and pytest waits
+forever. Production never hit it (the loop path uses `add_reader`), but it makes
+the leaf's own gate untrustworthy — and it is the same hazard the Windows reader
+would have, since `drain_input` and the console reader are two readers on one
+queue. `_stop_reader_thread()` now stops and joins the reader before anything
+else reads, and it is called **after** `_input_handler` is cleared, so what the
+thread reads on its way out is discarded rather than delivered (clearing second
+turned the hang into a deterministic failure — the join gives the thread 200 ms
+in which to deliver). 0 hangs in 30 runs after. The thread is not restarted:
+`stop()` follows `drain_input` in every caller.
+`test_stdin_buffer.py` has its own 10 ms-`threading.Timer` flake (1 run in 30);
+untouched here, and unrelated — it drives `StdinBuffer` alone.
+
+### Verification, since none of it can run on the box it was written on
+
+- `tests/test_windows_console.py` (34 tests): `sys.platform` monkeypatched to
+  `win32`, a `FakeConsole` behind the three kernel32 seams, and a `FakeKeyboard`
+  installed as `sys.modules["msvcrt"]`. It runs on Linux and macOS and would run
+  on Windows.
+- **`utf16_units()` in that file is load-bearing and my first version was
+  wrong**: `"😀".encode("utf-16-le", "surrogatepass").decode(...)` re-joins the
+  pair, so the fake fed one character and the surrogate tests passed without
+  ever exercising the pairing. Decode the halves one at a time.
+- `TestImportability` re-runs the original bug in a subprocess: `select`,
+  `termios` and `tty` made unimportable through a `sys.meta_path` blocker,
+  `sys.platform` set to `win32`, then import and drive `ProcessTerminal`. No
+  amount of branching inside the class would have fixed an import-time failure,
+  so that is the thing worth pinning.
+- `tests/conftest.py` `collect_ignore`s `test_process_terminal_io.py` on Windows
+  (it imports `pty`/`fcntl`/`termios` at module scope, which is a collection
+  error and not a skip).
+- **MUTATION TESTING: 16 mutations, 13 caught on the first honest run.** All
+  three misses were real and all three are now closed by *discriminating* tests
+  rather than more of the same: not stopping the resize poll, starting a reader
+  for a redirected stdin, and keeping raw mode on a non-console are each
+  invisible to a frame *and* to a keystroke — they leak a thread. The tests now
+  assert on the threads (`WindowsHarness.reader_thread` / `resize_thread`),
+  which is the only place that consequence shows up. 16/16 after.
+- POSIX unchanged: `pytest packages/tui/terminal` 99 passed, every package's
+  pytest green, `ruff check .`, `ruff format --check .`, `pyright packages`
+  clean, `tui_parity.py` 273/273 + 46/46, `tui_e2e.py` 28/38 with **0 failing**
+  (the ten are 7.9-7.12, unported).
+
+### `scripts/migrate_next.py` was unusable on Windows too
+
+Every `read_text`/`write_text` now passes `encoding="utf-8"`. Without it
+`stub_markers_in` decodes ported source with cp1252 and dies on the first
+box-drawing glyph, which takes `--status`, `--start` and `--done` with it.
+**The other scripts have the same bug** (`bump_versions.py`,
+`publish_packages.py`, `tui_goldens.py`, `tui_e2e.py`, `tui_parity.py`,
+`convert_models.py`, `convert_image_models.py`) and were left alone: out of
+scope for this session, and none of them is on the path to a running app.
+
+### The bash tool was a second, independent Windows failure
+
+Checked after the terminal work, and it was **four under-ports of
+`utils/shell.ts` and `utils/child-process.ts`, not four missing enhancements** —
+the TS has cross-platform code for every one of these and the port dropped it.
+`bash.py` now carries `getShellConfig`, `getShellEnv` and `killProcessTree`
+(`sanitizeBinaryOutput` from the same TS file was already in
+`session/bash_executor.py`, where the output is decoded).
+
+1. **Shell resolution never had a Windows branch, and was wrong on POSIX too.**
+   The port was `os.environ.get("SHELL", "/bin/bash")`; the TS never reads
+   `$SHELL` at all. On Windows that meant `spawn /bin/bash ENOENT` for every
+   command; on POSIX it ran the user's *login* shell, so a fish or zsh user got
+   fish or zsh for a tool whose whole contract is bash — silently, since a
+   bash-ism just fails as a syntax error. Now: explicit `shell_path`, then Git
+   Bash under `%ProgramFiles%`/`%ProgramFiles(x86)%`, then `where bash.exe`
+   (verified — `where` prints paths that do not exist), then the TS's
+   install-Git-for-Windows error; on POSIX `/bin/bash`, then `which bash`, then
+   `sh`. The two platforms are asymmetric *on purpose* in the TS: Windows
+   verifies `where`'s answer, Unix trusts `which`'s, because Termux and other
+   special filesystems make an independent existence check say no to a shell
+   that works. That is also why this is not `shutil.which`.
+2. **`killProcessTree` was `proc.kill()` on Windows**, which kills the shell and
+   leaves everything the shell started running — a timed-out or aborted command
+   was not actually stopped. `taskkill /F /T /PID` now, and the POSIX side gained
+   the single-pid fallback the TS has for a child that left its group.
+3. **`getShellEnv` was `dict(os.environ)`** — a stub, so the managed `fd`/`rg`
+   directory was never on PATH for shell commands on any platform. The TS finds
+   the PATH key **case-insensitively**, which exists precisely because Windows
+   spells it `Path` and a second `PATH` entry there does nothing. This is the
+   one change that adds a leaf dependency: `tools` → `cortexcode-cli-config`
+   for `get_bin_dir`, matching `bash.ts`'s own `../config.js` import (config has
+   no dependencies, so there is no cycle). Left bare rather than pinned, which
+   is the code group's existing convention for every intra-group dep — the 1.8
+   lesson about bare deps applies to this whole group and is a job of its own.
+4. **THE HANG THE TS HAS A WINDOWS TEST FOR WAS PORTED BACK IN.**
+   `bash-close-hang-windows.test.ts` exists because a detached descendant
+   inherits the shell's stdout/stderr handles, so the pipe never reaches EOF
+   even after the shell exits; the TS answers with `waitForChildProcess` (wait
+   for exit, give stdio 100 ms, then destroy the streams). The port replaced it
+   with `proc.wait()` followed by an unconditional `t.join()` on the reader
+   threads — i.e. it waits for the *descendant*. Measured on Linux before the
+   fix: `bash -c "echo started; sleep 3 &"` returned after 3.01 s; on Windows a
+   daemonised child means never. Now 0.10 s.
+   Two things had to change together, and the second is not cosmetic:
+   - the readers get `EXIT_STDIO_GRACE_S` and are then abandoned (daemon
+     threads, each closing its own pipe when the descendant finally lets go) —
+     **`close()` from any other thread would block on the `BufferedReader` lock
+     the reader holds while inside a read**, which is the hang again;
+   - `stream.read(4096)` became `read1(4096)`. `read` waits for a *full* 4096
+     bytes or EOF, so with a grace period a short line sits in the buffer and
+     the output is **dropped rather than delayed** — the fix would have silently
+     traded a hang for lost output. `read1` returns what is available, which is
+     what node's `data` event does. Anything that drains a pipe on a deadline
+     needs this.
+   Both `execute_bash_with_operations` (the `!command` path) and the bash tool
+   go through the fixed code, which is exactly the two entry points the TS test
+   covers.
+
+MUTATION TESTING: 13 mutations, 12 caught on the first run. The miss was real —
+dropping the "stop delivering after the grace period" guard is invisible to
+every test that only checks what a command returned, and it lets an abandoned
+reader append to an accumulator whose temp file is already closed. Closed by a
+test that lets a background job write *after* `exec` returns. 13/13.
+
+`grep`/`find` need nothing here: this port scans in Python rather than shelling
+out to `rg`/`fd`, so there is no `.exe` to resolve.
+
+### Not fixed here, and knowingly so
+
+- **Nobody has run any of this on Windows.** Every claim above is from tests
+  with a faked console, a faked kernel32 and a monkeypatched `sys.platform`; the
+  ctypes calls themselves (`WinDLL`, `GetStdHandle`, `GetConsoleMode`) and
+  `taskkill` are the layers no test on Linux can exercise. Somebody with a
+  Windows box should confirm the acceptance list by hand.
+- `trackDetachedChildPid` / `killTrackedDetachedChildren` (`utils/shell.ts`) are
+  still unported: hoocode kills detached descendants when it takes a SIGHUP or
+  SIGTERM, and pycortex leaves them running. Independent of platform, and a
+  process-lifecycle job rather than a Windows one.
+- The Kitty query and the modifyOtherKeys fallback are still written to a
+  Windows console. Both are ignored there rather than harmful, and suppressing
+  them would be a behaviour difference no terminal asked for.

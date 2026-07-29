@@ -168,7 +168,7 @@ def leaf_dirs() -> list[Path]:
 
 
 def leaf_cortex_table(leaf: Path) -> dict[str, object]:
-    data = tomllib.loads((leaf / "pyproject.toml").read_text())
+    data = tomllib.loads((leaf / "pyproject.toml").read_text(encoding="utf-8"))
     tool = data.get("tool", {})
     cortex = tool.get("cortex", {}) if isinstance(tool, dict) else {}
     return cortex if isinstance(cortex, dict) else {}
@@ -254,7 +254,7 @@ def stub_markers_in(leaf: Path) -> list[str]:
     found: list[str] = []
     for path in sorted(src.rglob("*.py")):
         try:
-            lines = path.read_text().splitlines()
+            lines = path.read_text(encoding="utf-8").splitlines()
         except OSError:
             continue
         for lineno, line in enumerate(lines, 1):
@@ -275,7 +275,7 @@ def e2e_gaps() -> list[tuple[str, str]]:
     if not E2E_REPORT.is_file():
         return []
     try:
-        report = json.loads(E2E_REPORT.read_text())
+        report = json.loads(E2E_REPORT.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return [("?", f"{E2E_REPORT.name}: not valid JSON")]
     by_step: dict[str, list[str]] = {}
@@ -356,7 +356,7 @@ def parity_gaps() -> list[tuple[str, str]]:
     if not PARITY_REPORT.is_file():
         return []
     try:
-        report = json.loads(PARITY_REPORT.read_text())
+        report = json.loads(PARITY_REPORT.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return [("?", f"{PARITY_REPORT.name}: not valid JSON")]
     by_step: dict[str, list[str]] = {}
@@ -518,10 +518,10 @@ def cmd_done(steps: list[Step], step_id: str) -> int:
             print(f"  ✗ {problem}", file=sys.stderr)
         return 1
 
-    text = PLAN.read_text()
+    text = PLAN.read_text(encoding="utf-8")
     lines = text.splitlines(keepends=True)
     lines[step.line_no] = lines[step.line_no].replace("- [ ]", "- [x]", 1)
-    PLAN.write_text("".join(lines))
+    PLAN.write_text("".join(lines), encoding="utf-8")
 
     subprocess.run(["git", "add", "-A"], cwd=REPO_ROOT, check=True)
     msg = f"migrate: {step.id} {step.title}"
@@ -539,7 +539,7 @@ def main() -> int:
     parser.add_argument("--done", metavar="ID", help="verify gates, check box, commit")
     args = parser.parse_args()
 
-    steps = parse_plan(PLAN.read_text())
+    steps = parse_plan(PLAN.read_text(encoding="utf-8"))
     if args.done:
         return cmd_done(steps, args.done)
     if args.status or args.json:
