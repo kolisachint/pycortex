@@ -192,7 +192,7 @@ class AgentOptions:
     follow_up_mode: QueueMode = "one-at-a-time"
     session_id: str | None = None
     thinking_budgets: Any = None
-    thinking_display: str | None = None
+    thinking_display: Literal["summarized", "omitted"] | None = None
     transport: Any = None
     max_retry_delay_ms: int | None = None
     tool_execution: ToolExecutionMode = "parallel"
@@ -517,6 +517,19 @@ class Agent:
 
         return AgentLoopConfig(
             model=self.state.model,
+            # The request-shaping half (`AgentLoopConfig extends SimpleStreamOptions`).
+            # Every field here reaches the provider through the loop's spread, and
+            # none of them did before 7.12: they were accepted by `AgentOptions`,
+            # stored, and never read, so a session at thinking level `high` asked
+            # for no thinking at all.
+            reasoning=None if self.state.thinking_level == "off" else self.state.thinking_level,
+            session_id=self.session_id,
+            on_payload=self.options.on_payload,
+            on_response=self.options.on_response,
+            transport=self.options.transport,
+            thinking_budgets=self.options.thinking_budgets,
+            thinking_display=self.options.thinking_display,
+            max_retry_delay_ms=self.options.max_retry_delay_ms,
             convert_to_llm=self.convert_to_llm,
             transform_context=self.transform_context,
             get_api_key=self.get_api_key,

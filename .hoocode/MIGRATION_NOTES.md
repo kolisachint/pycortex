@@ -2591,3 +2591,157 @@ runner dies before its restore. The awaits in the dialog tests are
 - 5.6's `publish = false` on `code/_meta` is still untouched, for the reason
   7.1–7.10 all gave: flipping it puts `cortexcode-code` on PyPI, which is a
   release decision.
+
+## 7.12 e2e cutover — DONE
+
+The last step, and the only one whose deliverable is a *run* rather than a port.
+One scenario (`e2e/first-run`), one new module in the e2e leaf
+(`_api_stub.py`, an Anthropic Messages API on 127.0.0.1), and eight bug fixes
+across five leaves — every one of them found by the same thing: nothing in this
+port had ever completed a turn against a real provider. 38/38 scenarios, 0
+pending; 13/14 mutations caught (the fourteenth is equivalent, see below).
+
+**What the scenario actually exercises.** A clean config directory
+(`HOOCODE_CODING_AGENT_DIR` at a temp dir, no settings, no `auth.json`, no
+sessions), `ANTHROPIC_API_KEY` in the environment, and a `models.json` pointing
+`anthropic` at the stand-in — the same per-provider `base_url` override a user
+aims at a gateway. Everything between is the real thing: `SettingsManager`,
+`ModelRegistry`, `find_initial_model`, `create_agent_session`, the agent loop,
+`cortex.ai.providers.anthropic`, the SSE parser, the footer's usage counters,
+and a session file written where the config said to write it.
+
+1. **The agent loop handed providers a `dict`, and no provider takes one.**
+   `AgentLoopConfig extends SimpleStreamOptions` in the TS, and
+   `streamAssistantResponse` spreads the config into the stream call; this port
+   had neither the fields nor the object — `dict(vars(config))` went out, and the
+   first real turn died on `'dict' object has no attribute 'api_key'`. The
+   fields are on `AgentLoopConfig` now and `stream_options_of` builds the
+   `SimpleStreamOptions` the spread stands for. The faux provider reads options
+   with a `getattr`-or-`dict` shim, which is exactly why 37 scenarios could pass
+   over this.
+2. **Eight request-shaping fields were accepted and dropped.** `AgentOptions`
+   has taken `session_id`, `on_payload`, `on_response`, `transport`,
+   `thinking_budgets`, `thinking_display` and `max_retry_delay_ms` since Phase 3,
+   and `_create_loop_config` set none of them — nor `reasoning`, which is the
+   session's thinking level. **A session at thinking level `high` was asking
+   Anthropic for no thinking at all**, with the footer saying otherwise. The
+   `off` → `None` ternary matters as much as the rest: `reasoning="off"` is a
+   level no provider has.
+3. **`|| config.apiKey` was missing from the key resolution.** Without it a key
+   that arrives on the config rather than through the `get_api_key` hook is
+   dropped, and the provider falls back to the environment — "no API key found"
+   on a machine where the key was passed in.
+4. **`prepare_next_turn`'s thinking level was ignored**, the other half of the
+   TS's snapshot handling (the model half was ported). Ported here with `off`
+   meaning "no reasoning", as above.
+5. **Sessions were written to `~/.hoocode/agent/sessions` on every machine.**
+   `get_default_session_dir` hard-coded that path where the TS defaults to
+   `getAgentDir()`: the env var ignored *and* an `agent` segment the TS does not
+   have. So a process pointed at another config directory scattered its sessions
+   into the home one, and a user coming from hoocode found `--continue` opening
+   on nothing.
+6. **`-p` printed `Would process message: <text>` and returned 0.** The placeholder
+   reported success to whatever was reading the exit code — the one thing a
+   script piping `-p` somewhere must never be told. `cortex.code.print` has been
+   ported since Phase 5 and had no caller; `main` now gives it the same startup
+   the TUI gets (`build_startup_session`), so both modes answer with the same
+   model, session and credentials. Its first real call found the next one:
+7. **print mode passed the images *list* where `PromptOptions` goes.**
+   `AgentSession.prompt` reads `options.preflight_result` first thing, so every
+   `-p` run would have died there. `code/print` depends on `code/session` for the
+   options type now, as the TS's print mode depends on its session module.
+8. **Compaction built its request out of dicts, with camelCase keys.**
+   `{"systemPrompt": …}` for the context and `{"maxTokens": …, "apiKey": …}` for
+   the options, both passed to `complete_simple` — TS object literals kept as
+   dicts. `/compact` against a real provider raised; `_summarization_prompt` and
+   `_summarization_options` build the real types now.
+9. **The agent harness registered its callbacks where the agent never looks.**
+   `self.agent.options.get_api_key = …` after construction, when
+   `Agent.__init__` has already copied its options onto itself — seven callbacks,
+   all dead. And `AgentHarness` could not be constructed at all (`Agent(options={…})`
+   passes a dict to something that reads `options.initial_state`), which is why
+   nobody had noticed. Both fixed, plus `_prepare_next_turn`'s snapshot: it took
+   no arguments where the agent passes two, and returned `thinkingLevel` and a
+   dict context where the loop reads `thinking_level` and assigns the context on.
+   This leaf still has no consumer in the port — see below.
+10. **`--list-models` exists now**, which four error messages across the port
+    already promised ("Use --list-models to see available models"). It is
+    `cli/list-models.ts` over the registry that landed in 7.11.
+11. **The session directory honoured `--session-dir` and nothing else.**
+    `main.ts` resolves the flag, then `HOOCODE_CODING_AGENT_SESSION_DIR`, then
+    the `sessionDir` setting; two of the three were unread, so a user who had set
+    either got their sessions written somewhere they had not asked for.
+12. **`build_startup_session` is the seam, and it is shared.** The startup half
+    of `run_interactive_mode` — settings, registry, model, session — is a
+    function now, because print mode needs the same three steps and so does the
+    corpus. A scenario that re-implemented them would be testing its own copy.
+    `find_initial_model`'s `error` finally becomes an exit code there, and its
+    `fallback_message` finally reaches `InteractiveModeOptions.model_fallback_message`,
+    which had been declared since 7.2 and never set by anything.
+
+MUTATION TESTING: 14 mutations, 13 caught. The one that survived its target —
+deleting `AgentLoopConfig.api_key` and running `e2e/first-run` — is equivalent
+*for that scenario*: first-run resolves its key through the `get_api_key` hook,
+so the fallback is not on its path. The loop suite catches it (three failures),
+which is the right owner. Three earlier misses were real and are closed with
+tests: the `--list-models` sort order, the harness's snapshot shape, and
+`prepare_next_turn`'s registration.
+
+**Why the stand-in is an HTTP server and not a patched client.** Patching
+`httpx` would have proved the code above the transport and nothing else, and the
+transport is where two of these bugs lived (headers, and the SSE stream the
+parser refuses to end early). A socket is the only place to stand where
+everything above it is the real thing. It costs a thread and a port; the whole
+corpus still runs in eight seconds.
+
+**6.1's side-by-side, re-run.** `bun install && npm run build` in the TS clone,
+then both binaries over the same scripted print scenarios, the same stand-in
+provider and the same shape of clean config directory (`baseUrl` for the TS's
+`models.json`, `base_url` for this one — the port's on-disk convention). Three
+differences, all accounted for:
+
+- **`-p "…"` is identical on stdout.** hoocode adds one stderr line —
+  "Semantic search index unavailable (embsearch binary not found)" — from a
+  subsystem this port does not have.
+- **`--version` differs only in the number** (0.4.155 vs 0.1.0). The *format* was
+  a real difference and is fixed: this printed `hoocode 0.1.0` where `main.ts`
+  prints the bare version, so anything reading `--version` got a sentence.
+- **`--help` is abridged here**, deliberately: the TS lists `install`, `remove`,
+  `update`, `list`, `config` and `resources` subcommands, the team bridge, and
+  40-odd provider environment variables, none of which this port has. Two lines
+  of it were wrong rather than short, and are fixed: it named `HOOCODE_AGENT_DIR`,
+  which nothing reads (the variable is `HOOCODE_CODING_AGENT_DIR`), and it never
+  mentioned `HOOCODE_CODING_AGENT_SESSION_DIR` at all. The "(default:
+  ~/.hoocode/agent)" wording is kept as-is: `getAgentDir()` returns `~/.hoocode`
+  in both, so that parenthesis is wrong in the TS too, and parity wins over
+  tidying someone else's help text.
+
+### Found here, deliberately not fixed
+
+- **`--export` stays out.** It needs `core/export-html/` (744 lines of TS across
+  three files: an ANSI-to-HTML converter, a tool renderer and the document
+  shell); `export_session_branch_to_jsonl` has existed since Phase 4 and is the
+  half that *is* ported. The flag fails loudly and no longer names a migration
+  step, because there is no later step to name — this is the last one. Same for
+  `--resume` (the pre-TUI `selectSession` renderer) and `--print-token-surface`.
+- **`--model`, `--provider`, `--api-key` and `--thinking` are still not threaded
+  from the CLI.** 7.11's note stands: `resolve_cli_model` is ported and tested,
+  `AuthStorage.set_runtime_api_key` is what `--api-key` needs, and
+  `build_startup_session` is now the one seam that would take them. It takes no
+  CLI arguments today because no scenario in the corpus asks for one.
+- **`cortex.agent.harness` has no consumer.** `code/session` builds its own
+  `AgentSession` rather than sitting on the harness the way the TS does, so the
+  leaf is ported, now constructible, and used by nobody. The three bugs fixed in
+  it here were all invisible for that reason; the rest of it is unexercised and
+  should be assumed to hold more.
+- **Print mode's `@file` arguments, `--max-turns` and `--task-id` are not wired.**
+  `PrintModeOptions` carries all three; `main` passes the messages and the output
+  mode. `cli/file-processor.ts` and `cli/initial-message.ts` (the stdin/@file
+  half) are unported, and nothing in the corpus covers them.
+- **`stream_simple` is typed `SimpleStreamOptions | None` now, `stream` is
+  `Any`.** The TS's `ProviderStreamOptions` is a union of per-provider option
+  types; this port has the classes but not the union, so the provider-specific
+  entry point stays untyped rather than gaining a name the TS does not have.
+- 5.6's `publish = false` on `code/_meta` is still untouched, for the reason
+  7.1–7.11 all gave: flipping it puts `cortexcode-code` on PyPI, which is a
+  release decision. It is the only audit finding left, and it outlives the plan.

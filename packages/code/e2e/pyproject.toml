@@ -5,8 +5,13 @@ description = "Cortex CLI leaf: end-to-end TUI harness (never published)"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    # `e2e/first-run` drives the real provider against a local stand-in, and the
+    # registry reaches it by lazy import — so the leaf depends on it in fact,
+    # whether or not a scenario names it.
+    "cortexcode-ai-provider-anthropic",
     "cortexcode-cli-config",
     "cortexcode-cli-interactive",
+    "cortexcode-cli-session",
     "cortexcode-tui-components",
     "cortexcode-tui-render",
     "cortexcode-tui-terminal",
@@ -27,8 +32,10 @@ packages = [
 ]
 
 [tool.uv.sources]
+cortexcode-ai-provider-anthropic = { workspace = true }
 cortexcode-cli-config = { workspace = true }
 cortexcode-cli-interactive = { workspace = true }
+cortexcode-cli-session = { workspace = true }
 cortexcode-tui-components = { workspace = true }
 cortexcode-tui-render = { workspace = true }
 cortexcode-tui-terminal = { workspace = true }

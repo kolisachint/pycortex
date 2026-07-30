@@ -51,10 +51,14 @@ from cortex.code.interactive.interactive_mode import (
     BuiltInSlashCommand,
     InteractiveMode,
     InteractiveModeOptions,
+    StartupSession,
     build_app_root,
+    build_model_registry,
+    build_startup_session,
     format_display_path,
     resolve_fd_path,
     resolve_session_manager,
+    resolve_startup_model,
     run_interactive_mode,
 )
 from cortex.code.interactive.keybindings import (
@@ -162,7 +166,10 @@ __all__ = [
     "WORDMARK_COMPACT",
     "WORDMARK_GLYPH",
     "WorkProgress",
+    "StartupSession",
     "build_app_root",
+    "build_model_registry",
+    "build_startup_session",
     "build_compact_wordmark",
     "compare_versions",
     "format_display_path",
@@ -175,6 +182,7 @@ __all__ = [
     "resolve_fd_path",
     "resolve_tool_renderer",
     "resolve_session_manager",
+    "resolve_startup_model",
     "run_interactive_mode",
     "startup_progress",
 ]

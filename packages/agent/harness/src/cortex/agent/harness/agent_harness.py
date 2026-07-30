@@ -8,10 +8,15 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
-from cortex.agent.agent import Agent, QueueMode  # pyright: ignore[reportMissingTypeStubs]
+from cortex.agent.agent import (  # pyright: ignore[reportMissingTypeStubs]
+    Agent,
+    AgentOptions,
+    QueueMode,
+)
 from cortex.agent.types import (  # pyright: ignore[reportMissingTypeStubs]
+    AgentContext,
     AgentMessage,
     AgentTool,
     ThinkingLevel,
@@ -79,12 +84,15 @@ class AgentHarness:
         if options.tools is not None:
             initial_state["tools"] = options.tools
 
+        # `AgentOptions`, not the dict this passed: `Agent.__init__` reads
+        # `options.initial_state`, so a harness could not be constructed at all.
+        # Nothing noticed because nothing in this port builds one.
         self.agent = Agent(
-            options={
-                "initial_state": initial_state,
-                "steering_mode": options.steering_mode or "all",
-                "follow_up_mode": options.follow_up_mode or "all",
-            }
+            AgentOptions(
+                initial_state=initial_state,
+                steering_mode=cast(QueueMode, options.steering_mode or "all"),
+                follow_up_mode=cast(QueueMode, options.follow_up_mode or "all"),
+            )
         )
         self.env: ExecutionEnv = options.env
         self.session: Session = options.session
@@ -116,14 +124,18 @@ class AgentHarness:
         self.agent.state.model = self.model
         self.agent.state.thinking_level = self.thinking_level
 
-        # Set up agent callbacks
-        self.agent.options.get_api_key = self._get_api_key
-        self.agent.options.transform_context = self._transform_context
-        self.agent.options.before_tool_call = self._before_tool_call
-        self.agent.options.after_tool_call = self._after_tool_call
+        # Set up agent callbacks. The TS assigns these onto the agent
+        # (`this.agent.getApiKey = …`), and so must this: `Agent.__init__` copies
+        # its options onto itself and the loop config is built from *those*
+        # attributes, so hanging the callbacks off `agent.options` after
+        # construction registered nothing at all.
+        self.agent.get_api_key = self._get_api_key
+        self.agent.transform_context = self._transform_context
+        self.agent.before_tool_call = self._before_tool_call
+        self.agent.after_tool_call = self._after_tool_call
         self.agent.options.on_payload = self._on_payload
         self.agent.options.on_response = self._on_response
-        self.agent.options.prepare_next_turn = self._prepare_next_turn
+        self.agent.prepare_next_turn = self._prepare_next_turn
 
         # Subscribe to agent events
         self.agent.subscribe(self._handle_agent_event)
@@ -195,20 +207,27 @@ class AgentHarness:
             )
         )
 
-    async def _prepare_next_turn(self) -> dict[str, Any]:
-        """Prepare for the next turn."""
+    async def _prepare_next_turn(self, *_args: Any) -> dict[str, Any]:
+        """Prepare for the next turn.
+
+        The arguments are the loop context and the signal the agent passes; the
+        TS's arrow ignores both, and so does this. What it hands back is read by
+        the loop, which means an :class:`AgentContext` and snake_case keys — the
+        camelCase dict this returned would have been assigned onto the loop as
+        the next turn's context and died on the first attribute read.
+        """
         await self._flush_pending_session_writes()
         turn_state = await self._create_turn_state()
         self._apply_turn_state(turn_state)
         return {
-            "context": {
-                "systemPrompt": turn_state.system_prompt,
-                "messages": list(turn_state.messages),
-                "tools": list(turn_state.active_tools),
-            },
+            "context": AgentContext(
+                system_prompt=turn_state.system_prompt,
+                messages=list(turn_state.messages),
+                tools=list(turn_state.active_tools),
+            ),
             "model": turn_state.model,
-            "thinkingLevel": turn_state.thinking_level,
-        }  # pyright: ignore[reportReturnType]
+            "thinking_level": turn_state.thinking_level,
+        }
 
     async def _handle_agent_event(self, event: Any, signal: Any = None) -> None:
         """Handle agent events."""

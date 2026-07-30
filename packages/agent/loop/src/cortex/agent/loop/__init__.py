@@ -48,6 +48,7 @@ from cortex.ai.types import (
     Context,
     ImageContent,
     Message,
+    SimpleStreamOptions,
     TextContent,
     Tool,
     ToolCall,
@@ -61,6 +62,7 @@ __all__ = [
     "AgentEventSink",
     "run_agent_loop",
     "run_agent_loop_continue",
+    "stream_options_of",
 ]
 
 
@@ -107,6 +109,46 @@ def _field(value: Any, name: str, default: Any = None) -> Any:
 def _tool_calls_of(message: AssistantMessage) -> list[AgentToolCall]:
     """The ``toolCall`` blocks of an assistant message, in source order."""
     return [block for block in message.content if isinstance(block, ToolCall)]
+
+
+#: The ``SimpleStreamOptions`` half of an ``AgentLoopConfig`` — the TS's
+#: ``extends``, spelled out because Python has no structural spread.
+_STREAM_OPTION_FIELDS = (
+    "temperature",
+    "max_tokens",
+    "transport",
+    "cache_retention",
+    "session_id",
+    "on_payload",
+    "on_response",
+    "headers",
+    "timeout_ms",
+    "max_retries",
+    "max_retry_delay_ms",
+    "metadata",
+    "constrain_tool_calls",
+    "reasoning",
+    "thinking_budgets",
+    "thinking_display",
+)
+
+
+def stream_options_of(config: Any, *, api_key: str | None, signal: Any) -> SimpleStreamOptions:
+    """What the provider is told about this request. Port of the TS's spread.
+
+    ``streamAssistantResponse`` calls ``streamFunction(model, context, {...config,
+    apiKey, signal})``: in TS the loop config *is* a ``SimpleStreamOptions``, so
+    spreading it hands the provider every request-shaping field the agent set. The
+    Python providers read those fields as attributes (``options.api_key``,
+    ``options.reasoning``), so the spread has to become a real object — a dict of
+    ``vars(config)`` was passed here until 7.12, and the first turn against a real
+    provider died on ``'dict' object has no attribute 'api_key'``.
+
+    Fields are read with ``getattr`` because a caller may hand the loop any
+    config-shaped object, which is the same latitude the rest of the loop gives it.
+    """
+    values = {name: getattr(config, name, None) for name in _STREAM_OPTION_FIELDS}
+    return SimpleStreamOptions(api_key=api_key, signal=signal, **values)
 
 
 def _to_llm_tools(tools: Any) -> list[Tool] | None:
@@ -554,6 +596,15 @@ class AgentLoop:
                         next_model = _snapshot_field(snapshot, "model")
                         if next_model is not None:
                             config = replace(config, model=next_model)
+                        # A snapshot that names a thinking level re-aims the *next*
+                        # request, exactly as the model does; `off` means "no
+                        # reasoning", which the options spell as unset.
+                        next_thinking = _snapshot_field(snapshot, "thinking_level")
+                        if next_thinking is not None:
+                            config = replace(
+                                config,
+                                reasoning=None if next_thinking == "off" else next_thinking,
+                            )
 
                 # Check if we should stop
                 if getattr(config, "should_stop_after_turn", None):
@@ -622,13 +673,14 @@ class AgentLoop:
         stream_function = self.stream_fn or stream_simple
 
         # Resolve the API key per request: tokens expire, and a run can outlive one.
+        # The config's own key is the fallback, as in the TS's `|| config.apiKey`:
+        # a caller that has no `get_api_key` hook still gets to supply one.
         resolved_api_key = None
         if getattr(config, "get_api_key", None):
             resolved_api_key = await _maybe_await(config.get_api_key(config.model.provider))
+        resolved_api_key = resolved_api_key or getattr(config, "api_key", None)
 
-        options: dict[str, Any] = dict(vars(config))
-        options["api_key"] = resolved_api_key
-        options["signal"] = self.signal
+        options = stream_options_of(config, api_key=resolved_api_key, signal=self.signal)
 
         response = stream_function(config.model, llm_context, options)
 

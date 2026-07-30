@@ -17,7 +17,7 @@ class StreamFunction:
         self,
         model: Model,
         context: Context,
-        options: dict[str, Any] | None = None,
+        options: Any = None,
     ) -> Any: ...
 
 
@@ -57,7 +57,7 @@ def _wrap_stream(api: Api, stream: StreamFunction) -> StreamFunction:
     def wrapped(
         model: Model,
         context: Context,
-        options: dict[str, Any] | None = None,
+        options: Any = None,
     ) -> Any:
         if model.api != api:
             raise ValueError(f"Mismatched api: {model.api} expected {api}")
@@ -72,7 +72,7 @@ def _wrap_stream_simple(api: Api, stream_simple: StreamFunction) -> StreamFuncti
     def wrapped(
         model: Model,
         context: Context,
-        options: dict[str, Any] | None = None,
+        options: Any = None,
     ) -> Any:
         if model.api != api:
             raise ValueError(f"Mismatched api: {model.api} expected {api}")

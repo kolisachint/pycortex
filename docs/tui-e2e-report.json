@@ -1,5 +1,5 @@
 {
-  "generated_from": "0f7925e",
+  "generated_from": "164a989",
   "note": "Written by scripts/tui_e2e.py. Consumed by scripts/migrate_next.py --status. A Phase 7 step cannot be ticked while it still owns unmet scenarios.",
   "passing": [
     "auth/login-dialog",
@@ -15,6 +15,7 @@
     "commands/file-mention",
     "commands/help",
     "commands/slash-autocomplete",
+    "e2e/first-run",
     "footer/context-meter",
     "footer/git-branch",
     "footer/model-and-tokens",
@@ -40,12 +41,5 @@
     "tools/execution-renders",
     "tools/output-expand"
   ],
-  "unmet": [
-    {
-      "id": "e2e/first-run",
-      "status": "pending",
-      "blocked_by": "7.12",
-      "title": "A clean install boots, prompts, answers and exits cleanly"
-    }
-  ]
+  "unmet": []
 }

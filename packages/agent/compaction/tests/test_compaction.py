@@ -6,6 +6,9 @@ Mechanical port of hoocode's ``packages/agent/test/harness/compaction.test.ts``.
 
 from __future__ import annotations
 
+from typing import Any
+
+import pytest
 from cortex.agent.compaction import (
     DEFAULT_COMPACTION_SETTINGS,
     CompactionDetails,
@@ -576,3 +579,87 @@ class TestPrepareCompaction:
 
         preparation = prepare_compaction([u1, compaction], DEFAULT_COMPACTION_SETTINGS)
         assert preparation is None
+
+
+class TestSummarizationRequest:
+    """What a summarization asks the provider for (7.12).
+
+    Both call sites handed `complete_simple` dicts — a context keyed
+    `systemPrompt` and options keyed `maxTokens`/`apiKey` — which every real
+    provider reads as attributes. `/compact` could only ever have worked against
+    a stand-in that accepts both shapes, and against Anthropic it raised.
+    """
+
+    async def test_the_request_is_built_from_real_types(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import cortex.ai.stream as stream_module
+        from cortex.agent.compaction.compaction import generate_summary
+        from cortex.ai.types import (
+            AssistantMessage,
+            Context,
+            SimpleStreamOptions,
+            TextContent,
+            Usage,
+            UserMessage,
+        )
+
+        seen: dict[str, object] = {}
+
+        async def complete_simple(model: Any, context: Any, options: Any = None) -> Any:
+            seen["context"] = context
+            seen["options"] = options
+            return AssistantMessage(
+                content=[TextContent(text="## Goal\nported")],
+                api=model.api,
+                provider=model.provider,
+                model=model.id,
+                usage=Usage(
+                    input=1,
+                    output=1,
+                    cache_read=0,
+                    cache_write=0,
+                    total_tokens=2,
+                    cost={
+                        "input": 0,
+                        "output": 0,
+                        "cacheRead": 0,
+                        "cacheWrite": 0,
+                        "total": 0,
+                    },
+                ),
+                stop_reason="stop",
+                timestamp=0,
+            )
+
+        monkeypatch.setattr(stream_module, "complete_simple", complete_simple)
+
+        from cortex.ai.providers.faux import register_faux_provider
+
+        registration = register_faux_provider()
+        try:
+            summary = await generate_summary(
+                [UserMessage(content=[TextContent(text="do the thing")], timestamp=0)],
+                registration.get_model(),
+                reserve_tokens=1000,
+                api_key="the-key",
+                thinking_level="high",
+            )
+        finally:
+            registration.unregister()
+
+        assert summary.startswith("## Goal")
+
+        context = seen["context"]
+        assert isinstance(context, Context)
+        assert context.system_prompt, "the summarization system prompt went missing"
+        assert isinstance(context.messages[0], UserMessage)
+        assert "do the thing" in context.messages[0].content[0].text
+
+        options = seen["options"]
+        assert isinstance(options, SimpleStreamOptions)
+        assert options.api_key == "the-key"
+        assert options.max_tokens == 800
+        # The faux model does not advertise reasoning, so the TS's ternary drops
+        # the level rather than asking a non-reasoning model to think.
+        assert options.reasoning is None

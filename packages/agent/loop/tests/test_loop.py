@@ -1189,3 +1189,193 @@ class TestPublicAPI:
 
         assert [getattr(m, "role", "") for m in messages] == ["assistant"]
         assert _text_of(messages[0]) == "continued"
+
+
+# ---------------------------------------------------------------------------
+# What the provider is told about the request (7.12)
+# ---------------------------------------------------------------------------
+
+
+class TestStreamOptions:
+    """The `{...config, apiKey, signal}` spread, which this port did not have.
+
+    The loop passed `dict(vars(config))` and the config carried none of
+    `SimpleStreamOptions`' fields, so a real provider — which reads
+    `options.api_key`, `options.reasoning` — got a dict with nothing it wanted.
+    Every assertion here is about a field arriving, because that is exactly what
+    was being dropped.
+    """
+
+    def _capturing_stream(self, seen: list[Any]) -> Any:
+        """The default stream function, with a note taken of what it was handed."""
+        from cortex.ai.stream import stream_simple
+
+        def stream_fn(model: Any, context: Any, options: Any) -> Any:
+            seen.append(options)
+            return stream_simple(model, context, options)
+
+        return stream_fn
+
+    async def test_the_options_are_a_stream_options_object(self, faux: Any) -> None:
+        from cortex.ai.types import SimpleStreamOptions
+
+        faux.set_responses([faux_assistant_message("ok")])
+        seen: list[Any] = []
+        await run_agent_loop(
+            prompts=[_user("hi")],
+            context=AgentContext(system_prompt="", messages=[]),
+            config=_config(faux),
+            emit=_Sink(),
+            stream_fn=self._capturing_stream(seen),
+        )
+
+        assert isinstance(seen[0], SimpleStreamOptions), f"provider got {type(seen[0])}"
+
+    async def test_request_shaping_fields_reach_the_provider(self, faux: Any) -> None:
+        faux.set_responses([faux_assistant_message("ok")])
+        seen: list[Any] = []
+        config = AgentLoopConfig(
+            model=faux.get_model(),
+            reasoning="high",
+            session_id="session-7",
+            cache_retention="long",
+            max_retries=4,
+            thinking_display="summarized",
+        )
+
+        await run_agent_loop(
+            prompts=[_user("hi")],
+            context=AgentContext(system_prompt="", messages=[]),
+            config=config,
+            emit=_Sink(),
+            stream_fn=self._capturing_stream(seen),
+        )
+
+        options = seen[0]
+        assert options.reasoning == "high"
+        assert options.session_id == "session-7"
+        assert options.cache_retention == "long"
+        assert options.max_retries == 4
+        assert options.thinking_display == "summarized"
+
+    async def test_the_resolved_key_wins_over_the_configured_one(self, faux: Any) -> None:
+        faux.set_responses([faux_assistant_message("ok")])
+        seen: list[Any] = []
+
+        def fresh_key(_provider: str) -> str:
+            return "fresh-key"
+
+        config = AgentLoopConfig(model=faux.get_model(), api_key="stale-key", get_api_key=fresh_key)
+
+        await run_agent_loop(
+            prompts=[_user("hi")],
+            context=AgentContext(system_prompt="", messages=[]),
+            config=config,
+            emit=_Sink(),
+            stream_fn=self._capturing_stream(seen),
+        )
+
+        assert seen[0].api_key == "fresh-key"
+
+    async def test_the_configured_key_is_the_fallback(self, faux: Any) -> None:
+        """`|| config.apiKey`: a caller with no hook still gets to supply a key.
+
+        Without the fallback the request goes out with `api_key=None` and the
+        provider falls back to the environment, which is how a key passed on the
+        CLI turns into "no API key found" on a machine that has no env var.
+        """
+        faux.set_responses([faux_assistant_message("ok")])
+        seen: list[Any] = []
+        config = AgentLoopConfig(model=faux.get_model(), api_key="the-only-key")
+
+        await run_agent_loop(
+            prompts=[_user("hi")],
+            context=AgentContext(system_prompt="", messages=[]),
+            config=config,
+            emit=_Sink(),
+            stream_fn=self._capturing_stream(seen),
+        )
+
+        assert seen[0].api_key == "the-only-key"
+
+    async def test_a_hook_that_answers_none_falls_back_too(self, faux: Any) -> None:
+        faux.set_responses([faux_assistant_message("ok")])
+        seen: list[Any] = []
+
+        def no_key(_provider: str) -> str | None:
+            return None
+
+        config = AgentLoopConfig(model=faux.get_model(), api_key="the-fallback", get_api_key=no_key)
+
+        await run_agent_loop(
+            prompts=[_user("hi")],
+            context=AgentContext(system_prompt="", messages=[]),
+            config=config,
+            emit=_Sink(),
+            stream_fn=self._capturing_stream(seen),
+        )
+
+        assert seen[0].api_key == "the-fallback"
+
+    async def test_prepare_next_turn_can_re_aim_the_thinking_level(self, faux: Any) -> None:
+        """A snapshot's thinking level shapes the *next* request, as the model does."""
+        faux.set_responses(
+            [
+                faux_assistant_message(
+                    [faux_tool_call("echo", {"value": "one"}, {"id": "tool-1"})],
+                    stop_reason="toolUse",
+                ),
+                faux_assistant_message("done"),
+            ]
+        )
+        seen: list[Any] = []
+        executed: list[Any] = []
+
+        async def prepare_next_turn(_context: Any) -> Any:
+            return {"thinking_level": "medium"}
+
+        config = AgentLoopConfig(
+            model=faux.get_model(),
+            reasoning="high",
+            prepare_next_turn=prepare_next_turn,
+        )
+
+        await run_agent_loop(
+            prompts=[_user("hi")],
+            context=AgentContext(system_prompt="", messages=[], tools=[_echo_tool(executed)]),
+            config=config,
+            emit=_Sink(),
+            stream_fn=self._capturing_stream(seen),
+        )
+
+        assert [options.reasoning for options in seen] == ["high", "medium"]
+
+    async def test_off_means_no_reasoning_at_all(self, faux: Any) -> None:
+        faux.set_responses(
+            [
+                faux_assistant_message(
+                    [faux_tool_call("echo", {"value": "one"}, {"id": "tool-1"})],
+                    stop_reason="toolUse",
+                ),
+                faux_assistant_message("done"),
+            ]
+        )
+        seen: list[Any] = []
+        executed: list[Any] = []
+
+        async def prepare_next_turn(_context: Any) -> Any:
+            return {"thinking_level": "off"}
+
+        config = AgentLoopConfig(
+            model=faux.get_model(), reasoning="high", prepare_next_turn=prepare_next_turn
+        )
+
+        await run_agent_loop(
+            prompts=[_user("hi")],
+            context=AgentContext(system_prompt="", messages=[], tools=[_echo_tool(executed)]),
+            config=config,
+            emit=_Sink(),
+            stream_fn=self._capturing_stream(seen),
+        )
+
+        assert [options.reasoning for options in seen] == ["high", None]

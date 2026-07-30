@@ -421,7 +421,11 @@ visible capability at a time.
 - [x] **7.11 auth + model registry** — `core/{model-registry,model-resolver,auth-storage}.ts`,
       `login-controller.ts` → `packages/code/config/`, `packages/code/interactive/`.
       `/login` opens the provider picker; a missing key explains itself.
-- [ ] **7.12 e2e cutover** — every scenario in the corpus passing, `tui_e2e.py` exits
-      0 with zero pending, stub markers gone from `code/interactive`, `agent/loop`
-      and `code/main`. Then re-run 6.1's side-by-side against hoocode interactively.
+- [x] **7.12 e2e cutover** — every scenario in the corpus passing, `tui_e2e.py` exits
+      0 with zero pending, stub markers gone from `packages/code/interactive`,
+      `packages/agent/loop` and `packages/code/main`. Then re-run 6.1's side-by-side
+      against hoocode interactively. `e2e/first-run` is the scenario that fakes
+      nothing above the socket: a clean config directory, the real registry and
+      resolver, the real Anthropic provider, and an HTTP stand-in where the API
+      would be — which is how the first turn against a real provider finally ran.
       verify: e2e-scenarios, no-stubs

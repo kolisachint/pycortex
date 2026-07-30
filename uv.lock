@@ -420,8 +420,10 @@ name = "cortexcode-cli-e2e"
 version = "0.0.1"
 source = { editable = "packages/code/e2e" }
 dependencies = [
+    { name = "cortexcode-ai-provider-anthropic" },
     { name = "cortexcode-cli-config" },
     { name = "cortexcode-cli-interactive" },
+    { name = "cortexcode-cli-session" },
     { name = "cortexcode-tui-components" },
     { name = "cortexcode-tui-render" },
     { name = "cortexcode-tui-terminal" },
@@ -430,8 +432,10 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cortexcode-ai-provider-anthropic", editable = "packages/ai/provider-anthropic" },
     { name = "cortexcode-cli-config", editable = "packages/code/config" },
     { name = "cortexcode-cli-interactive", editable = "packages/code/interactive" },
+    { name = "cortexcode-cli-session", editable = "packages/code/session" },
     { name = "cortexcode-tui-components", editable = "packages/tui/components" },
     { name = "cortexcode-tui-render", editable = "packages/tui/render" },
     { name = "cortexcode-tui-terminal", editable = "packages/tui/terminal" },
@@ -489,18 +493,30 @@ source = { editable = "packages/code/main" }
 dependencies = [
     { name = "cortexcode-cli-config" },
     { name = "cortexcode-cli-interactive" },
+    { name = "cortexcode-cli-print" },
+    { name = "cortexcode-cli-session" },
+    { name = "cortexcode-tui-fuzzy" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "cortexcode-cli-config", editable = "packages/code/config" },
     { name = "cortexcode-cli-interactive", editable = "packages/code/interactive" },
+    { name = "cortexcode-cli-print", editable = "packages/code/print" },
+    { name = "cortexcode-cli-session", editable = "packages/code/session" },
+    { name = "cortexcode-tui-fuzzy", editable = "packages/tui/fuzzy" },
 ]
 
 [[package]]
 name = "cortexcode-cli-print"
 version = "0.0.3"
 source = { editable = "packages/code/print" }
+dependencies = [
+    { name = "cortexcode-cli-session" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "cortexcode-cli-session", editable = "packages/code/session" }]
 
 [[package]]
 name = "cortexcode-cli-prompts"

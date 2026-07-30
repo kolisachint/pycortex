@@ -440,3 +440,77 @@ class TestAgentState:
         assert state.system_prompt == "test"
         assert state.thinking_level == "high"
         assert state.is_streaming is True
+
+
+# ---------------------------------------------------------------------------
+# What the agent tells the loop about the request (7.12)
+# ---------------------------------------------------------------------------
+
+
+class TestLoopConfigStreamOptions:
+    """`createLoopConfig`'s eight request-shaping fields.
+
+    `AgentOptions` accepted every one of them and `_create_loop_config` set
+    none, so they were stored and never read: a session on thinking level
+    `high` asked the provider for no thinking at all. These are asserted on the
+    config the agent builds, because that is the object the loop spreads into
+    the provider call.
+    """
+
+    def test_thinking_level_becomes_reasoning(self, faux: Any) -> None:
+        agent = _agent(faux)
+        agent.state.thinking_level = "high"
+        assert agent._create_loop_config()  # pyright: ignore[reportPrivateUsage].reasoning == "high"
+
+    def test_off_is_no_reasoning_rather_than_the_string(self, faux: Any) -> None:
+        """`reasoning: thinkingLevel === "off" ? undefined : …` — the TS's ternary.
+
+        Sending `reasoning="off"` would be a request for a thinking level the
+        providers do not have, rather than a request for no thinking.
+        """
+        agent = _agent(faux)
+        agent.state.thinking_level = "off"
+        assert agent._create_loop_config()  # pyright: ignore[reportPrivateUsage].reasoning is None
+
+    def test_the_session_id_and_callbacks_are_carried(self, faux: Any) -> None:
+        async def on_payload(payload: Any) -> Any:
+            return payload
+
+        async def on_response(_response: Any) -> None:
+            return None
+
+        agent = _agent(
+            faux,
+            session_id="session-42",
+            on_payload=on_payload,
+            on_response=on_response,
+            transport="sse",
+            max_retry_delay_ms=250,
+            thinking_display="summarized",
+        )
+
+        config = agent._create_loop_config()  # pyright: ignore[reportPrivateUsage]
+        assert config.session_id == "session-42"
+        assert config.on_payload is on_payload
+        assert config.on_response is on_response
+        assert config.transport == "sse"
+        assert config.max_retry_delay_ms == 250
+        assert config.thinking_display == "summarized"
+
+    async def test_the_level_reaches_the_provider(self, faux: Any) -> None:
+        """End to end through the loop, since the config alone proves half of it."""
+        seen: list[Any] = []
+
+        def stream_fn(model: Any, context: Any, options: Any) -> Any:
+            from cortex.ai.stream import stream_simple
+
+            seen.append(options)
+            return stream_simple(model, context, options)
+
+        faux.set_responses([faux_assistant_message("ok")])
+        agent = _agent(faux, stream_fn=stream_fn)
+        agent.state.thinking_level = "medium"
+
+        await agent.prompt("think about it")
+
+        assert seen and seen[0].reasoning == "medium"
