@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "cortexcode-ai-models>=0.0.3,<0.1.0",
+    "cortexcode-ai-oauth>=0.0.3,<0.1.0",
     "cortexcode-ai-types>=0.0.3,<0.1.0",
     "cortexcode-cli-config>=0.0.3,<0.1.0",
     "cortexcode-cli-prompts>=0.0.3,<0.1.0",
@@ -30,6 +31,7 @@ packages = [
 
 [tool.uv.sources]
 cortexcode-ai-models = { workspace = true }
+cortexcode-ai-oauth = { workspace = true }
 cortexcode-ai-types = { workspace = true }
 cortexcode-cli-config = { workspace = true }
 cortexcode-cli-prompts = { workspace = true }
