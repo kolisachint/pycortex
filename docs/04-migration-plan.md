@@ -408,7 +408,7 @@ visible capability at a time.
       session-replacement half plus `renderCurrentSessionState` — already
       deferred there — so the selector without them would be a picker you cannot
       pick from. `overlay/session-selector` moves with them.
-- [ ] **7.10 session persistence** — `core/session-manager.ts` wiring into interactive
+- [x] **7.10 session persistence** — `core/session-manager.ts` wiring into interactive
       mode → `packages/code/session/`. `--continue` restores the transcript on
       screen; a turn survives quit and relaunch. The same machinery — the runtime's
       session-replacement half plus `renderCurrentSessionState` — is what `/new`,

@@ -146,9 +146,10 @@ class TreeNavigationController:
             if label and not summary_text:
                 session_manager.append_label_change(target_id, label)
 
-            # Update agent state
-            entries = session_manager.get_entries()
-            self._deps.set_agent_messages(entries)
+            # Update agent state. The *messages* on the new branch, not the
+            # entries: the agent's context is a message list, and the entry list
+            # is the whole file rather than the path that was navigated to.
+            self._deps.set_agent_messages(session_manager.build_session_context().messages)
 
             return NavigateTreeResult(
                 editor_text=editor_text,

@@ -8,6 +8,7 @@ terminal, no session file and no agent. The screen-level counterpart is
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import re
@@ -19,6 +20,7 @@ from cortex.code.interactive import CommandExecutor, DynamicBorder
 from cortex.code.interactive.components.keybinding_hints import key_display_text
 from cortex.code.interactive.keybindings import KeybindingsManager
 from cortex.code.interactive.theme import get_markdown_theme
+from cortex.code.session import SessionImportFileNotFoundError, SessionReplacementResult
 from cortex.code.session.stats import SessionStats, TokenStats
 from cortex.tui.components import Markdown, MarkdownTheme, Spacer, Text
 from cortex.tui.keys import set_keybindings
@@ -48,6 +50,10 @@ class FakeUI:
 class FakeSessionManager:
     def __init__(self, name: str | None = None) -> None:
         self._name = name
+        self.leaf_id: str | None = "entry-9"
+
+    def get_leaf_id(self) -> str | None:
+        return self.leaf_id
 
     def get_session_name(self) -> str | None:
         return self._name
@@ -101,6 +107,44 @@ class FakeFooter:
         self.invalidations += 1
 
 
+class FakeEditor:
+    def __init__(self) -> None:
+        self.text = ""
+
+    def set_text(self, text: str) -> None:
+        self.text = text
+
+
+class FakeRuntimeHost:
+    """The three session-replacement calls the 7.10 handlers make."""
+
+    def __init__(self) -> None:
+        self.new_sessions = 0
+        self.forks: list[tuple[str, str]] = []
+        self.imports: list[str] = []
+        #: Raised by whichever call is made next, if set.
+        self.error: Exception | None = None
+        #: What the next call reports back.
+        self.result = SessionReplacementResult()
+
+    def _answer(self) -> SessionReplacementResult:
+        if self.error is not None:
+            raise self.error
+        return self.result
+
+    async def new_session(self) -> SessionReplacementResult:
+        self.new_sessions += 1
+        return self._answer()
+
+    async def fork(self, entry_id: str, position: str = "before") -> SessionReplacementResult:
+        self.forks.append((entry_id, position))
+        return self._answer()
+
+    async def import_from_jsonl(self, path: str) -> SessionReplacementResult:
+        self.imports.append(path)
+        return self._answer()
+
+
 class Context:
     """A :class:`CommandContext` built by hand."""
 
@@ -126,6 +170,11 @@ class Context:
         #: What `find_exact_model_match` answers with, by search term.
         self.model_matches: dict[str, Any] = {}
         self._footer = FakeFooter()
+        self._editor = FakeEditor()
+        self._runtime_host = FakeRuntimeHost()
+        self._status = Container()
+        self.rebuilds = 0
+        self.loaders_stopped = 0
 
     @property
     def session(self) -> Any:
@@ -162,6 +211,24 @@ class Context:
     @property
     def footer(self) -> Any:
         return self._footer
+
+    @property
+    def editor(self) -> Any:
+        return self._editor
+
+    @property
+    def runtime_host(self) -> Any:
+        return self._runtime_host
+
+    @property
+    def status_container(self) -> Container:
+        return self._status
+
+    def render_current_session_state(self) -> None:
+        self.rebuilds += 1
+
+    def stop_working_loader(self) -> None:
+        self.loaders_stopped += 1
 
     def update_editor_border_color(self) -> None:
         self.border_updates += 1
@@ -519,3 +586,106 @@ class TestHandleModel:
         assert ctx.errors == ["No API key for openai/gpt-5-mini"]
         assert ctx.statuses == []
         assert ctx.selector_searches == []
+
+
+class TestHandleClear:
+    """``/new`` — the runtime makes a session, the app redraws from it."""
+
+    def test_starts_a_new_session_and_rebuilds_the_screen(self):
+        ctx = Context()
+        asyncio.run(CommandExecutor(ctx).handle_clear())
+        assert ctx.runtime_host.new_sessions == 1
+        assert ctx.rebuilds == 1
+        assert "✓ New session started" in _chat_text(ctx)
+
+    def test_stops_the_loader_before_replacing_the_session(self):
+        # The loader belongs to a turn in the session being replaced; leaving it
+        # running would tick over a transcript it has nothing to do with.
+        ctx = Context()
+        asyncio.run(CommandExecutor(ctx).handle_clear())
+        assert ctx.loaders_stopped == 1
+
+    def test_a_cancelled_replacement_leaves_the_screen_alone(self):
+        ctx = Context()
+        ctx.runtime_host.result = SessionReplacementResult(cancelled=True)
+        asyncio.run(CommandExecutor(ctx).handle_clear())
+        assert ctx.rebuilds == 0
+        assert _chat_text(ctx) == ""
+
+    def test_a_failure_is_reported_rather_than_raised(self):
+        ctx = Context()
+        ctx.runtime_host.error = RuntimeError("disk full")
+        asyncio.run(CommandExecutor(ctx).handle_clear())
+        assert ctx.errors == ["Failed to create session: disk full"]
+        assert ctx.rebuilds == 0
+
+
+class TestHandleClone:
+    """``/clone`` — a fork *at* the leaf, so nothing leaves the transcript."""
+
+    def test_forks_at_the_current_leaf(self):
+        ctx = Context()
+        asyncio.run(CommandExecutor(ctx).handle_clone())
+        assert ctx.runtime_host.forks == [("entry-9", "at")]
+        assert ctx.rebuilds == 1
+        assert ctx.statuses == ["Cloned to new session"]
+
+    def test_clears_the_editor(self):
+        ctx = Context()
+        ctx.editor.set_text("half-written")
+        asyncio.run(CommandExecutor(ctx).handle_clone())
+        assert ctx.editor.text == ""
+
+    def test_an_empty_session_has_nothing_to_clone(self):
+        ctx = Context()
+        ctx.session_manager.leaf_id = None
+        asyncio.run(CommandExecutor(ctx).handle_clone())
+        assert ctx.statuses == ["Nothing to clone yet"]
+        assert ctx.runtime_host.forks == []
+
+    def test_a_failure_is_reported_rather_than_raised(self):
+        ctx = Context()
+        ctx.runtime_host.error = ValueError("Failed to create forked session")
+        asyncio.run(CommandExecutor(ctx).handle_clone())
+        assert ctx.errors == ["Failed to create forked session"]
+
+
+class TestHandleImport:
+    """``/import`` — one path argument, quotes honoured."""
+
+    def test_imports_the_named_file(self):
+        ctx = Context()
+        asyncio.run(CommandExecutor(ctx).handle_import("/import /tmp/session.jsonl"))
+        assert ctx.runtime_host.imports == ["/tmp/session.jsonl"]
+        assert ctx.rebuilds == 1
+        assert ctx.statuses == ["Session imported from: /tmp/session.jsonl"]
+
+    def test_a_quoted_path_may_contain_spaces(self):
+        ctx = Context()
+        asyncio.run(CommandExecutor(ctx).handle_import('/import "/tmp/my sessions/a.jsonl"'))
+        assert ctx.runtime_host.imports == ["/tmp/my sessions/a.jsonl"]
+
+    def test_an_unquoted_path_stops_at_the_first_space(self):
+        ctx = Context()
+        asyncio.run(CommandExecutor(ctx).handle_import("/import /tmp/a.jsonl extra"))
+        assert ctx.runtime_host.imports == ["/tmp/a.jsonl"]
+
+    def test_an_unterminated_quote_is_no_argument_at_all(self):
+        # Guessing where the quote ended would import a path nobody typed.
+        ctx = Context()
+        asyncio.run(CommandExecutor(ctx).handle_import('/import "/tmp/a.jsonl'))
+        assert ctx.runtime_host.imports == []
+        assert ctx.errors == ["Usage: /import <path.jsonl>"]
+
+    def test_no_argument_is_a_usage_error(self):
+        ctx = Context()
+        asyncio.run(CommandExecutor(ctx).handle_import("/import"))
+        assert ctx.runtime_host.imports == []
+        assert ctx.errors == ["Usage: /import <path.jsonl>"]
+
+    def test_a_missing_file_says_so(self):
+        ctx = Context()
+        ctx.runtime_host.error = SessionImportFileNotFoundError("/tmp/gone.jsonl")
+        asyncio.run(CommandExecutor(ctx).handle_import("/import /tmp/gone.jsonl"))
+        assert ctx.errors == ["Failed to import session: File not found: /tmp/gone.jsonl"]
+        assert ctx.rebuilds == 0

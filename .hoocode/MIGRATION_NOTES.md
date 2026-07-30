@@ -2266,3 +2266,139 @@ out to `rg`/`fd`, so there is no `.exe` to resolve.
 - The Kitty query and the modifyOtherKeys fallback are still written to a
   Windows console. Both are ignored there rather than harmful, and suppressing
   them would be a behaviour difference no terminal asked for.
+
+## 7.10 session persistence — DONE
+
+The session outlived the process. `session-manager.ts`'s listing and
+context-building halves + `agent-session-runtime.ts`'s session-*replacement*
+half → `packages/code/session/`; `session-selector.ts` (1023) +
+`tree-selector.ts` (1247) + `user-message-selector.ts` (155) +
+`session-selector-search.ts` (194) + the render/rebind wiring in
+`interactive-mode.ts` → `packages/code/interactive/`; `--continue` →
+`packages/code/main/`. 4 e2e scenarios, 181 + 729 + 114 tests across the three
+leaves, 29/30 mutations caught.
+
+1. **`build_session_context` was the missing half, and nothing worked without
+   it.** The Python `SessionManager` had no counterpart at all — every mode was
+   reading `get_entries()` — so a restored session was a list of JSONL dicts and
+   the components above read `.role`/`.content` off objects. The split is the
+   TS's: the walk up the tree is in `session-manager.py`, the scan over the
+   root-first path is `cortex.agent.harness.types.build_session_context` (the TS
+   imports that half from `hoocode-agent-core`, and `code/session` now declares
+   the dep rather than reaching for it bare, as `agent/compaction` does).
+   Reviving the messages is the port's own work — `model_validate` per role,
+   the roles with no model (`bashExecution`) handed back as the dicts the live
+   path also puts in `agent.state.messages`.
+2. **`sdk.ts` assigns the restored messages onto the agent, and missing that
+   would have been invisible.** `agent.state.messages = existingSession.messages`
+   is one line at the end of `createAgentSession`; without it `--continue`
+   *looks* right — the transcript is on screen — and the next question reaches
+   the provider with no history at all. `session/resume` asserts on the agent's
+   context, not only on the screen, for exactly that reason.
+3. **The app owns a runtime now, not a session.** `InteractiveMode.session` is a
+   property over `runtime_host.session` (the TS's `get session()`), which is why
+   six commands that *replace* the session needed no changes anywhere above:
+   the command executor, the footer and the tool renderers all read through it.
+   `rebind_session` is `rebindCurrentSession` and the order is load-bearing —
+   unsubscribe, re-point, resubscribe — because subscribing first delivers the
+   new session's events into a footer still describing the old one.
+4. **The cwd check runs before the teardown, and that is the whole design of
+   `switch_session`.** A session file naming a directory that no longer exists
+   is the one case where a switch must leave the current session *running*, so
+   the caller can ask where to open it instead. A mutation that moved the check
+   after `_teardown_current()` passed every assertion about which session was
+   current — the failure only shows up in whether that session is still live,
+   which is what the test now asserts.
+5. **`/new` on an ephemeral session must stay ephemeral, and the TS's own code
+   does not.** `newSession` calls `SessionManager.create` unconditionally, which
+   under `--no-session` starts writing files the user asked not to have (and in
+   this port, with `session_dir == ""`, writes a relative-path `.jsonl` into the
+   process's cwd). `fork` already branches on `is_persisted()`; `new_session`
+   now does too. Deviation, deliberate, and the only one in the runtime.
+6. **`AgentSession` grew the tree half it had been missing.** `/tree` is
+   `navigateTree`, whose controller was ported in Phase 4 and left unwired —
+   and its `set_agent_messages` call was passing **entries where the TS passes
+   `buildSessionContext().messages`**, which nothing could have noticed while
+   nothing called it. Fixed here, with `get_user_messages_for_forking` and
+   `abort_branch_summary` beside it.
+7. **The tree selector's indentation code exists twice on purpose.** Once over
+   the whole tree (`_flatten_tree`), once over the visible one
+   (`_recalculate_visual_structure`), because a filter can hide a node whose
+   children then re-attach to the nearest visible ancestor and every connector
+   and gutter has to be recomputed around what is left. Both copies follow the
+   same rule — indentation grows only at a branch point — and keeping them in
+   step is why `_child_indent` and `_child_gutters` are extracted here where the
+   TS inlines them twice.
+8. **`_last_selected_id` was read before it was assigned, and the first test
+   found it.** `_apply_filter()` runs from the constructor and reads the field
+   that the constructor sets *after* it; in TS a class field declared with an
+   initialiser is set before the constructor body runs, so the ordering is free
+   there and is not here. Every tree test failed at once, which is the good
+   version of this bug.
+9. **`SessionManager.list`/`list_all` are async and the reads inside them are
+   not.** The TS's `Promise.all` over files is I/O concurrency Python has no
+   free equivalent for, and a thread pool would be an enhancement. What the
+   async signature buys is real: the overlay paints a loading header, the
+   progress callback moves a counter in it, and Tab is answerable while a slow
+   directory is still being read — none of which survives a synchronous loader.
+10. **The `all` scope is loaded once, lazily.** `listAll` walks every session
+    directory on the machine, so the first Tab loads it and every Tab after that
+    is a swap. A mutation that reloaded on each Tab is invisible to any
+    assertion about what is *on* the screen — the list is the same — so the test
+    counts loads instead.
+11. **`/import` ships without the confirmation dialog and `/tree` without the
+    summary prompt.** Both are `dialogs.showSelector`, which is extension
+    chrome. `/import` names its own file, so there is nothing for a confirm to
+    disambiguate and the session it replaces is left rather than destroyed;
+    `/tree` navigates unsummarised, which is what a user with
+    `branchSummarySkipPrompt` set already gets.
+12. **`Input.set_value` leaves the caret at the start, so the tree's label
+    editor cannot be cleared with Backspace.** That is the TS's behaviour, one
+    for one (`setValue` sets `cursor = Math.min(cursor, value.length)` on a
+    fresh `Input` whose cursor is 0). Ctrl+K empties the field. Written down
+    because it looks like a port bug and is not.
+13. **`--resume` and `--session <partial-uuid>` stay out.** Both need the
+    standalone `selectSession` renderer that runs *before* the TUI exists, plus
+    the id resolver beside it; `/resume` inside the app is the same list over the
+    same machinery. A `--session` path that is not there is now reported rather
+    than silently starting a new session under that name.
+
+MUTATION TESTING: 30 mutations, 24 caught on the first honest run. Five of the
+six misses were real and are closed above (the header-vs-last-activity date, the
+undisposed session, the cwd-check ordering, ephemeral `/new`, and a phrase token
+matched fuzzily — which needed a text where the phrase's characters *are* a
+subsequence, or the two paths are indistinguishable). **The sixth is
+equivalent**: deleting the `leaf_id is None` early return in
+`build_session_context` changes nothing, because `None` then fails both
+`isinstance` checks and falls into the `leaf is None` return two lines later.
+The early return is kept — it is what the TS does, and it is the line that says
+the tri-state exists. 29/30 after.
+
+### Found here, deliberately not fixed
+
+- **Extension hooks around every session replacement are absent.**
+  `session_before_switch`, `session_before_fork` and `session_shutdown` are what
+  the TS emits and awaits; nothing in this port puts an extension runner on a
+  session. Every replacement method still returns `SessionReplacementResult`
+  with a `cancelled` flag and every caller checks it, so wiring the runner is a
+  change to one method rather than to eight call sites.
+- **`renderCurrentSessionState` cannot rebuild what has no component.** Custom
+  messages, compaction summaries, branch summaries and skill blocks are four
+  branches of `addMessageToChat` whose components arrive with the steps that
+  produce those entries; a session holding one renders without it rather than
+  crashing.
+- **`hide-thinking` still does not rebuild the transcript**, though
+  `rebuild_chat_from_messages` — the machinery 7.9 said it was waiting for — now
+  exists. Wiring it is a settings-callback change and belongs with whoever
+  revisits that screen; the note from 7.9 stands until then.
+- **The model a session was saved with is not restored.** `sdk.ts` looks it up
+  in the registry and falls back with a message; the registry is 7.11's, so a
+  resumed session keeps whatever model the process is already on (which is what
+  `create_replacement_session` carries over) rather than the one in the file.
+- **`--export` moved from 7.10 to 7.12.** It was attributed to "session
+  persistence", but what it needs is the HTML exporter;
+  `export_session_branch_to_jsonl` has existed since Phase 4 and the HTML half
+  is unported. The flag still fails loudly, naming the later step.
+- 5.6's `publish = false` on `code/_meta` is still untouched, for the reason
+  7.1–7.9 all gave: flipping it puts `cortexcode-code` on PyPI, which is a
+  release decision.

@@ -21,12 +21,13 @@ from __future__ import annotations
 import os
 import re
 import traceback
-from collections.abc import Callable
+from collections.abc import Callable, Generator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from cortex.code.e2e._harness import AppHarness
-from cortex.code.interactive import BRAND_MARK
+from cortex.code.interactive import BRAND_MARK, resolve_session_manager
 from cortex.tui.render import TUI
 
 __all__ = [
@@ -205,6 +206,7 @@ def faux_session(
     tools: list[Any] | None = None,
     models: list[Any] | None = None,
     with_model_registry: bool = False,
+    session_manager: Any = None,
 ) -> FauxSession:
     """Build the session the shell scenarios prompt against.
 
@@ -223,6 +225,10 @@ def faux_session(
     `models` overrides the faux model definitions. The footer's context meter is
     the reason it exists: the default model declares a 128k window, and no turn a
     scenario can afford to run moves a gauge scaled to that.
+
+    `session_manager` is 7.10's: the scenarios about a session outliving the
+    process need one that writes, and they bring a temporary directory of their
+    own to write into.
     """
     from cortex.ai.providers.faux import register_faux_provider
     from cortex.code.session import SessionManager, create_agent_session
@@ -231,7 +237,11 @@ def faux_session(
     created = create_agent_session(
         cwd=cwd,
         settings_manager=settings,
-        session_manager=SessionManager(cwd, "", persist=False),
+        session_manager=(
+            session_manager
+            if session_manager is not None
+            else SessionManager(cwd, "", persist=False)
+        ),
         model=registration.get_model(),
         stream_fn=stream_fn,
         tools=tools,
@@ -1210,19 +1220,44 @@ def commands_help() -> None:
         h.assert_hides("> /hotkeys")
 
 
-# `/clear` is 7.10's, and it is the runtime half that puts it there.
-#
-# hoocode's command that empties the chat log is `/new`, and its handler
-# (`CommandExecutor.handleClear`, named for what it does to the screen) is two
-# calls: `runtimeHost.newSession()` and `renderCurrentSessionState()`. The first
-# is `AgentSessionRuntime`'s session-*replacement* half, which 7.4 deferred to
-# 7.10 in `cortex.code.session.runtime`'s own docstring; the second rebuilds the
-# transcript from a session's entries, which is `session/resume` — 7.10's other
-# scenario — under a different name. Neither is `command-executor.ts` work that
-# 7.8 was holding up, so the scenario moves to the step that builds what it
-# needs rather than 7.8 shipping something that empties a container and calls it
-# a session.
-pending("commands/clear", "`/new` empties the chat log", "7.10")
+@scenario("commands/clear", "`/new` empties the chat log", "7.10")
+def commands_clear() -> None:
+    """hoocode's command for a clean chat log is `/new`, and it means it.
+
+    There is no `/clear` in `slash-commands.ts`: what empties the screen is a
+    *new session*, and the handler is named `handleClear` for what the user sees
+    rather than for what it does. So this checks both halves — the transcript is
+    gone from the screen, and the session behind it is a different one, with the
+    old turn no longer in the agent's context.
+    """
+    from cortex.ai.providers.faux import faux_assistant_message
+
+    faux = faux_session()
+    faux.set_responses([faux_assistant_message("Ada Lovelace wrote the first algorithm.")])
+    try:
+        with boot_shell(session=faux.session) as h:
+            h.type("who wrote the first algorithm?")
+            h.key("enter")
+            h.assert_shows("Ada Lovelace wrote the first algorithm.")
+            first_session_id = h.app.session.session_id
+
+            h.type("/new")
+            h.key("enter")
+            h.wait_for(lambda: h.contains("New session started", scrollback=False))
+
+            # The turn is off the *screen* — not merely scrolled away, which is
+            # why this asks the viewport rather than the transcript.
+            h.assert_hides("who wrote the first algorithm?", scrollback=False)
+            h.assert_hides("Ada Lovelace wrote the first algorithm.", scrollback=False)
+
+            # And it is a different session: `/new` replaces it rather than
+            # clearing a container, so the next question starts from nothing.
+            assert h.app.session.session_id != first_session_id, "the session was not replaced"
+            assert h.app.session.messages == [], "the new session inherited the old transcript"
+            # The editor is back and usable.
+            assert _prompt_row(h) >= 0, f"the editor did not come back\n\n{h.snapshot()}"
+    finally:
+        faux.unregister()
 
 
 @scenario("commands/file-mention", "`@` opens file autocomplete and inserts a path", "7.8")
@@ -1346,19 +1381,46 @@ def overlay_model_selector() -> None:
         faux.unregister()
 
 
-# `/resume` and its session selector are 7.10's, with the machinery they need.
-#
-# `session-selector.ts` is one half of what this scenario asks for: it lists the
-# sessions on disk. The other half — *loading* the one you pick — is
-# `AgentSessionRuntime`'s session-replacement half plus `renderCurrentSessionState`,
-# both of which `cortex.code.session.runtime` defers to 7.10 in its own docstring
-# and which are exactly what `--continue` needs to put a transcript back on the
-# screen. Shipping the list without the load would put a command in the `/` menu
-# that opens a picker you cannot pick from, which is the one thing 7.8's
-# convention rules out. So the scenario moves to the step that builds what it
-# needs, as `commands/clear` did before it, and `/resume` stays unadvertised
-# until then.
-pending("overlay/session-selector", "`/resume` lists sessions and loads one", "7.10")
+@scenario("overlay/session-selector", "`/resume` lists sessions and loads one", "7.10")
+def overlay_session_selector() -> None:
+    """`/resume` is a picker you can pick from, which is the whole point of it.
+
+    Listing sessions and loading one are two different pieces of machinery — the
+    list is `session-selector.ts` over `SessionManager.list`, the load is the
+    runtime's `switch_session` plus `render_current_session_state` — and a
+    scenario that only opened the overlay would pass over either one alone. So
+    this drives it end to end: two sessions on disk, open the list, pick the
+    other one, and read its transcript off the screen.
+    """
+    with session_workspace() as workspace:
+        write_session(workspace, "how do I list files?", "Use ls.")
+        write_session(workspace, "how do I count lines?", "Use wc -l.")
+
+        faux = faux_session(cwd=workspace.cwd, session_manager=workspace.new_manager())
+        try:
+            with boot_shell(cwd=workspace.cwd, session=faux.session) as h:
+                h.type("/resume")
+                h.key("enter")
+                h.wait_for(lambda: h.contains("Resume Session", scrollback=False))
+
+                # Both sessions are offered, by their first user message.
+                h.wait_for(lambda: h.contains("how do I list files?", scrollback=False))
+                h.assert_shows("how do I count lines?", scrollback=False)
+
+                # Search down to one row and take it. Typing goes to the
+                # overlay's search box, which is what the list filters on.
+                h.type("count lines")
+                h.wait_for(lambda: not h.contains("how do I list files?", scrollback=False))
+                h.key("enter")
+
+                # The picked session is on screen, both sides of it, and the
+                # overlay is gone.
+                h.wait_for(lambda: h.contains("Use wc -l.", scrollback=False))
+                h.assert_shows("how do I count lines?", "Use wc -l.", scrollback=False)
+                assert not _overlay_open(h), f"the overlay stayed open\n\n{h.snapshot()}"
+                assert _prompt_row(h) >= 0, f"the editor did not come back\n\n{h.snapshot()}"
+        finally:
+            faux.unregister()
 
 
 @scenario("overlay/settings", "`/settings` opens settings and a change persists", "7.9")
@@ -1433,10 +1495,147 @@ def overlay_escape_closes() -> None:
 
 # ===========================================================================
 # 7.10 — sessions
+#
+# These are the only scenarios that touch the filesystem, and they bring their
+# own directory: a session that survives a restart has to be a real file, and a
+# scenario must not leave one on the machine that ran it.
 # ===========================================================================
 
-pending("session/resume", "`--continue` restores the previous transcript on screen", "7.10")
-pending("session/persist-across-restart", "A turn survives quit and relaunch", "7.10")
+
+def _role_of(message: Any) -> str:
+    """Role of a message, model or dict."""
+    if isinstance(message, dict):
+        return str(message.get("role", ""))
+    return str(getattr(message, "role", ""))
+
+
+@dataclass
+class SessionWorkspace:
+    """A throwaway project directory and the session directory beside it."""
+
+    cwd: str
+    session_dir: str
+
+    def new_manager(self) -> Any:
+        """A fresh persisted session in this workspace."""
+        from cortex.code.session import SessionManager
+
+        return SessionManager(self.cwd, self.session_dir)
+
+
+@contextmanager
+def session_workspace() -> Generator[SessionWorkspace]:
+    """A real cwd and session directory, removed afterwards.
+
+    The cwd has to exist rather than be a fixed string like the other scenarios
+    use: the runtime refuses to open a session whose recorded directory is gone,
+    which is exactly the check `switch_session` makes.
+    """
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as root:
+        cwd = os.path.join(root, "project")
+        session_dir = os.path.join(root, "sessions")
+        os.makedirs(cwd)
+        os.makedirs(session_dir)
+        yield SessionWorkspace(cwd=cwd, session_dir=session_dir)
+
+
+def write_session(workspace: SessionWorkspace, question: str, answer: str) -> str:
+    """One finished exchange, written to its own session file. Returns the path.
+
+    Both halves are needed: `SessionManager` does not flush a session to disk
+    until it has an assistant message, so a question on its own is not a session
+    anything can resume.
+    """
+    from cortex.ai.providers.faux import faux_assistant_message
+
+    manager = workspace.new_manager()
+    manager.append_message({"role": "user", "content": question, "timestamp": 1})
+    manager.append_message(faux_assistant_message(answer).model_dump())
+    path = manager.get_session_file()
+    assert path is not None
+    return path
+
+
+@scenario("session/resume", "`--continue` restores the previous transcript on screen", "7.10")
+def session_resume() -> None:
+    """`pycortex --continue` opens *on* the last session, not next to it.
+
+    The flag is resolved before the app exists — `resolve_session_manager` picks
+    the file, the session is built over it, and `init()` draws whatever it finds
+    — so what this checks is that the transcript is on the first frame rather
+    than something a later command has to fetch.
+    """
+    with session_workspace() as workspace:
+        write_session(workspace, "what is a monad?", "A monoid in the category of endofunctors.")
+
+        # Exactly what `main` does for `--continue`.
+        manager = resolve_session_manager(
+            workspace.cwd, continue_session=True, session_dir=workspace.session_dir
+        )
+        faux = faux_session(cwd=workspace.cwd, session_manager=manager)
+        try:
+            with boot_shell(cwd=workspace.cwd, session=faux.session) as h:
+                h.assert_shows("what is a monad?")
+                h.assert_shows("A monoid in the category of endofunctors.")
+                # Restored, not re-asked: the agent holds both messages already,
+                # and the editor is empty and waiting.
+                # The agent holds the restored conversation too, not just the
+                # screen: the next question is asked with this history behind it.
+                assert [_role_of(m) for m in h.app.session.messages] == ["user", "assistant"], (
+                    "the restored transcript did not reach the agent's context"
+                )
+                assert _prompt_row(h) >= 0, f"the editor is not ready\n\n{h.snapshot()}"
+
+                # And Up-arrow walks back through what was asked in it, which is
+                # the half of a resume that is not on the screen.
+                h.key("up")
+                h.assert_shows("> what is a monad?", scrollback=False)
+        finally:
+            faux.unregister()
+
+
+@scenario("session/persist-across-restart", "A turn survives quit and relaunch", "7.10")
+def session_persist_across_restart() -> None:
+    """The whole round trip, driven through the app both times.
+
+    Nothing here writes a session file by hand: the first app is asked a
+    question, answers it, and is quit with Ctrl+C twice; the second app is
+    started the way `--continue` starts one and has to show the same exchange.
+    That is the difference between this and `session/resume` — there, the file
+    was a fixture; here, the app produced it.
+    """
+    from cortex.ai.providers.faux import faux_assistant_message
+
+    with session_workspace() as workspace:
+        first = faux_session(cwd=workspace.cwd, session_manager=workspace.new_manager())
+        first.set_responses([faux_assistant_message("Grace Hopper wrote the first compiler.")])
+        try:
+            exits: list[int] = []
+            with boot_shell(cwd=workspace.cwd, session=first.session, on_exit=exits.append) as h:
+                h.type("who wrote the first compiler?")
+                h.key("enter")
+                h.assert_shows("Grace Hopper wrote the first compiler.")
+
+                h.key("ctrl+c")
+                h.key("ctrl+c")
+                assert exits == [0], f"the app did not quit: {exits!r}"
+        finally:
+            first.unregister()
+
+        # A second process would resolve the file the same way `--continue` does.
+        manager = resolve_session_manager(
+            workspace.cwd, continue_session=True, session_dir=workspace.session_dir
+        )
+        second = faux_session(cwd=workspace.cwd, session_manager=manager)
+        try:
+            with boot_shell(cwd=workspace.cwd, session=second.session) as h:
+                h.assert_shows("who wrote the first compiler?")
+                h.assert_shows("Grace Hopper wrote the first compiler.")
+        finally:
+            second.unregister()
+
 
 # ===========================================================================
 # 7.11 — auth and models

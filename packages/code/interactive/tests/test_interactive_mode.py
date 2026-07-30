@@ -15,6 +15,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 import pytest
+from cortex.ai.types import ToolCall
 from cortex.code.config import APP_TITLE, SettingsManager
 from cortex.code.config.settings_storage import InMemorySettingsStorage
 from cortex.code.interactive import (
@@ -1569,5 +1570,387 @@ class TestModelKeys:
         try:
             app.cycle_thinking_level()
             assert "Model does not support thinking" in _chat_text(app)
+        finally:
+            registration.unregister()
+
+
+# ---------------------------------------------------------------------------
+# 7.10 — the session the app is holding, and replacing it
+# ---------------------------------------------------------------------------
+
+
+def _persisted_app(tmp_path: Path, **overrides: object):
+    """An app over a session that writes to `tmp_path`, answering from the faux provider."""
+    from cortex.ai.providers.faux import register_faux_provider
+    from cortex.code.session import SessionManager, create_agent_session
+
+    registration = register_faux_provider()
+    settings = _settings()
+    created = create_agent_session(
+        cwd=str(tmp_path),
+        settings_manager=settings,
+        session_manager=SessionManager(str(tmp_path), str(tmp_path)),
+        model=registration.get_model(),
+    )
+    app = _app(None, settings=settings, session=created.session, cwd=str(tmp_path), **overrides)
+    return app, registration
+
+
+def _record_turn(app: InteractiveMode, question: str, answer: str) -> None:
+    """Write one finished exchange into the app's session file."""
+    from cortex.ai.providers.faux import faux_assistant_message
+
+    manager = app.session_manager
+    manager.append_message({"role": "user", "content": question, "timestamp": 1})
+    manager.append_message(faux_assistant_message(answer).model_dump())
+
+
+class TestSessionRestore:
+    """`render_initial_messages`: a session's entries, back onto the screen."""
+
+    def test_a_stored_transcript_is_on_the_first_frame(self, tmp_path: Path):
+        from cortex.ai.providers.faux import register_faux_provider
+        from cortex.code.session import SessionManager, create_agent_session
+
+        written = SessionManager(str(tmp_path), str(tmp_path))
+        registration = register_faux_provider()
+        try:
+            from cortex.ai.providers.faux import faux_assistant_message
+
+            written.append_message({"role": "user", "content": "what is a monad?", "timestamp": 1})
+            written.append_message(faux_assistant_message("A monoid.").model_dump())
+
+            settings = _settings()
+            created = create_agent_session(
+                cwd=str(tmp_path),
+                settings_manager=settings,
+                session_manager=SessionManager.continue_recent(str(tmp_path), str(tmp_path)),
+                model=registration.get_model(),
+            )
+            app = _app(settings=settings, session=created.session, cwd=str(tmp_path))
+
+            text = _chat_text(app)
+            assert "what is a monad?" in text
+            assert "A monoid." in text
+        finally:
+            registration.unregister()
+
+    def test_a_restored_user_message_is_in_the_editor_history(self, tmp_path: Path):
+        app, registration = _persisted_app(tmp_path)
+        try:
+            _record_turn(app, "asked before", "answered before")
+            app.render_current_session_state()
+            # Up-arrow on a resumed session walks back through what was actually
+            # asked in it, which is the half of a resume that is not on screen.
+            app.editor.handle_input("\x1b[A")
+            assert app.editor.get_text() == "asked before"
+        finally:
+            registration.unregister()
+
+    def test_an_empty_session_draws_nothing(self, tmp_path: Path):
+        app, registration = _persisted_app(tmp_path)
+        try:
+            assert app.chat_container.children == []
+        finally:
+            registration.unregister()
+
+    def test_a_tool_call_and_its_result_are_rebuilt_into_one_block(self, tmp_path: Path):
+        from cortex.ai.providers.faux import faux_assistant_message
+
+        app, registration = _persisted_app(tmp_path)
+        try:
+            call = faux_assistant_message("").model_copy(
+                update={
+                    "content": [ToolCall(id="t1", name="read", arguments={})],
+                    "stop_reason": "toolUse",
+                }
+            )
+            app.session_manager.append_message(call.model_dump())
+            app.session_manager.append_message(
+                {
+                    "role": "toolResult",
+                    "tool_call_id": "t1",
+                    "tool_name": "read",
+                    "content": [{"type": "text", "text": "the file contents"}],
+                    "is_error": False,
+                    "timestamp": 2,
+                }
+            )
+            app.render_current_session_state()
+
+            blocks = [
+                child
+                for child in app.chat_container.children
+                if isinstance(child, ToolExecutionComponent)
+            ]
+            assert len(blocks) == 1, "the call and its result should be one block, not two"
+            assert "the file contents" in _chat_text(app)
+            # The result landed, so nothing is left waiting for one.
+            assert app.pending_tools == {}
+        finally:
+            registration.unregister()
+
+    def test_a_call_that_never_finished_is_still_pending_after_a_rebuild(self, tmp_path: Path):
+        # A tool that was running when the process died: the block comes back
+        # unfilled, ready for the result if the turn is resumed.
+        from cortex.ai.providers.faux import faux_assistant_message
+
+        app, registration = _persisted_app(tmp_path)
+        try:
+            call = faux_assistant_message("").model_copy(
+                update={
+                    "content": [ToolCall(id="t9", name="read", arguments={})],
+                    "stop_reason": "toolUse",
+                }
+            )
+            app.session_manager.append_message(call.model_dump())
+            app.render_current_session_state()
+            assert list(app.pending_tools) == ["t9"]
+        finally:
+            registration.unregister()
+
+    def test_a_call_from_an_aborted_turn_is_drawn_failed(self, tmp_path: Path):
+        from cortex.ai.providers.faux import faux_assistant_message
+
+        app, registration = _persisted_app(tmp_path)
+        try:
+            call = faux_assistant_message("").model_copy(
+                update={
+                    "content": [ToolCall(id="t1", name="read", arguments={})],
+                    "stop_reason": "aborted",
+                }
+            )
+            app.session_manager.append_message(call.model_dump())
+            app.render_current_session_state()
+
+            assert "Operation aborted" in _chat_text(app)
+            assert app.pending_tools == {}, "an aborted call must not wait for a result"
+        finally:
+            registration.unregister()
+
+    def test_a_bash_row_comes_back(self, tmp_path: Path):
+        app, registration = _persisted_app(tmp_path)
+        try:
+            app.session_manager.append_message(
+                {
+                    "role": "bashExecution",
+                    "command": "ls -la",
+                    "output": "total 0",
+                    "exit_code": 0,
+                    "cancelled": False,
+                    "truncated": False,
+                    "full_output_path": None,
+                    "timestamp": 1,
+                    "exclude_from_context": False,
+                }
+            )
+            _record_turn(app, "and then?", "then this")
+            app.render_current_session_state()
+
+            text = _chat_text(app)
+            assert "ls -la" in text
+            assert "total 0" in text
+        finally:
+            registration.unregister()
+
+    def test_rebuilding_drops_the_live_state_first(self, tmp_path: Path):
+        # A streaming component belongs to the session being replaced; leaving it
+        # would attach the next turn's deltas to a dead component.
+        app, registration = _persisted_app(tmp_path)
+        try:
+            app.handle_session_event(
+                {"type": "message_start", "message": registration.get_model() and _partial()}
+            )
+            assert app.streaming_component is not None
+            app.render_current_session_state()
+            assert app.streaming_component is None
+            assert app.streaming_message is None
+        finally:
+            registration.unregister()
+
+
+def _partial():
+    from cortex.ai.providers.faux import faux_assistant_message
+
+    return faux_assistant_message("")
+
+
+class TestSessionReplacementWiring:
+    """What the app does when the runtime hands it a different session."""
+
+    def test_new_session_empties_the_log_and_swaps_the_session(self, tmp_path: Path):
+        app, registration = _persisted_app(tmp_path)
+        try:
+            _record_turn(app, "the old turn", "answered")
+            app.render_current_session_state()
+            assert "the old turn" in _chat_text(app)
+            first_id = app.session.session_id
+
+            asyncio.run(app.command_executor.handle_clear())
+
+            assert app.session.session_id != first_id
+            assert "the old turn" not in _chat_text(app)
+            assert "New session started" in _chat_text(app)
+        finally:
+            registration.unregister()
+
+    def test_the_footer_follows_the_new_session(self, tmp_path: Path):
+        app, registration = _persisted_app(tmp_path)
+        try:
+            asyncio.run(app.command_executor.handle_clear())
+            # `rebind_session` re-points everything that holds a session; the
+            # footer is the one that would otherwise keep describing the old one.
+            assert app.footer.session is app.session
+        finally:
+            registration.unregister()
+
+    def test_the_app_resubscribes_to_the_replacement(self, tmp_path: Path):
+        app, registration = _persisted_app(tmp_path)
+        try:
+            asyncio.run(app.command_executor.handle_clear())
+            # Events from the new session reach the screen.
+            from cortex.ai.providers.faux import faux_assistant_message
+
+            # Through the session, not through `handle_session_event`: the
+            # subscription is the thing under test.
+            app.session._emit(
+                {
+                    "type": "message_start",
+                    "message": faux_assistant_message("from the new session"),
+                }
+            )
+            assert "from the new session" in _chat_text(app)
+        finally:
+            registration.unregister()
+
+    def test_the_replacement_keeps_the_model_the_session_was_on(self, tmp_path: Path):
+        app, registration = _persisted_app(tmp_path)
+        try:
+            before = app.session.model
+            asyncio.run(app.command_executor.handle_clear())
+            # Without the factory carrying it over, a `/new` would drop to no
+            # model at all and the next prompt would answer with `/login`.
+            assert app.session.model is not None
+            assert app.session.model.id == before.id
+        finally:
+            registration.unregister()
+
+    def test_resume_puts_another_session_on_screen(self, tmp_path: Path):
+        from cortex.ai.providers.faux import faux_assistant_message
+        from cortex.code.session import SessionManager
+
+        stored = SessionManager(str(tmp_path), str(tmp_path))
+        stored.append_message({"role": "user", "content": "the stored one", "timestamp": 1})
+        stored.append_message(faux_assistant_message("stored answer").model_dump())
+        stored_file = stored.get_session_file()
+        assert stored_file is not None
+
+        app, registration = _persisted_app(tmp_path)
+        try:
+            asyncio.run(app.handle_resume_session(stored_file))
+            text = _chat_text(app)
+            assert "the stored one" in text
+            assert "stored answer" in text
+            assert app.session.session_file == stored_file
+        finally:
+            registration.unregister()
+
+    def test_resuming_a_session_whose_cwd_is_gone_says_so(self, tmp_path: Path):
+        from cortex.ai.providers.faux import faux_assistant_message
+        from cortex.code.session import SessionManager
+
+        orphan = SessionManager("/w/deleted", str(tmp_path))
+        orphan.append_message({"role": "user", "content": "orphaned", "timestamp": 1})
+        orphan.append_message(faux_assistant_message("answered").model_dump())
+        orphan_file = orphan.get_session_file()
+        assert orphan_file is not None
+
+        app, registration = _persisted_app(tmp_path)
+        try:
+            before = app.session
+            asyncio.run(app.handle_resume_session(orphan_file))
+            assert "does not exist" in _chat_text(app)
+            # And the session that was running is still running.
+            assert app.session is before
+        finally:
+            registration.unregister()
+
+    def test_fork_refills_the_editor_with_the_message_it_forked_before(self, tmp_path: Path):
+        app, registration = _persisted_app(tmp_path)
+        try:
+            _record_turn(app, "ask me differently", "answered")
+            app.render_current_session_state()
+
+            app.show_user_message_selector()
+            # Enter on the fork picker takes the most recent message.
+            _overlay(app).handle_input("\r")
+
+            assert app.editor.get_text() == "ask me differently"
+            assert "Forked to new session" in _chat_text(app)
+        finally:
+            registration.unregister()
+
+    def test_fork_with_nothing_to_fork_from_says_so(self, tmp_path: Path):
+        app, registration = _persisted_app(tmp_path)
+        try:
+            app.show_user_message_selector()
+            assert "No messages to fork from" in _chat_text(app)
+            # And no overlay was opened over the editor.
+            assert app.editor_container.children[0] is app.editor
+        finally:
+            registration.unregister()
+
+    def test_tree_moves_the_leaf_within_the_same_session(self, tmp_path: Path):
+        app, registration = _persisted_app(tmp_path)
+        try:
+            _record_turn(app, "first", "answered first")
+            first_leaf = app.session_manager.get_leaf_id()
+            _record_turn(app, "second", "answered second")
+            session_file = app.session.session_file
+
+            app.show_tree_selector()
+            overlay = _overlay(app)
+            # Walk up to the first answer and take it.
+            for _ in range(10):
+                if app.session_manager.get_leaf_id() != first_leaf:
+                    overlay.handle_input("\x1b[A")
+            overlay.handle_input("\r")
+
+            # Same file — a tree navigation is not a fork.
+            assert app.session.session_file == session_file
+        finally:
+            registration.unregister()
+
+    def test_tree_with_an_empty_session_says_so(self, tmp_path: Path):
+        app, registration = _persisted_app(tmp_path)
+        try:
+            app.show_tree_selector()
+            assert "No entries in session" in _chat_text(app)
+            assert app.editor_container.children[0] is app.editor
+        finally:
+            registration.unregister()
+
+    def test_resume_lists_this_project_and_loads_what_is_picked(self, tmp_path: Path):
+        from cortex.ai.providers.faux import faux_assistant_message
+        from cortex.code.session import SessionManager
+
+        stored = SessionManager(str(tmp_path), str(tmp_path))
+        stored.append_message({"role": "user", "content": "pick me", "timestamp": 1})
+        stored.append_message(faux_assistant_message("picked").model_dump())
+
+        app, registration = _persisted_app(tmp_path)
+        try:
+            app.show_session_selector()
+            overlay = _overlay(app)
+            assert overlay is not app.editor, "the overlay did not open"
+
+            async def drive() -> None:
+                # The list loads asynchronously; let the scheduled load finish.
+                for _ in range(20):
+                    await asyncio.sleep(0)
+                text = "\n".join(overlay.render(80))
+                assert "pick me" in text
+
+            asyncio.run(drive())
         finally:
             registration.unregister()

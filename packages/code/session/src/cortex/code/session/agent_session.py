@@ -19,12 +19,14 @@ rather than faked, and each is named where it would have been:
   ``core/extensions/**``, which `code/extensions` has not ported;
 * the **tool registry** and ``_rebuildSystemPrompt`` — steps 7.5/7.6, which are
   what first need a tool to run;
-* **compaction, auto-retry and tree navigation** — the controllers exist next
-  door (:mod:`cortex.code.session.compaction`, ``.retry``, ``.tree_navigation``)
-  but read messages as dicts with camelCase keys, so wiring them to the pydantic
-  messages the agent emits is its own step, not a side effect of this one.
+* **compaction and auto-retry** — the controllers exist next door
+  (:mod:`cortex.code.session.compaction`, ``.retry``) but read messages as dicts
+  with camelCase keys, so wiring them to the pydantic messages the agent emits is
+  its own step, not a side effect of this one.
   :attr:`AgentSession.retry_attempt` is 0 until then, and the interactive mode
-  reads it exactly where the TS does;
+  reads it exactly where the TS does. **Tree navigation** was the third of these
+  and is wired as of 7.10 (:meth:`AgentSession.navigate_tree`), because ``/tree``
+  is a picker with nothing behind it otherwise;
 * **model management** (``setModel``, ``cycleModel``, thinking levels) — landed
   in 7.9 with the selector overlays. What it asks a model registry for is
   :class:`ModelRegistryLike`; the registry that answers is still 7.11's, and
@@ -66,8 +68,14 @@ from cortex.code.session.bash_executor import BashResult, execute_bash_with_oper
 from cortex.code.session.stats import (
     ContextUsage,
     SessionStats,
+    collect_user_messages_for_forking,
     compute_context_usage,
     compute_session_stats,
+)
+from cortex.code.session.tree_navigation import (
+    NavigateTreeOptions,
+    NavigateTreeResult,
+    TreeNavigationController,
 )
 
 __all__ = [
@@ -88,6 +96,21 @@ AgentSessionEvent = dict[str, Any]
 AgentSessionEventListener = Callable[[AgentSessionEvent], Any]
 
 StreamingBehavior = Literal["steer", "followUp"]
+
+
+@dataclass(frozen=True)
+class _TreeNavigationDeps:
+    """What :class:`TreeNavigationController` reads back out of the session.
+
+    Callables rather than values, as the TS's are: the model and the agent's
+    message list both change under a navigation that takes a while.
+    """
+
+    session_manager: Any
+    settings_manager: Any
+    get_model: Callable[[], Any]
+    get_required_request_auth: Callable[[Any], Any]
+    set_agent_messages: Callable[[list[Any]], None]
 
 
 @dataclass(frozen=True)
@@ -214,6 +237,20 @@ class AgentSession:
         #: Bash rows that finished mid-turn, waiting for the turn to end.
         self._pending_bash_messages: list[dict[str, Any]] = []
         self._bash_abort_controller: Any = None
+
+        # Tree navigation (7.10, for `/tree`). The controller was ported with
+        # the rest of the session leaf and left unwired because nothing could
+        # open a tree; the deps it reads are resolved at call time, as the TS's
+        # are, so a model set later is the model it summarises with.
+        self._tree = TreeNavigationController(
+            _TreeNavigationDeps(
+                session_manager=self.session_manager,
+                settings_manager=self.settings_manager,
+                get_model=lambda: self.model,
+                get_required_request_auth=self._get_required_request_auth,
+                set_agent_messages=self._set_agent_messages,
+            )
+        )
 
         # Always subscribe to agent events for internal handling (session
         # persistence, and the queue bookkeeping the UI reads).
@@ -422,6 +459,33 @@ class AgentSession:
             session_manager=self.session_manager,
             messages=self.messages,
         )
+
+    def get_user_messages_for_forking(self) -> list[dict[str, str]]:
+        """Every user message in this session, for the fork picker to list."""
+        return collect_user_messages_for_forking(self.session_manager.get_entries())
+
+    async def navigate_tree(
+        self, target_id: str, options: NavigateTreeOptions | None = None
+    ) -> NavigateTreeResult:
+        """Move the session's leaf to another point in its tree. What ``/tree`` does."""
+        return await self._tree.navigate_tree(target_id, options)
+
+    def abort_branch_summary(self) -> None:
+        """Cancel the branch summarisation a tree navigation is waiting on."""
+        self._tree.abort_branch_summary()
+
+    async def _get_required_request_auth(self, model: Any) -> Any:
+        """Credentials for a request. The auth storage that answers is 7.11's.
+
+        Reached only by summarising branch navigation, which is why it can say
+        so rather than block the rest of ``/tree``: navigating without a summary
+        never asks.
+        """
+        raise RuntimeError(format_no_api_key_found_message(getattr(model, "provider", "")))
+
+    def _set_agent_messages(self, messages: list[Any]) -> None:
+        """Replace the agent's context. What a tree navigation ends with."""
+        self.agent.state.messages = list(messages)
 
     def get_session_stats(self) -> SessionStats:
         """Aggregate counts, tokens and cost for this session. What ``/session`` prints."""
