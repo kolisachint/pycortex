@@ -5,14 +5,14 @@ dependencies through a :class:`CommandContext` rather than through ``this``;
 this port keeps that shape, and for the same payoff — a handler is testable
 against a context built by hand, with no TUI, no terminal and no session file.
 
-**Seven of the thirteen handlers are here, and the other six are not stranded —
+**Ten of the thirteen handlers are here, and the other three are not stranded —
 they are waiting on machinery that belongs to a later step.** ``/new``,
-``/clone`` and ``/import``
-need ``AgentSessionRuntime``'s session-replacement half, which
-:mod:`cortex.code.session.runtime` defers to 7.10 and which is also what
-``renderCurrentSessionState`` rebuilds from; ``/subagent`` needs the subagent
-pool and the agent registry; ``/share`` shells out to ``gh``; and ``/copy``
-needs ``utils/clipboard.ts``, whose payload is a native addon plus Wayland/X11
+``/clone`` and ``/import`` arrived with 7.10, over
+``AgentSessionRuntime``'s session-replacement half and the
+``renderCurrentSessionState`` that rebuilds the screen from whatever session it
+left behind; what is still absent is ``/subagent``, which needs the subagent
+pool and the agent registry, ``/share``, which shells out to ``gh``, and
+``/copy``, which needs ``utils/clipboard.ts`` — a native addon plus Wayland/X11
 tool probing rather than a clipboard call. Adding a handler that answers
 "not available" would put a dead entry in the `/` menu, so instead
 :mod:`cortex.code.interactive.interactive_mode` advertises exactly the commands
@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from collections.abc import Callable
 from typing import Any, Protocol
@@ -41,6 +42,7 @@ from cortex.code.interactive.components.keybinding_hints import (
     key_display_text,
 )
 from cortex.code.interactive.theme import get_theme
+from cortex.code.session import MissingSessionCwdError, SessionImportFileNotFoundError
 from cortex.tui.components import Markdown, MarkdownTheme, Spacer, Text
 from cortex.tui.render import TUI, Container
 from cortex.tui.util import visible_width
@@ -71,6 +73,19 @@ class CommandContext(Protocol):
 
     @property
     def footer(self) -> Any: ...
+
+    @property
+    def editor(self) -> Any: ...
+
+    @property
+    def runtime_host(self) -> Any: ...
+
+    @property
+    def status_container(self) -> Container: ...
+
+    def render_current_session_state(self) -> None: ...
+
+    def stop_working_loader(self) -> None: ...
 
     # Positional-only: the app names these parameters after what they carry
     # (`warning_message`), and a protocol that pinned a name would reject it.
@@ -126,6 +141,82 @@ class CommandExecutor:
             return
 
         await self._ctx.show_model_selector(search_term)
+
+    async def handle_clear(self) -> None:
+        """``/new`` — start an empty session, and empty the screen with it.
+
+        Named for what the TS names it (``handleClear``) rather than for the
+        command: what the user asks for is a clean chat log, and a new session
+        file is how hoocode gives them one — the old session stays on disk and
+        can be resumed.
+        """
+        self._ctx.stop_working_loader()
+        self._ctx.status_container.clear()
+        try:
+            result = await self._ctx.runtime_host.new_session()
+            if result.cancelled:
+                return
+            self._ctx.render_current_session_state()
+            self._ctx.chat_container.add_child(Spacer(1))
+            self._ctx.chat_container.add_child(
+                Text(get_theme().fg("accent", "✓ New session started"), 1, 1)
+            )
+            self._ctx.ui.request_render()
+        except Exception as error:  # noqa: BLE001 - the TS catch, one for one
+            self._ctx.show_error(f"Failed to create session: {error}")
+
+    async def handle_clone(self) -> None:
+        """``/clone`` — duplicate the session at its current position.
+
+        A fork at the leaf rather than before a message, so nothing is taken out
+        of the transcript: the point is two sessions that share a history and
+        diverge from here.
+        """
+        leaf_id = self._ctx.session_manager.get_leaf_id()
+        if not leaf_id:
+            self._ctx.show_status("Nothing to clone yet")
+            return
+
+        try:
+            result = await self._ctx.runtime_host.fork(leaf_id, position="at")
+            if result.cancelled:
+                self._ctx.ui.request_render()
+                return
+
+            self._ctx.render_current_session_state()
+            self._ctx.editor.set_text("")
+            self._ctx.show_status("Cloned to new session")
+        except Exception as error:  # noqa: BLE001 - the TS catch, one for one
+            self._ctx.show_error(str(error))
+
+    async def handle_import(self, text: str) -> None:
+        """``/import <path.jsonl>`` — adopt a session file and switch to it.
+
+        The TS asks for confirmation first, through the extension dialogs this
+        port does not have. The command names its own file, so there is nothing
+        for a confirmation to disambiguate — and the session it replaces is not
+        destroyed, only left.
+        """
+        input_path = _path_argument(text, "/import")
+        if not input_path:
+            self._ctx.show_error("Usage: /import <path.jsonl>")
+            return
+
+        try:
+            self._ctx.stop_working_loader()
+            self._ctx.status_container.clear()
+            result = await self._ctx.runtime_host.import_from_jsonl(input_path)
+            if result.cancelled:
+                self._ctx.show_status("Import cancelled")
+                return
+            self._ctx.render_current_session_state()
+            self._ctx.show_status(f"Session imported from: {input_path}")
+        except MissingSessionCwdError as error:
+            self._ctx.show_error(str(error))
+        except SessionImportFileNotFoundError as error:
+            self._ctx.show_error(f"Failed to import session: {error}")
+        except Exception as error:  # noqa: BLE001 - the TS catch, one for one
+            self._ctx.show_error(f"Failed to import session: {error}")
 
     def handle_name(self, text: str) -> None:
         """``/name`` — set the session's display name, or print the current one.
@@ -378,6 +469,31 @@ class CommandExecutor:
             )
         )
         self._ctx.ui.request_render()
+
+
+def _path_argument(text: str, command: str) -> str | None:
+    """The one path argument of ``/import``, quotes honoured. Port of ``getPathArgument``.
+
+    A quoted argument is taken whole, which is the only way to name a path with
+    a space in it; an unterminated quote is no argument at all rather than a
+    guess at where it ended.
+    """
+    if text == command or not text.startswith(f"{command} "):
+        return None
+
+    args_string = text[len(command) + 1 :].lstrip()
+    if not args_string:
+        return None
+
+    first_char = args_string[0]
+    if first_char in ('"', "'"):
+        closing_index = args_string.find(first_char, 1)
+        if closing_index < 0:
+            return None
+        return args_string[1:closing_index]
+
+    match = re.search(r"\s", args_string)
+    return args_string if match is None else args_string[: match.start()]
 
 
 def _locale_string(value: int) -> str:

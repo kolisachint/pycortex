@@ -71,9 +71,28 @@ makes Escape out of any overlay land back at the prompt. Three commands reach it
 ``/settings`` (:meth:`InteractiveMode.show_settings_selector`, the whole settings
 screen over what this port can drive), ``/model`` and ``/scoped-models`` (both
 through :class:`~cortex.code.interactive.model_controller.ModelController`, which
-also answers Ctrl+L and the two cycle keys). ``/resume``, ``/fork`` and ``/tree``
-are 7.10's: each loads a different point in the session, which is the runtime's
-session-replacement half.
+also answers Ctrl+L and the two cycle keys).
+
+Step 7.10 made the session outlive the process. The app no longer owns an
+:class:`~cortex.code.session.AgentSession` — it owns an
+:class:`~cortex.code.session.AgentSessionRuntime` and reads the current session
+off it (:attr:`InteractiveMode.session` is a property, as the TS's getter is), so
+every command that *replaces* the session works without anything above having to
+be re-wired:
+
+* :meth:`InteractiveMode.render_current_session_state` is the TS's — drop the
+  live state, then rebuild the transcript from the session's own entries
+  (:meth:`InteractiveMode.render_initial_messages`). It is what ``--continue``
+  puts on screen at startup and what every replacement ends with;
+* :meth:`InteractiveMode.rebind_session` is ``rebindCurrentSession``, and the
+  runtime calls it: unsubscribe from the old session, point the footer and the
+  provider at the new one, resubscribe;
+* ``/new`` and ``/clone`` and ``/import``
+  (:class:`~cortex.code.interactive.command_executor.CommandExecutor`),
+  ``/resume`` (:meth:`InteractiveMode.show_session_selector`), ``/fork``
+  (:meth:`InteractiveMode.show_user_message_selector`) and ``/tree``
+  (:meth:`InteractiveMode.show_tree_selector`) are the six commands over it, with
+  Ctrl+N, Ctrl+R and the two tree keys beside them.
 
 Shutdown is a callback, not ``process.exit``. The TS exits the process from
 inside ``shutdown()``; doing that here would make the exit path the one thing the
@@ -94,12 +113,21 @@ from pathlib import Path
 from typing import Any, Protocol, cast
 
 from cortex.ai.types import TextContent
-from cortex.code.config import APP_NAME, APP_TITLE, VERSION, SettingsManager, get_bin_dir
+from cortex.code.config import (
+    APP_NAME,
+    APP_TITLE,
+    VERSION,
+    SettingsManager,
+    get_agent_dir,
+    get_bin_dir,
+)
 from cortex.code.interactive.bash_execution_controller import BashExecutionController
 from cortex.code.interactive.command_executor import CommandExecutor
 from cortex.code.interactive.components.assistant_message import AssistantMessageComponent
+from cortex.code.interactive.components.bash_execution import BashExecutionComponent
 from cortex.code.interactive.components.custom_editor import CustomEditor
 from cortex.code.interactive.components.footer import FooterComponent
+from cortex.code.interactive.components.session_selector import SessionSelectorComponent
 from cortex.code.interactive.components.settings_selector import (
     SettingsCallbacks,
     SettingsConfig,
@@ -113,7 +141,12 @@ from cortex.code.interactive.components.tool_execution import (
     ToolExecutionResult,
     ToolOutputDisplayLevel,
 )
+from cortex.code.interactive.components.tree_selector import FilterMode, TreeSelectorComponent
 from cortex.code.interactive.components.user_message import UserMessageComponent
+from cortex.code.interactive.components.user_message_selector import (
+    UserMessageItem,
+    UserMessageSelectorComponent,
+)
 from cortex.code.interactive.footer_data_provider import FooterDataProvider
 from cortex.code.interactive.keybindings import KeybindingsManager
 from cortex.code.interactive.model_controller import ModelController, SelectorFactory
@@ -128,6 +161,14 @@ from cortex.code.interactive.theme import (
 )
 from cortex.code.interactive.tool_renderers import resolve_tool_renderer
 from cortex.code.interactive.wordmark import CompactWordmarkOptions, build_compact_wordmark
+from cortex.code.session import (
+    AgentSessionRuntime,
+    AgentSessionServices,
+    CreateAgentSessionResult,
+    MissingSessionCwdError,
+    SessionManager,
+    create_agent_session,
+)
 from cortex.tui.components import (
     CombinedAutocompleteProvider,
     EditorOptions,
@@ -148,6 +189,7 @@ __all__ = [
     "build_app_root",
     "format_display_path",
     "resolve_fd_path",
+    "resolve_session_manager",
     "run_interactive_mode",
 ]
 
@@ -281,6 +323,12 @@ def _content_field(block: Any, name: str) -> Any:
     return getattr(block, name, None)
 
 
+#: A message's fields are read the same way its content blocks' are: a session
+#: restored from disk holds models for the roles that have one and plain dicts
+#: for the roles that do not (`bashExecution`), exactly as the live path does.
+_field_of = _content_field
+
+
 def _tool_calls_of(message: Any) -> list[Any]:
     """The ``toolCall`` blocks of an assistant message, in order."""
     content = (
@@ -291,10 +339,23 @@ def _tool_calls_of(message: Any) -> list[Any]:
     return [block for block in content if _content_field(block, "type") == "toolCall"]
 
 
+def _closing(done: Callable[[], None], request_render: Callable[[], None]) -> Callable[[], None]:
+    """The cancel callback every 7.10 overlay is handed: close, then repaint.
+
+    The repaint is not redundant with ``done``: putting the editor back changes
+    the component tree without asking for a frame, and a cancelled overlay that
+    is still on screen is indistinguishable from one that ignored Escape.
+    """
+
+    def cancel() -> None:
+        done()
+        request_render()
+
+    return cancel
+
+
 def _create_unpersisted_session(cwd: str, settings_manager: SettingsManager) -> Any:
     """A session with no session file and no model, for an app booted without one."""
-    from cortex.code.session import SessionManager, create_agent_session
-
     return create_agent_session(
         cwd=cwd,
         settings_manager=settings_manager,
@@ -370,6 +431,12 @@ class InteractiveModeOptions:
     #: provider. Pressing Enter on that session shows the ``/login`` guidance,
     #: which is what a fresh install shows too.
     session: Any | None = None
+    #: The runtime the session hangs off. Built around ``session`` when omitted,
+    #: with a factory that carries the current session's model and tools into
+    #: every replacement (:meth:`InteractiveMode.create_replacement_session`).
+    #: ``main.ts`` builds its own, which is how ``--continue`` opens on a
+    #: restored session rather than switching to one after the fact.
+    runtime_host: Any | None = None
     #: Settings source; a file-backed manager for the cwd when omitted.
     settings: SettingsManager | None = None
     #: Keybindings; the user's ``keybindings.json`` when omitted.
@@ -397,11 +464,28 @@ class InteractiveMode:
             else SettingsManager.create(self.cwd)
         )
 
-        self.session = (
+        # The app owns a *runtime*, not a session: `/new`, `/resume`, `/fork`,
+        # `/clone` and `/import` all replace the session under it, and `session`
+        # is a property over whichever one is current (the TS's getter).
+        initial_session = (
             self.options.session
             if self.options.session is not None
             else _create_unpersisted_session(self.cwd, self.settings_manager)
         )
+        self.runtime_host = (
+            self.options.runtime_host
+            if self.options.runtime_host is not None
+            else AgentSessionRuntime(
+                initial_session,
+                AgentSessionServices(
+                    cwd=self.cwd,
+                    agent_dir=get_agent_dir(),
+                    settings_manager=self.settings_manager,
+                ),
+                self.create_replacement_session,
+            )
+        )
+        self.runtime_host.set_rebind_session(self.rebind_session)
 
         self.ui.set_clear_on_shrink(self.settings_manager.get_clear_on_shrink())
         self.ui.set_show_hardware_cursor(self.settings_manager.get_show_hardware_cursor())
@@ -500,9 +584,81 @@ class InteractiveMode:
         return cast(AppTerminal, self.ui.terminal)
 
     @property
+    def session(self) -> Any:
+        """Whichever session is current. Port of the TS's ``get session()``.
+
+        A property rather than a field so that ``/new`` and ``/resume`` replacing
+        the session under the runtime is invisible to everything that reads it —
+        the command executor, the footer, the tool renderers.
+        """
+        return self.runtime_host.session
+
+    @property
     def session_manager(self) -> Any:
         """The current session's manager. Part of the command context."""
         return self.session.session_manager
+
+    def create_replacement_session(
+        self, *, cwd: str, agent_dir: str, session_manager: Any
+    ) -> CreateAgentSessionResult:
+        """Build a session for the runtime to switch to.
+
+        The TS factory closes over the process's fixed inputs and re-resolves the
+        model through the registry; without one (7.11) the honest equivalent is
+        to carry over what the *current* session is running with — model,
+        thinking level, tools, system prompt, and the stream function a scenario
+        may have substituted — so a resumed session answers the way the one
+        before it did rather than dropping to no model at all.
+        """
+        current = self.session
+        agent = current.agent
+        return create_agent_session(
+            cwd=cwd,
+            agent_dir=agent_dir,
+            settings_manager=self.settings_manager,
+            session_manager=session_manager,
+            model=agent.state.model,
+            model_registry=current.model_registry,
+            thinking_level=current.thinking_level or "off",
+            system_prompt=agent.state.system_prompt or "",
+            tools=list(agent.state.tools or []),
+            stream_fn=agent.stream_fn,
+            scoped_models=list(current.scoped_models),
+        )
+
+    async def rebind_session(self, session: Any) -> None:
+        """Re-attach the app to a replacement session. Port of ``rebindCurrentSession``.
+
+        Called by the runtime once the new session exists, and the order is the
+        TS's: drop the old subscription first, then re-point everything that
+        holds a session, then subscribe. Subscribing first would deliver the new
+        session's events into a footer still describing the old one.
+        """
+        if self._unsubscribe_session is not None:
+            self._unsubscribe_session()
+            self._unsubscribe_session = None
+
+        self.apply_runtime_settings()
+        self.setup_session_listener()
+        await self.model_controller.update_available_provider_count()
+        self.update_editor_border_color()
+        self.update_terminal_title()
+
+    def apply_runtime_settings(self) -> None:
+        """Point the session-shaped parts of the app at the current session.
+
+        Port of ``applyRuntimeSettings``, minus the editor-geometry half: the
+        settings that feed it cannot change during a session replacement here,
+        because nothing between the two reloads them.
+        """
+        self.footer.set_session(self.session)
+        # The TS reads `session.autoCompactionEnabled`, which is that session's
+        # copy of the setting; this port's sessions do not carry one, so the
+        # footer is told what the settings manager says — the same value, one
+        # hop earlier.
+        self.footer.set_auto_compact_enabled(self.settings_manager.get_compaction_enabled())
+        self.footer_data_provider.set_cwd(self.session_manager.get_cwd())
+        self.hide_thinking_block = self.settings_manager.get_hide_thinking_block()
 
     @property
     def command_executor(self) -> CommandExecutor:
@@ -583,6 +739,11 @@ class InteractiveMode:
         self.setup_footer_watchers()
         self.update_terminal_title()
         self._is_initialized = True
+
+        # Last, as in the TS: a session opened with `--continue` or `--session`
+        # arrives with a transcript, and it belongs under the banner rather than
+        # over it.
+        self.render_initial_messages()
 
     def setup_session_listener(self) -> None:
         """Subscribe to the session, so its events reach the screen."""
@@ -711,6 +872,12 @@ class InteractiveMode:
             lambda: _schedule(self.model_controller.cycle_model("backward")),
         )
         self.editor.on_action("app.thinking.cycle", self.cycle_thinking_level)
+        self.editor.on_action(
+            "app.session.new", lambda: _schedule(self.command_executor.handle_clear())
+        )
+        self.editor.on_action("app.session.tree", self.show_tree_selector)
+        self.editor.on_action("app.session.fork", self.show_user_message_selector)
+        self.editor.on_action("app.session.resume", self.show_session_selector)
         self.editor.on_ctrl_d = self.handle_ctrl_d
 
     def cycle_thinking_level(self) -> None:
@@ -843,6 +1010,30 @@ class InteractiveMode:
             clear_editor()
             _schedule(self.command_executor.handle_model(search_term or None))
 
+        def run_new(_text: str) -> None:
+            clear_editor()
+            _schedule(self.command_executor.handle_clear())
+
+        def run_clone(_text: str) -> None:
+            clear_editor()
+            _schedule(self.command_executor.handle_clone())
+
+        def run_import(text: str) -> None:
+            clear_editor()
+            _schedule(self.command_executor.handle_import(text))
+
+        def run_resume(_text: str) -> None:
+            clear_editor()
+            self.show_session_selector()
+
+        def run_fork(_text: str) -> None:
+            clear_editor()
+            self.show_user_message_selector()
+
+        def run_tree(_text: str) -> None:
+            clear_editor()
+            self.show_tree_selector()
+
         return {
             "/settings": BuiltInSlashCommand(run_settings),
             "/scoped-models": BuiltInSlashCommand(run_scoped_models),
@@ -853,6 +1044,12 @@ class InteractiveMode:
             "/hotkeys": BuiltInSlashCommand(run_hotkeys),
             "/debug": BuiltInSlashCommand(run_debug),
             "/quit": BuiltInSlashCommand(run_quit),
+            "/new": BuiltInSlashCommand(run_new),
+            "/clone": BuiltInSlashCommand(run_clone),
+            "/import": BuiltInSlashCommand(run_import, with_args=True),
+            "/resume": BuiltInSlashCommand(run_resume),
+            "/fork": BuiltInSlashCommand(run_fork),
+            "/tree": BuiltInSlashCommand(run_tree),
         }
 
     def create_base_autocomplete_provider(self) -> CombinedAutocompleteProvider:
@@ -1091,6 +1288,173 @@ class InteractiveMode:
             return selector, selector.get_settings_list()
 
         self.show_selector(create)
+
+    def show_user_message_selector(self) -> None:
+        """``/fork``: pick a user message and branch the session before it."""
+        user_messages = self.session.get_user_messages_for_forking()
+        if not user_messages:
+            self.show_status("No messages to fork from")
+            return
+
+        initial_selected_id = user_messages[-1].get("entry_id")
+
+        def create(done: Callable[[], None]) -> tuple[Any, Any]:
+            async def fork(entry_id: str) -> None:
+                try:
+                    result = await self.runtime_host.fork(entry_id)
+                    if result.cancelled:
+                        done()
+                        self.ui.request_render()
+                        return
+                    self.render_current_session_state()
+                    # The message forked *before* is out of the transcript now;
+                    # it goes back into the editor so it can be asked again.
+                    self.editor.set_text(result.selected_text or "")
+                    done()
+                    self.show_status("Forked to new session")
+                except Exception as error:  # noqa: BLE001 - the TS catch, one for one
+                    done()
+                    self.show_error(str(error))
+
+            selector = UserMessageSelectorComponent(
+                [
+                    UserMessageItem(id=message["entry_id"], text=message["text"])
+                    for message in user_messages
+                ],
+                lambda entry_id: _schedule(fork(entry_id)),
+                _closing(done, self.ui.request_render),
+                initial_selected_id,
+            )
+            return selector, selector.get_message_list()
+
+        self.show_selector(create)
+
+    def show_tree_selector(self, initial_selected_id: str | None = None) -> None:
+        """``/tree``: move the session's leaf to another point in its own tree.
+
+        Unlike ``/fork`` this writes no new file — the branch pointer moves
+        inside the session that is open.
+
+        **Without the summary prompt.** The TS asks whether to summarise the
+        branch being left, through ``dialogs.showSelector``; extension dialogs
+        are not ported, and neither is the summariser they would drive (it needs
+        the request auth of 7.11). Navigation happens unsummarised, which is the
+        answer a user who has set ``branchSummarySkipPrompt`` already gets.
+        """
+        tree = self.session_manager.get_tree()
+        real_leaf_id = self.session_manager.get_leaf_id()
+        initial_filter_mode = cast(FilterMode, self.settings_manager.get_tree_filter_mode())
+
+        if not tree:
+            self.show_status("No entries in session")
+            return
+
+        def create(done: Callable[[], None]) -> tuple[Any, Any]:
+            async def navigate(entry_id: str) -> None:
+                if entry_id == real_leaf_id:
+                    done()
+                    self.show_status("Already at this point")
+                    return
+
+                done()
+                try:
+                    result = await self.session.navigate_tree(entry_id)
+                    if result.cancelled:
+                        self.show_status("Navigation cancelled")
+                        return
+
+                    self.chat_container.clear()
+                    self.render_initial_messages()
+                    if result.editor_text and not self.editor.get_text().strip():
+                        self.editor.set_text(result.editor_text)
+                    self.show_status("Navigated to selected point")
+                except Exception as error:  # noqa: BLE001 - the TS catch, one for one
+                    self.show_error(str(error))
+
+            def change_label(entry_id: str, label: str | None) -> None:
+                self.session_manager.append_label_change(entry_id, label)
+                self.ui.request_render()
+
+            selector = TreeSelectorComponent(
+                tree,
+                real_leaf_id,
+                self.ui.terminal.rows,
+                lambda entry_id: _schedule(navigate(entry_id)),
+                _closing(done, self.ui.request_render),
+                change_label,
+                initial_selected_id,
+                initial_filter_mode,
+            )
+            return selector, selector
+
+        self.show_selector(create)
+
+    def show_session_selector(self) -> None:
+        """``/resume``: list the sessions on disk and open the one that is picked."""
+
+        def create(done: Callable[[], None]) -> tuple[Any, Any]:
+            async def load_current(on_progress: Any = None) -> list[Any]:
+                return await SessionManager.list(
+                    self.session_manager.get_cwd(),
+                    self.session_manager.get_session_dir(),
+                    on_progress,
+                )
+
+            async def load_all(on_progress: Any = None) -> list[Any]:
+                return await SessionManager.list_all(on_progress)
+
+            async def resume(session_path: str) -> None:
+                done()
+                await self.handle_resume_session(session_path)
+
+            def rename(session_file_path: str, next_name: str | None) -> None:
+                name = (next_name or "").strip()
+                if not name:
+                    return
+                # Renaming reaches for the file rather than the open session: the
+                # row being renamed is usually not the one that is running.
+                SessionManager.open(session_file_path).append_session_info(name)
+
+            selector = SessionSelectorComponent(
+                load_current,
+                load_all,
+                lambda session_path: _schedule(resume(session_path)),
+                _closing(done, self.ui.request_render),
+                self.shutdown,
+                self.ui.request_render,
+                rename_session=rename,
+                show_rename_hint=True,
+                keybindings=self.keybindings,
+                current_session_file_path=self.session_manager.get_session_file(),
+            )
+            return selector, selector
+
+        self.show_selector(create)
+
+    async def handle_resume_session(self, session_path: str) -> Any:
+        """Switch to a stored session and put it on screen. Port of ``handleResumeSession``.
+
+        The loader is stopped first: it belongs to a turn in the session being
+        replaced, and an animation left running would tick over a transcript it
+        has nothing to do with.
+        """
+        self.stop_working_loader()
+        try:
+            result = await self.runtime_host.switch_session(session_path)
+            if result.cancelled:
+                return result
+            self.render_current_session_state()
+            self.show_status("Resumed session")
+            return result
+        except MissingSessionCwdError as error:
+            # The TS asks whether to open it in the current directory instead,
+            # through the extension dialogs this port does not have. Saying what
+            # is wrong is the honest half of that.
+            self.show_error(str(error))
+            return None
+        except Exception as error:  # noqa: BLE001 - the TS catch, one for one
+            self.show_error(f"Failed to resume session: {error}")
+            return None
 
     def _settings_callbacks(self, done: Callable[[], None]) -> SettingsCallbacks:
         """What each settings row does. Port of the callback object in the TS."""
@@ -1547,6 +1911,184 @@ class InteractiveMode:
         )
         self.ui.request_render()
 
+    # ------------------------------------------------------------------
+    # Rebuilding the transcript from a session
+    # ------------------------------------------------------------------
+
+    def add_message_to_chat(self, message: Any, populate_history: bool = False) -> None:
+        """Draw one stored message. Port of ``addMessageToChat``.
+
+        The branches with a component behind them: bash rows, user messages and
+        assistant messages. Tool results are not among them — they are drawn
+        *into* the call's block by :meth:`render_session_context`, which is the
+        only place that knows which block a result belongs to. The TS's custom,
+        compaction-summary and branch-summary branches need components that
+        arrive with the steps that produce those entries.
+        """
+        role = _role_of(message)
+
+        if role == "bashExecution":
+            component = BashExecutionComponent(
+                str(_field_of(message, "command") or ""),
+                self.ui,
+                bool(_field_of(message, "exclude_from_context")),
+            )
+            output = _field_of(message, "output")
+            if output:
+                component.append_output(str(output))
+            component.set_complete(
+                _field_of(message, "exit_code"),
+                bool(_field_of(message, "cancelled")),
+                None,
+                _field_of(message, "full_output_path"),
+            )
+            self.chat_container.add_child(component)
+            return
+
+        if role == "user":
+            text_content = _message_text(message)
+            if not text_content:
+                return
+            self.render_user_message(text_content)
+            if populate_history:
+                # So Up-arrow on a resumed session walks back through what was
+                # actually asked in it, not through an empty history.
+                self.editor.add_to_history(text_content)
+            return
+
+        if role == "assistant":
+            self.chat_container.add_child(
+                AssistantMessageComponent(
+                    message,
+                    self.hide_thinking_block,
+                    self.get_markdown_theme_with_settings(),
+                    self.hidden_thinking_label,
+                )
+            )
+
+    def render_session_context(
+        self, session_context: Any, update_footer: bool = False, populate_history: bool = False
+    ) -> None:
+        """Draw a whole session context into the chat log. Port of ``renderSessionContext``.
+
+        Tool calls are the part that needs bookkeeping: a call and its result are
+        two messages, so each call gets a block that is held in
+        ``rendered_pending_tools`` until the matching ``toolResult`` arrives to
+        fill it in. Whatever is still unmatched at the end was in flight when the
+        session was last written, so it becomes the app's pending set — which is
+        what lets a tool that was running at quit finish drawing after a resume.
+        """
+        self.pending_tools.clear()
+        rendered_pending_tools: dict[str, ToolExecutionComponent] = {}
+
+        if update_footer:
+            self.footer.invalidate()
+            self.update_editor_border_color()
+
+        for message in session_context.messages:
+            role = _role_of(message)
+
+            if role == "assistant":
+                self.add_message_to_chat(message, populate_history)
+                stop_reason = _field_of(message, "stop_reason")
+                for content in _tool_calls_of(message):
+                    tool_call_id = str(_content_field(content, "id") or "")
+                    component = ToolExecutionComponent(
+                        str(_content_field(content, "name") or ""),
+                        tool_call_id,
+                        _content_field(content, "arguments"),
+                        ToolExecutionOptions(
+                            show_images=self.settings_manager.get_show_images(),
+                            image_width_cells=self.settings_manager.get_image_width_cells(),
+                            display_level=self.tool_output_display,
+                        ),
+                        resolve_tool_renderer(
+                            self.session, str(_content_field(content, "name") or "")
+                        ),
+                        self.ui,
+                        self.session_manager.get_cwd(),
+                    )
+                    component.set_expanded(self.tool_output_expanded)
+                    self.chat_container.add_child(component)
+
+                    if stop_reason in ("aborted", "error"):
+                        # A call the turn never got to run has no result and
+                        # never will; it is drawn failed rather than pending.
+                        if stop_reason == "aborted":
+                            retry_attempt = self.session.retry_attempt
+                            error_message = (
+                                f"Aborted after {retry_attempt} retry attempt"
+                                f"{'s' if retry_attempt > 1 else ''}"
+                                if retry_attempt > 0
+                                else "Operation aborted"
+                            )
+                        else:
+                            error_message = str(_field_of(message, "error_message") or "Error")
+                        component.update_result(
+                            ToolExecutionResult(
+                                content=[TextContent(text=error_message)],
+                                details=None,
+                                is_error=True,
+                            )
+                        )
+                    else:
+                        rendered_pending_tools[tool_call_id] = component
+            elif role == "toolResult":
+                tool_call_id = str(
+                    _field_of(message, "tool_call_id") or _field_of(message, "toolCallId") or ""
+                )
+                component = rendered_pending_tools.pop(tool_call_id, None)
+                if component is not None:
+                    component.update_result(
+                        ToolExecutionResult(
+                            content=list(_field_of(message, "content") or []),
+                            details=_field_of(message, "details"),
+                            is_error=bool(_field_of(message, "is_error")),
+                        )
+                    )
+            else:
+                self.add_message_to_chat(message, populate_history)
+
+        self.pending_tools.update(rendered_pending_tools)
+        self.ui.request_render()
+
+    def render_initial_messages(self) -> None:
+        """Draw the current session's transcript. Port of ``renderInitialMessages``."""
+        context = self.session_manager.build_session_context()
+        self.render_session_context(context, update_footer=True, populate_history=True)
+
+        compaction_count = sum(
+            1 for entry in self.session_manager.get_entries() if entry.get("type") == "compaction"
+        )
+        if compaction_count > 0:
+            times = "1 time" if compaction_count == 1 else f"{compaction_count} times"
+            self.show_status(f"Session compacted {times}")
+
+    def render_current_session_state(self) -> None:
+        """Throw the screen away and rebuild it from the session that is current.
+
+        Port of ``renderCurrentSessionState``, and the second half of every
+        session replacement. The live state goes first — a streaming component
+        and a pending tool block both belong to a session that no longer exists,
+        and leaving either would attach the next turn's deltas to a dead
+        component.
+        """
+        self.chat_container.clear()
+        self.pending_messages_container.clear()
+        self.streaming_component = None
+        self.streaming_message = None
+        self.pending_tools.clear()
+        self.render_initial_messages()
+
+    def rebuild_chat_from_messages(self) -> None:
+        """Redraw the transcript in place, for a change of how it looks.
+
+        The same rebuild without the state reset: the session has not changed,
+        only the way it renders (hiding thinking blocks, a theme change).
+        """
+        self.chat_container.clear()
+        self.render_session_context(self.session_manager.build_session_context())
+
     def show_error(self, error_message: str) -> None:
         theme = get_theme()
         self.chat_container.add_child(Spacer(1))
@@ -1615,26 +2157,56 @@ def build_app_root(tui: TUI, **options: Any) -> InteractiveMode:
     return app
 
 
-def run_interactive_mode(options: InteractiveModeOptions | None = None) -> int:
+def resolve_session_manager(
+    cwd: str,
+    *,
+    continue_session: bool = False,
+    session_path: str | None = None,
+    session_dir: str | None = None,
+    no_session: bool = False,
+) -> SessionManager:
+    """Which session file the process starts on. Port of ``main.ts``'s ``resolveSessionManager``.
+
+    The order is the TS's, minus the two branches that need a picker or an id
+    lookup (``--resume`` and ``--session <partial-uuid>``, whose resolver is
+    7.11's): an explicit path, then ``--continue``, then a new session.
+    """
+    if no_session:
+        return SessionManager.in_memory(cwd)
+    if session_path:
+        return SessionManager.open(session_path, session_dir)
+    if continue_session:
+        return SessionManager.continue_recent(cwd, session_dir)
+    return SessionManager.create(cwd, session_dir)
+
+
+def run_interactive_mode(
+    options: InteractiveModeOptions | None = None,
+    session_manager: SessionManager | None = None,
+) -> int:
     """Run interactive mode against the real terminal. Returns the exit code.
 
     Builds the session the mode talks to, the way ``main.ts`` does through
     ``createAgentSessionRuntime``: settings and a session file for the cwd, and
     whatever model has been resolved for it — which, until the model registry
     lands in 7.11, is none.
+
+    ``session_manager`` is how ``--continue`` reaches here: the file is chosen
+    before the session is built (:func:`resolve_session_manager`), so the app
+    opens *on* the restored transcript rather than switching to it afterwards.
     """
     resolved = options if options is not None else InteractiveModeOptions()
 
     if resolved.session is None:
-        from cortex.code.session import create_agent_session
-
         cwd = resolved.cwd if resolved.cwd is not None else os.getcwd()
         # One settings manager, shared: the session reads the same file the app
         # does, and reading it twice is how the two drift.
         settings = (
             resolved.settings if resolved.settings is not None else SettingsManager.create(cwd)
         )
-        created = create_agent_session(cwd=cwd, settings_manager=settings)
+        created = create_agent_session(
+            cwd=cwd, settings_manager=settings, session_manager=session_manager
+        )
         resolved = replace(resolved, cwd=cwd, settings=settings, session=created.session)
 
     async def _run() -> int:

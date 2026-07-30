@@ -54,6 +54,7 @@ from cortex.code.interactive.interactive_mode import (
     build_app_root,
     format_display_path,
     resolve_fd_path,
+    resolve_session_manager,
     run_interactive_mode,
 )
 from cortex.code.interactive.keybindings import (
@@ -165,6 +166,7 @@ __all__ = [
     "render_diff",
     "resolve_fd_path",
     "resolve_tool_renderer",
+    "resolve_session_manager",
     "run_interactive_mode",
     "startup_progress",
 ]

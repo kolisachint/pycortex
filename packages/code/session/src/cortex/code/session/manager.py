@@ -10,12 +10,17 @@ from __future__ import annotations
 import json
 import os
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 CURRENT_SESSION_VERSION = 3
+
+#: Called with ``(loaded, total)`` while a session listing walks the files it
+#: found. Port of ``SessionListProgress``.
+SessionListProgress = Callable[[int, int], None]
 
 
 @dataclass
@@ -245,6 +250,214 @@ def get_latest_compaction_entry(entries: list[dict[str, Any]]) -> dict[str, Any]
     return None
 
 
+def _message_from_stored(message: Any) -> Any:
+    """Turn a message as the file holds it back into the object the app renders.
+
+    ``AgentSession`` writes messages through ``model_dump()``, so what comes back
+    off disk is a plain dict with the model's own field names. Reviving it is
+    free in TypeScript — the JSON *is* the message — and is this port's one piece
+    of restore work: every component above reads ``.role`` and ``.content`` off
+    an object, and a session restored as dicts would render as nothing at all.
+
+    A role with no model behind it (``bashExecution``, ``custom``: both plain
+    dicts on the live path too) is handed back unchanged, which is exactly what
+    the live path puts in ``agent.state.messages``.
+    """
+    if not isinstance(message, dict):
+        return message
+
+    from cortex.ai.types import AssistantMessage, ToolResultMessage, UserMessage
+
+    model_for_role = {
+        "user": UserMessage,
+        "assistant": AssistantMessage,
+        "toolResult": ToolResultMessage,
+    }.get(message.get("role", ""))
+    if model_for_role is None:
+        return message
+    try:
+        return model_for_role.model_validate(message)
+    except Exception:
+        # A message written by a newer version, or hand-edited into a shape the
+        # model rejects. The TS would render whatever it parsed; dropping the
+        # whole session over one row would be worse than rendering it raw.
+        return message
+
+
+def _session_tree_entry(entry: dict[str, Any]) -> Any:
+    """One stored entry as the harness's dataclass, or ``None`` if it has no place.
+
+    The path scan lives in ``cortex.agent.harness`` — the TS imports it from
+    ``hoocode-agent-core`` for the same reason — and it dispatches on
+    ``isinstance``, so the JSONL dicts have to become the entries it knows.
+    """
+    from cortex.agent.harness.types import (
+        BranchSummaryEntry as HarnessBranchSummaryEntry,
+    )
+    from cortex.agent.harness.types import (
+        CompactionEntry as HarnessCompactionEntry,
+    )
+    from cortex.agent.harness.types import (
+        CustomEntry as HarnessCustomEntry,
+    )
+    from cortex.agent.harness.types import (
+        CustomMessageEntry as HarnessCustomMessageEntry,
+    )
+    from cortex.agent.harness.types import (
+        LabelEntry as HarnessLabelEntry,
+    )
+    from cortex.agent.harness.types import (
+        MessageEntry as HarnessMessageEntry,
+    )
+    from cortex.agent.harness.types import (
+        ModelChangeEntry as HarnessModelChangeEntry,
+    )
+    from cortex.agent.harness.types import (
+        SessionInfoEntry as HarnessSessionInfoEntry,
+    )
+    from cortex.agent.harness.types import (
+        ThinkingLevelChangeEntry as HarnessThinkingLevelChangeEntry,
+    )
+
+    entry_type = entry.get("type", "")
+    entry_id = entry.get("id", "")
+    parent_id = entry.get("parentId")
+    timestamp = entry.get("timestamp", "")
+
+    if entry_type == "message":
+        return HarnessMessageEntry(
+            id=entry_id,
+            parent_id=parent_id,
+            timestamp=timestamp,
+            message=_message_from_stored(entry.get("message")),
+        )
+    if entry_type == "thinking_level_change":
+        return HarnessThinkingLevelChangeEntry(
+            id=entry_id,
+            parent_id=parent_id,
+            timestamp=timestamp,
+            thinking_level=entry.get("thinkingLevel", ""),
+        )
+    if entry_type == "model_change":
+        return HarnessModelChangeEntry(
+            id=entry_id,
+            parent_id=parent_id,
+            timestamp=timestamp,
+            provider=entry.get("provider", ""),
+            model_id=entry.get("modelId", ""),
+        )
+    if entry_type == "compaction":
+        return HarnessCompactionEntry(
+            id=entry_id,
+            parent_id=parent_id,
+            timestamp=timestamp,
+            summary=entry.get("summary", ""),
+            first_kept_entry_id=entry.get("firstKeptEntryId", ""),
+            tokens_before=entry.get("tokensBefore", 0),
+            tokens_after=entry.get("tokensAfter"),
+            details=entry.get("details"),
+            from_hook=bool(entry.get("fromHook", False)),
+        )
+    if entry_type == "branch_summary":
+        return HarnessBranchSummaryEntry(
+            id=entry_id,
+            parent_id=parent_id,
+            timestamp=timestamp,
+            from_id=entry.get("fromId", ""),
+            summary=entry.get("summary", ""),
+            details=entry.get("details"),
+            from_hook=bool(entry.get("fromHook", False)),
+        )
+    if entry_type == "custom_message":
+        return HarnessCustomMessageEntry(
+            id=entry_id,
+            parent_id=parent_id,
+            timestamp=timestamp,
+            custom_type=entry.get("customType", ""),
+            content=entry.get("content", ""),
+            details=entry.get("details"),
+            display=bool(entry.get("display", False)),
+        )
+    if entry_type == "custom":
+        return HarnessCustomEntry(
+            id=entry_id,
+            parent_id=parent_id,
+            timestamp=timestamp,
+            custom_type=entry.get("customType", ""),
+            details=entry.get("details"),
+        )
+    if entry_type == "label":
+        return HarnessLabelEntry(
+            id=entry_id,
+            parent_id=parent_id,
+            timestamp=timestamp,
+            target_id=entry.get("targetId", ""),
+            label=entry.get("label"),
+        )
+    if entry_type == "session_info":
+        return HarnessSessionInfoEntry(
+            id=entry_id,
+            parent_id=parent_id,
+            timestamp=timestamp,
+            name=entry.get("name", ""),
+        )
+    return None
+
+
+class _LeafUnspecified:
+    """The ``undefined`` half of the TS's tri-state ``leafId``.
+
+    ``buildSessionContext(entries)`` falls back to the last entry, while
+    ``buildSessionContext(entries, null)`` means *navigated to before the first
+    entry* and yields nothing. Python has one ``None``, so the "not passed" case
+    needs a value of its own.
+    """
+
+
+LEAF_UNSPECIFIED = _LeafUnspecified()
+
+
+def build_session_context(
+    entries: list[dict[str, Any]],
+    leaf_id: str | None | _LeafUnspecified = LEAF_UNSPECIFIED,
+    by_id: dict[str, dict[str, Any]] | None = None,
+) -> Any:
+    """Resolve the messages on the path from ``leaf_id`` to the root.
+
+    Port of ``buildSessionContext`` in ``session-manager.ts``: the walk up the
+    tree is here and the scan over the resulting root-first path — settings,
+    compaction, message extraction — is
+    :func:`cortex.agent.harness.types.build_session_context`, which is the same
+    split the TS makes (it imports that half from ``hoocode-agent-core``).
+    """
+    from cortex.agent.harness.types import SessionContext
+    from cortex.agent.harness.types import build_session_context as build_context_from_path
+
+    if by_id is None:
+        by_id = {entry.get("id", ""): entry for entry in entries}
+
+    if leaf_id is None:
+        return SessionContext(messages=[], thinking_level="off", model=None)
+
+    leaf: dict[str, Any] | None = None
+    if isinstance(leaf_id, str) and leaf_id:
+        leaf = by_id.get(leaf_id)
+    if leaf is None and isinstance(leaf_id, _LeafUnspecified):
+        leaf = entries[-1] if entries else None
+    if leaf is None:
+        return SessionContext(messages=[], thinking_level="off", model=None)
+
+    path: list[dict[str, Any]] = []
+    current: dict[str, Any] | None = leaf
+    while current is not None:
+        path.insert(0, current)
+        parent_id = current.get("parentId")
+        current = by_id.get(parent_id) if parent_id else None
+
+    converted = [_session_tree_entry(entry) for entry in path]
+    return build_context_from_path([entry for entry in converted if entry is not None])
+
+
 def get_default_session_dir(cwd: str, agent_dir: str | None = None) -> str:
     """Compute the default session directory for a cwd."""
     if agent_dir is None:
@@ -284,6 +497,177 @@ def find_most_recent_session(session_dir: str) -> str | None:
         return files[0][0] if files else None
     except OSError:
         return None
+
+
+def _parse_timestamp(value: Any) -> datetime | None:
+    """An ISO-8601 string as a datetime, or ``None`` if it is not one.
+
+    ``Date.parse`` accepts the trailing ``Z`` that :func:`datetime.fromisoformat`
+    rejected before 3.11's grammar change; normalising it keeps sessions written
+    by hoocode readable here.
+    """
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _extract_text_content(message: dict[str, Any]) -> str:
+    """The text of a stored message, blocks joined with a space."""
+    content = message.get("content")
+    if isinstance(content, str):
+        return content
+    if not isinstance(content, list):
+        return ""
+    return " ".join(
+        block.get("text", "")
+        for block in content
+        if isinstance(block, dict) and block.get("type") == "text"
+    )
+
+
+def _last_activity_time(entries: list[dict[str, Any]]) -> float | None:
+    """When this session last said anything, in epoch milliseconds.
+
+    A message's own timestamp first, the entry's ISO one as a fallback: the two
+    disagree by however long the turn took, and the message is the closer one.
+    """
+    last: float | None = None
+
+    for entry in entries:
+        if entry.get("type") != "message":
+            continue
+        message = entry.get("message")
+        if not isinstance(message, dict) or "content" not in message:
+            continue
+        if message.get("role") not in ("user", "assistant"):
+            continue
+
+        message_timestamp = message.get("timestamp")
+        if isinstance(message_timestamp, int | float) and not isinstance(message_timestamp, bool):
+            last = max(last or 0, float(message_timestamp))
+            continue
+
+        parsed = _parse_timestamp(entry.get("timestamp"))
+        if parsed is not None:
+            last = max(last or 0, parsed.timestamp() * 1000)
+
+    return last
+
+
+def _session_modified_date(
+    entries: list[dict[str, Any]], header: dict[str, Any], stats_mtime: datetime
+) -> datetime:
+    """What the list sorts and dates a session by."""
+    last = _last_activity_time(entries)
+    if last is not None and last > 0:
+        return datetime.fromtimestamp(last / 1000, UTC)
+
+    header_time = _parse_timestamp(header.get("timestamp"))
+    return header_time if header_time is not None else stats_mtime
+
+
+def build_session_info(file_path: str) -> SessionInfo | None:
+    """Summarise one session file for the selector, or ``None`` if unreadable.
+
+    Deliberately lenient, as the TS is: a malformed line is skipped rather than
+    failing the file, and any error at all yields ``None`` — one corrupt session
+    must not take the whole list with it.
+    """
+    try:
+        content = Path(file_path).read_text(encoding="utf-8")
+        entries = _parse_session_entries(content)
+        if not entries:
+            return None
+        header = entries[0]
+        if header.get("type") != "session":
+            return None
+
+        stats_mtime = datetime.fromtimestamp(os.path.getmtime(file_path), UTC)
+        message_count = 0
+        first_message = ""
+        all_messages: list[str] = []
+        name: str | None = None
+
+        for entry in entries:
+            # The latest session_info wins, including one that cleared the name.
+            if entry.get("type") == "session_info":
+                stripped = str(entry.get("name") or "").strip()
+                name = stripped or None
+
+            if entry.get("type") != "message":
+                continue
+            message_count += 1
+
+            message = entry.get("message")
+            if not isinstance(message, dict) or "content" not in message:
+                continue
+            if message.get("role") not in ("user", "assistant"):
+                continue
+
+            text_content = _extract_text_content(message)
+            if not text_content:
+                continue
+
+            all_messages.append(text_content)
+            if not first_message and message.get("role") == "user":
+                first_message = text_content
+
+        cwd = header.get("cwd") if isinstance(header.get("cwd"), str) else ""
+        created = _parse_timestamp(header.get("timestamp"))
+
+        return SessionInfo(
+            path=file_path,
+            id=header.get("id", ""),
+            cwd=cwd or "",
+            name=name,
+            parent_session_path=header.get("parentSession"),
+            created=created,
+            modified=_session_modified_date(entries, header, stats_mtime),
+            message_count=message_count,
+            first_message=first_message or "(no messages)",
+            all_messages_text=" ".join(all_messages),
+        )
+    except OSError:
+        return None
+
+
+def _list_sessions_from_dir(
+    directory: str,
+    on_progress: SessionListProgress | None = None,
+    progress_offset: int = 0,
+    progress_total: int | None = None,
+) -> list[SessionInfo]:
+    """Summarise every ``.jsonl`` in one directory, reporting progress as it goes."""
+    sessions: list[SessionInfo] = []
+    if not os.path.exists(directory):
+        return sessions
+
+    try:
+        files = [
+            os.path.join(directory, name)
+            for name in os.listdir(directory)
+            if name.endswith(".jsonl")
+        ]
+    except OSError:
+        return sessions
+
+    total = progress_total if progress_total is not None else len(files)
+    for loaded, file_path in enumerate(files, start=1):
+        info = build_session_info(file_path)
+        if on_progress is not None:
+            on_progress(progress_offset + loaded, total)
+        if info is not None:
+            sessions.append(info)
+
+    return sessions
+
+
+def _modified_key(session: SessionInfo) -> float:
+    """Sort key for "most recently active first"."""
+    return session.modified.timestamp() if session.modified is not None else 0.0
 
 
 class SessionManager:
@@ -629,6 +1013,14 @@ class SessionManager:
         """Get all session entries (excludes header)."""
         return [e for e in self._file_entries if e.get("type") != "session"]
 
+    def build_session_context(self) -> Any:
+        """The messages on the current branch, plus the model and thinking level.
+
+        What a mode renders a restored session from, and what the agent is given
+        as its context after a switch.
+        """
+        return build_session_context(self.get_entries(), self._leaf_id, self._by_id)
+
     def get_header(self) -> dict[str, Any] | None:
         """Get session header."""
         return next((e for e in self._file_entries if e.get("type") == "session"), None)
@@ -814,6 +1206,73 @@ class SessionManager:
         self._session_id = new_session_id
         self._build_index()
         return None
+
+    def new_session(self, id: str | None = None, parent_session: str | None = None) -> str | None:
+        """Start a fresh session in this manager. Returns the new file path.
+
+        The runtime's ``/new`` and ``/fork`` paths reach for this to record where
+        a session came from, which is what threads the session list.
+        """
+        return self._new_session(id, parent_session)
+
+    @staticmethod
+    async def list(
+        cwd: str,
+        session_dir: str | None = None,
+        on_progress: SessionListProgress | None = None,
+    ) -> list[SessionInfo]:
+        """Every session for one directory, most recently active first.
+
+        Async because the caller is: the selector paints a loading header and
+        fills the list in when this answers, and the progress callback is what
+        moves the counter in that header. The reads themselves are synchronous —
+        the TS's ``Promise.all`` is I/O concurrency Python has no free equivalent
+        for, and inventing a thread pool here would be an enhancement.
+        """
+        directory = session_dir if session_dir is not None else get_default_session_dir(cwd)
+        sessions = _list_sessions_from_dir(directory, on_progress)
+        sessions.sort(key=_modified_key, reverse=True)
+        return sessions
+
+    @staticmethod
+    async def list_all(on_progress: SessionListProgress | None = None) -> list[SessionInfo]:
+        """Every session across every project directory, most recently active first."""
+        from cortex.code.config import get_sessions_dir
+
+        sessions_dir = get_sessions_dir()
+        try:
+            if not os.path.exists(sessions_dir):
+                return []
+            directories = [
+                os.path.join(sessions_dir, name)
+                for name in os.listdir(sessions_dir)
+                if os.path.isdir(os.path.join(sessions_dir, name))
+            ]
+
+            # Count first, so the progress the header shows is out of the real
+            # total rather than climbing per directory.
+            total_files = 0
+            per_directory: list[str] = []
+            for directory in directories:
+                try:
+                    names = [n for n in os.listdir(directory) if n.endswith(".jsonl")]
+                except OSError:
+                    continue
+                per_directory.extend(os.path.join(directory, name) for name in names)
+                total_files += len(names)
+
+            sessions: list[SessionInfo] = []
+            for loaded, file_path in enumerate(per_directory, start=1):
+                info = build_session_info(file_path)
+                if on_progress is not None:
+                    on_progress(loaded, total_files)
+                if info is not None:
+                    sessions.append(info)
+
+            sessions.sort(key=_modified_key, reverse=True)
+            return sessions
+        except OSError:
+            return []
 
     @classmethod
     def create(cls, cwd: str, session_dir: str | None = None) -> SessionManager:

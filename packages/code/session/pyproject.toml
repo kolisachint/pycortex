@@ -7,6 +7,7 @@ requires-python = ">=3.11"
 dependencies = [
     "cortexcode-agent-agent>=0.0.3,<0.1.0",
     "cortexcode-agent-compaction>=0.0.3,<0.1.0",
+    "cortexcode-agent-harness>=0.0.3,<0.1.0",
     "cortexcode-ai-models>=0.0.3,<0.1.0",
     "cortexcode-ai-types>=0.0.3,<0.1.0",
     "cortexcode-cli-config>=0.0.3,<0.1.0",
@@ -19,6 +20,7 @@ publish = true
 [tool.uv.sources]
 cortexcode-agent-agent = { workspace = true }
 cortexcode-agent-compaction = { workspace = true }
+cortexcode-agent-harness = { workspace = true }
 cortexcode-ai-models = { workspace = true }
 cortexcode-ai-types = { workspace = true }
 cortexcode-cli-config = { workspace = true }
