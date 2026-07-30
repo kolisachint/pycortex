@@ -1385,3 +1385,189 @@ class TestResolveFdPath:
         )
         monkeypatch.setenv("PATH", str(empty))
         assert resolve_fd_path() is None
+
+
+def _overlay(app: InteractiveMode):
+    """Whatever is standing in for the editor, as the thing that handles input.
+
+    `Container.children` is typed as `Component` — render and invalidate — which
+    is all the renderer needs of one. An overlay is also focusable and takes
+    keystrokes, and that is what these tests drive it through.
+    """
+    from typing import Any, cast
+
+    return cast(Any, app.editor_container.children[0])
+
+
+class TestOverlays:
+    """The overlay host: an overlay takes the editor's place and Escape gives it back."""
+
+    def test_an_overlay_replaces_the_editor_and_takes_the_focus(self):
+        from cortex.tui.components import Text
+
+        app = _app()
+        overlay = Text("an overlay")
+
+        app.show_selector(lambda _done: (overlay, overlay))
+
+        assert app.editor_container.children == [overlay]
+        assert app.editor not in app.editor_container.children
+
+    def test_done_puts_the_editor_back(self):
+        from cortex.tui.components import Text
+
+        app = _app()
+        overlay = Text("an overlay")
+        closers: list[Callable[[], None]] = []
+
+        def create(done: Callable[[], None]):
+            closers.append(done)
+            return overlay, overlay
+
+        app.show_selector(create)
+        closers[0]()
+
+        assert app.editor_container.children == [app.editor]
+
+    def test_the_focus_target_can_differ_from_the_component(self):
+        """A settings overlay focuses its list rather than the container that
+        holds the borders, which is what `getSettingsList()` is for."""
+        from cortex.tui.components import Text
+        from cortex.tui.render import Container
+
+        app = _app()
+        inner = Text("the focusable part")
+        outer = Container()
+        outer.add_child(inner)
+
+        app.show_selector(lambda _done: (outer, inner))
+
+        assert app.editor_container.children == [outer]
+
+    def test_settings_opens_an_overlay_and_escape_closes_it(self):
+        app = _app()
+        app.handle_submit("/settings")
+
+        assert app.editor not in app.editor_container.children
+        rendered = "\n".join(app.editor_container.render(80))
+        assert "Auto-compact" in rendered
+
+        _overlay(app).handle_input("\x1b")
+        assert app.editor_container.children == [app.editor]
+
+    def test_the_overlay_gets_the_keyboard_and_the_editor_gets_it_back(self):
+        """An overlay that is on screen but not focused looks exactly like one
+        that works, right up until the first keystroke goes nowhere."""
+        app = _app()
+        app.handle_submit("/model")
+
+        overlay = _overlay(app)
+        assert overlay.focused is True
+        assert app.editor.focused is False
+
+        overlay.handle_input("\x1b")
+        assert app.editor_container.children == [app.editor]
+        assert app.editor.focused is True
+
+    def test_settings_consumes_the_line(self):
+        app = _app()
+        app.editor.set_text("/settings")
+        app.handle_submit("/settings")
+        assert app.editor.get_text() == ""
+
+    def test_a_settings_change_reaches_the_settings_manager(self):
+        settings = _settings()
+        app = _app(settings=settings)
+        app.handle_submit("/settings")
+
+        overlay = _overlay(app)
+        overlay.handle_input("\x1b[B")
+        overlay.handle_input("\x1b[B")  # onto "Tool output display"
+        overlay.handle_input("\r")
+
+        assert settings.get_tool_output_display() == "collapsed"
+        assert app.tool_output_display == "collapsed"
+
+    def test_a_theme_change_reaches_the_settings_and_the_palette(self):
+        from cortex.code.interactive.theme import get_theme_name, set_theme
+
+        settings = _settings()
+        app = _app(settings=settings)
+        try:
+            callbacks = app._settings_callbacks(lambda: None)  # pyright: ignore[reportPrivateUsage]
+            callbacks.on_theme_change("light")
+            assert settings.get_theme() == "light"
+            assert get_theme_name() == "light"
+        finally:
+            set_theme("dark")
+
+    def test_an_unloadable_theme_reports_and_falls_back(self):
+        from cortex.code.interactive.theme import get_theme_name, set_theme
+
+        app = _app()
+        try:
+            callbacks = app._settings_callbacks(lambda: None)  # pyright: ignore[reportPrivateUsage]
+            callbacks.on_theme_change("no-such-theme")
+            assert get_theme_name() == "dark"
+            assert "Failed to load theme" in _chat_text(app)
+        finally:
+            set_theme("dark")
+
+    def test_model_opens_the_picker(self):
+        app = _app()
+        app.handle_submit("/model")
+        assert app.editor not in app.editor_container.children
+
+    def test_scoped_models_with_nothing_available_says_so(self):
+        """No registry means no models to scope, and the app says that rather
+        than opening an empty configuration screen."""
+        app = _app()
+        app.handle_submit("/scoped-models")
+        assert app.editor_container.children == [app.editor]
+        assert "No models available" in _chat_text(app)
+
+
+class TestModelKeys:
+    def test_the_select_key_opens_the_picker(self):
+        app = _app()
+        app.editor.handle_input("\x0c")  # Ctrl+L — app.model.select
+        assert app.editor not in app.editor_container.children
+
+    def test_cycling_with_one_model_says_so(self):
+        app = _app()
+        app.editor.handle_input("\x10")  # Ctrl+P — app.model.cycleForward
+        assert "Only one model available" in _chat_text(app)
+
+    def test_the_editor_border_follows_the_thinking_level(self):
+        app, registration = _faux_app()
+        try:
+            app.session.agent.state.model = registration.get_model().model_copy(
+                update={"reasoning": True}
+            )
+            before = app.editor.border_color("─")
+            app.session.set_thinking_level("high")
+            app.update_editor_border_color()
+            assert app.editor.border_color("─") != before, (
+                "the border did not change with the thinking level"
+            )
+        finally:
+            registration.unregister()
+
+    def test_cycling_the_thinking_level_reports_where_it_landed(self):
+        app, registration = _faux_app()
+        try:
+            app.session.agent.state.model = registration.get_model().model_copy(
+                update={"reasoning": True}
+            )
+            app.cycle_thinking_level()
+            assert "Thinking level: minimal" in _chat_text(app)
+        finally:
+            registration.unregister()
+
+    def test_a_model_that_cannot_think_says_so(self):
+        app, registration = _faux_app()
+        try:
+            app.cycle_thinking_level()
+            assert "Model does not support thinking" in _chat_text(app)
+        finally:
+            registration.unregister()

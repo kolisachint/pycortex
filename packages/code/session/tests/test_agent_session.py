@@ -557,3 +557,237 @@ class TestSessionStats:
         stats = session.get_session_stats()
         assert stats.context_usage is not None
         assert stats.context_usage.context_window > 0
+
+
+class _Registry:
+    """A model registry over a fixed list. What 7.11 will supply for real."""
+
+    def __init__(self, models: list[Any], *, authed: bool = True) -> None:
+        self.models = models
+        self._authed = authed
+        self.refreshes = 0
+
+    def has_configured_auth(self, model: Any) -> bool:
+        return self._authed
+
+    def is_using_oauth(self, model: Any) -> bool:
+        return False
+
+    def refresh(self) -> None:
+        self.refreshes += 1
+
+    async def get_available(self) -> list[Any]:
+        return list(self.models)
+
+
+def _reasoning_model(faux: Any) -> Any:
+    """The faux model with reasoning on, so thinking levels have somewhere to go."""
+    return faux.get_model().model_copy(update={"reasoning": True})
+
+
+class TestSetModel:
+    async def test_it_moves_the_agent_onto_the_model(self, faux: Any):
+        other = faux.get_model().model_copy(update={"id": "faux-2"})
+        session = _session(faux, model_registry=_Registry([faux.get_model(), other]))
+        await session.set_model(other)
+        assert session.model is other
+
+    async def test_it_records_the_switch_in_the_settings(self, faux: Any):
+        other = faux.get_model().model_copy(update={"id": "faux-2"})
+        settings = _settings()
+        session = create_agent_session(
+            cwd="/w/project",
+            settings_manager=settings,
+            session_manager=SessionManager("/w/project", "", persist=False),
+            model=faux.get_model(),
+            model_registry=_Registry([faux.get_model(), other]),
+        ).session
+        await session.set_model(other)
+        assert settings.get_default_model() == "faux-2"
+        assert settings.get_default_provider() == other.provider
+
+    async def test_a_model_with_no_auth_is_refused(self, faux: Any):
+        session = _session(faux, model_registry=_Registry([faux.get_model()], authed=False))
+        before = session.model
+        with pytest.raises(RuntimeError, match="No API key"):
+            await session.set_model(faux.get_model())
+        assert session.model is before, "a refused switch still moved the agent"
+
+    async def test_without_a_registry_the_switch_is_allowed(self, faux: Any):
+        """There is nothing to check against, and refusing everything would make
+        the selector untestable rather than safe."""
+        other = faux.get_model().model_copy(update={"id": "faux-2"})
+        session = _session(faux)
+        await session.set_model(other)
+        assert session.model is other
+
+
+class TestCycleModel:
+    async def test_one_model_is_not_a_cycle(self, faux: Any):
+        session = _session(faux, model_registry=_Registry([faux.get_model()]))
+        assert await session.cycle_model("forward") is None
+
+    async def test_forward_steps_to_the_next_model(self, faux: Any):
+        other = faux.get_model().model_copy(update={"id": "faux-2"})
+        session = _session(faux, model_registry=_Registry([faux.get_model(), other]))
+        result = await session.cycle_model("forward")
+        assert result is not None
+        assert result.model.id == "faux-2"
+        assert result.is_scoped is False
+
+    async def test_backward_wraps_around(self, faux: Any):
+        other = faux.get_model().model_copy(update={"id": "faux-2"})
+        session = _session(faux, model_registry=_Registry([faux.get_model(), other]))
+        result = await session.cycle_model("backward")
+        assert result is not None
+        assert result.model.id == "faux-2", "backward from the first model must wrap to the last"
+
+    async def test_from_a_model_outside_the_list_it_steps_onto_the_second(self, faux: Any):
+        """The TS treats "not found" as index 0 and then steps, so the first
+        cycle lands on the list's *second* entry. Treating it as -1 instead would
+        land on the first and make one model unreachable by cycling forward."""
+        first = faux.get_model().model_copy(update={"id": "first"})
+        second = faux.get_model().model_copy(update={"id": "second"})
+        session = _session(faux, model_registry=_Registry([first, second]))
+        session.agent.state.model = faux.get_model().model_copy(update={"id": "stranger"})
+
+        result = await session.cycle_model("forward")
+        assert result is not None
+        assert result.model.id == "second"
+
+    async def test_scoped_models_win_over_the_registry(self, faux: Any):
+        from cortex.code.session import ScopedModel
+
+        scoped_a = faux.get_model().model_copy(update={"id": "scoped-a"})
+        scoped_b = faux.get_model().model_copy(update={"id": "scoped-b"})
+        session = _session(
+            faux,
+            model_registry=_Registry([faux.get_model()]),
+            scoped_models=[ScopedModel(scoped_a), ScopedModel(scoped_b)],
+        )
+        result = await session.cycle_model("forward")
+        assert result is not None
+        assert result.is_scoped is True
+        assert result.model.id in {"scoped-a", "scoped-b"}
+
+    async def test_a_scoped_model_can_pin_a_thinking_level(self, faux: Any):
+        from cortex.code.session import ScopedModel
+
+        thinker = _reasoning_model(faux).model_copy(update={"id": "thinker"})
+        other = _reasoning_model(faux).model_copy(update={"id": "other"})
+        session = _session(
+            faux,
+            scoped_models=[ScopedModel(other), ScopedModel(thinker, "high")],
+        )
+        # Land on `thinker`, whose pattern pinned "high".
+        result = await session.cycle_model("forward")
+        while result is not None and result.model.id != "thinker":
+            result = await session.cycle_model("forward")
+        assert result is not None
+        assert result.thinking_level == "high"
+
+
+class TestThinkingLevel:
+    def test_a_model_without_reasoning_offers_only_off(self, faux: Any):
+        assert _session(faux).get_available_thinking_levels() == ["off"]
+
+    def test_a_reasoning_model_offers_the_range(self, faux: Any):
+        session = _session(faux)
+        session.agent.state.model = _reasoning_model(faux)
+        assert session.get_available_thinking_levels() == [
+            "off",
+            "minimal",
+            "low",
+            "medium",
+            "high",
+        ]
+
+    def test_a_level_the_model_cannot_do_is_clamped(self, faux: Any):
+        session = _session(faux)
+        session.set_thinking_level("high")
+        assert session.thinking_level == "off", "a non-reasoning model took a thinking level"
+
+    def test_setting_the_level_records_it(self, faux: Any):
+        settings = _settings()
+        session = create_agent_session(
+            cwd="/w/project",
+            settings_manager=settings,
+            session_manager=SessionManager("/w/project", "", persist=False),
+            model=_reasoning_model(faux),
+        ).session
+        session.set_thinking_level("medium")
+        assert session.thinking_level == "medium"
+        assert settings.get_default_thinking_level() == "medium"
+
+    def test_setting_the_same_level_twice_records_once(self, faux: Any):
+        session = _session(faux)
+        session.agent.state.model = _reasoning_model(faux)
+        session.set_thinking_level("low")
+        before = len(session.session_manager.get_entries())
+        session.set_thinking_level("low")
+        assert len(session.session_manager.get_entries()) == before
+
+    def test_a_change_is_announced(self, faux: Any):
+        session = _session(faux)
+        session.agent.state.model = _reasoning_model(faux)
+        events: list[dict[str, Any]] = []
+        session.subscribe(lambda event: events.append(event))
+        session.set_thinking_level("high")
+        assert {"type": "thinking_level_changed", "level": "high"} in events
+
+    def test_cycling_without_reasoning_answers_nothing(self, faux: Any):
+        assert _session(faux).cycle_thinking_level() is None
+
+    def test_cycling_steps_through_the_levels(self, faux: Any):
+        session = _session(faux)
+        session.agent.state.model = _reasoning_model(faux)
+        assert session.cycle_thinking_level() == "minimal"
+        assert session.cycle_thinking_level() == "low"
+
+    async def test_a_switch_back_to_a_thinker_restores_the_stored_level(self, faux: Any):
+        """A model that cannot think clamps the level to `off`. Carrying *that*
+        across the next switch would strand the session on `off` for good, so
+        what comes back is the stored default — the level the user last chose
+        deliberately."""
+        settings = _settings()
+        thinker = _reasoning_model(faux)
+        session = create_agent_session(
+            cwd="/w/project",
+            settings_manager=settings,
+            session_manager=SessionManager("/w/project", "", persist=False),
+            model=thinker,
+        ).session
+        session.set_thinking_level("high")
+
+        plain = faux.get_model().model_copy(update={"id": "plain"})
+        await session.set_model(plain)
+        assert session.thinking_level == "off", "a model without reasoning kept a level"
+
+        await session.set_model(_reasoning_model(faux).model_copy(update={"id": "thinker-2"}))
+        assert session.thinking_level == "high"
+
+
+class TestQueueModes:
+    def test_steering_mode_reaches_the_agent_and_the_settings(self, faux: Any):
+        settings = _settings()
+        session = create_agent_session(
+            cwd="/w/project",
+            settings_manager=settings,
+            session_manager=SessionManager("/w/project", "", persist=False),
+            model=faux.get_model(),
+        ).session
+        session.set_steering_mode("one-at-a-time")
+        assert session.steering_mode == "one-at-a-time"
+        assert settings.get_steering_mode() == "one-at-a-time"
+
+    def test_follow_up_mode_reaches_the_agent_and_the_settings(self, faux: Any):
+        settings = _settings()
+        session = create_agent_session(
+            cwd="/w/project",
+            settings_manager=settings,
+            session_manager=SessionManager("/w/project", "", persist=False),
+            model=faux.get_model(),
+        ).session
+        session.set_follow_up_mode("one-at-a-time")
+        assert session.follow_up_mode == "one-at-a-time"
+        assert settings.get_follow_up_mode() == "one-at-a-time"

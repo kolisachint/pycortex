@@ -22,7 +22,7 @@ import os
 import re
 import traceback
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from cortex.code.e2e._harness import AppHarness
@@ -165,6 +165,36 @@ class FauxSession:
     #: `faux_assistant_message`) or callables the provider invokes per request.
     set_responses: Callable[[list[Any]], None]
     unregister: Callable[[], None]
+    #: Every model the faux provider registered, in order.
+    models: list[Any] = field(default_factory=list)
+
+
+class FauxModelRegistry:
+    """A model registry over the faux provider's models.
+
+    The real one is step 7.11's: it resolves credentials, watches `models.json`
+    and decides which models a user can actually reach. What the overlays ask it
+    is much smaller — the list, and whether a model has auth — so this answers
+    exactly that, for models with no credentials to have. A scenario about
+    *switching* models cannot wait for the machinery that decides which ones you
+    are allowed to switch to.
+    """
+
+    def __init__(self, models: list[Any]) -> None:
+        self._models = list(models)
+        self.refreshes = 0
+
+    def has_configured_auth(self, model: Any) -> bool:
+        return any(m.provider == model.provider and m.id == model.id for m in self._models)
+
+    def is_using_oauth(self, model: Any) -> bool:
+        return False
+
+    def refresh(self) -> None:
+        self.refreshes += 1
+
+    async def get_available(self) -> list[Any]:
+        return list(self._models)
 
 
 def faux_session(
@@ -174,6 +204,7 @@ def faux_session(
     stream_fn: Any = None,
     tools: list[Any] | None = None,
     models: list[Any] | None = None,
+    with_model_registry: bool = False,
 ) -> FauxSession:
     """Build the session the shell scenarios prompt against.
 
@@ -204,11 +235,13 @@ def faux_session(
         model=registration.get_model(),
         stream_fn=stream_fn,
         tools=tools,
+        model_registry=FauxModelRegistry(registration.models) if with_model_registry else None,
     )
     return FauxSession(
         session=created.session,
         set_responses=registration.set_responses,
         unregister=registration.unregister,
+        models=list(registration.models),
     )
 
 
@@ -1086,13 +1119,18 @@ def _menu_rows(harness: AppHarness) -> list[str]:
 
     The menu is drawn between the editor's lower border and the footer, one row
     per suggestion, with `→ ` on the selected one and two spaces on the rest.
+
+    A menu longer than the visible window ends with a `(n/m)` scroll counter,
+    which is chrome rather than a suggestion — it appeared here the moment 7.9
+    took the command table past the window's height.
     """
     lines = [line.rstrip() for line in harness.surface().lines()]
     footer = next((i for i, line in enumerate(lines) if line.startswith("⬢ ")), len(lines))
     borders = [i for i, line in enumerate(lines[:footer]) if line and set(line) == {"─"}]
     if not borders:
         return []
-    return [line.lstrip("→ ") for line in lines[borders[-1] + 1 : footer] if line.strip()]
+    rows = [line.lstrip("→ ") for line in lines[borders[-1] + 1 : footer] if line.strip()]
+    return [row for row in rows if not re.fullmatch(r"\(\d+/\d+\)", row)]
 
 
 @scenario("commands/slash-autocomplete", "Typing `/` opens the command autocomplete", "7.8")
@@ -1119,11 +1157,21 @@ def commands_slash_autocomplete() -> None:
         assert names, f"the menu opened empty\n\n{h.snapshot()}"
         unknown = [name for name in names if name not in advertised]
         assert not unknown, f"the menu offers commands that are not built in: {unknown!r}"
-        assert "hotkeys" in names, f"the menu is missing /hotkeys: {names!r}\n\n{h.snapshot()}"
+
+        # `/hotkeys` is offered — reached by filtering rather than by looking
+        # for it in the open menu, because since 7.9 the table is longer than
+        # the window and the last rows are below the fold.
+        h.type("hot")
+        h.wait_for(lambda: len(_menu_rows(h)) == 1)
+        assert _menu_rows(h)[0].startswith("hotkeys "), (
+            f"the menu did not filter to /hotkeys: {_menu_rows(h)!r}\n\n{h.snapshot()}"
+        )
         h.assert_shows("Show all keyboard shortcuts", scrollback=False)
 
         # Typing filters it down to the one match, and the editor still holds
         # what was typed.
+        for _ in range(3):
+            h.key("backspace")
         h.type("sess")
         h.wait_for(lambda: len(_menu_rows(h)) == 1)
         assert _menu_rows(h)[0].startswith("session "), (
@@ -1217,10 +1265,171 @@ def commands_file_mention() -> None:
 # 7.9 — overlays and selectors
 # ===========================================================================
 
-pending("overlay/model-selector", "`/model` switches model and the footer follows", "7.9")
-pending("overlay/session-selector", "`/sessions` lists sessions and loads one", "7.9")
-pending("overlay/settings", "`/settings` opens settings and a change persists", "7.9")
-pending("overlay/escape-closes", "Escape closes an overlay and restores editor focus", "7.9")
+
+def _overlay_open(harness: AppHarness) -> bool:
+    """Whether an overlay has taken the editor's place.
+
+    Asked of the app rather than of the screen, which is unusual here and
+    deliberate: an overlay *replaces* the editor in its container, and both the
+    editor and a selector's search box draw a `>` prompt, so the screen cannot
+    tell the two apart. What the screen can show — and what each scenario
+    checks besides this — is the overlay's own content, and that a keystroke
+    after Escape reaches the editor again.
+    """
+    app = harness.app
+    return app.editor not in app.editor_container.children
+
+
+def _two_faux_models() -> list[Any]:
+    """Two models to switch between. One is not a choice."""
+    from cortex.ai.providers.faux import FauxModelDefinition
+
+    return [
+        FauxModelDefinition(
+            id=f"faux-{index}",
+            name=f"Faux {index}",
+            reasoning=False,
+            input=["text"],
+            cost={"input": 0.0, "output": 0.0, "cache_read": 0.0, "cache_write": 0.0},
+            context_window=128000,
+            max_tokens=16384,
+        )
+        for index in (1, 2)
+    ]
+
+
+@scenario("overlay/model-selector", "`/model` switches model and the footer follows", "7.9")
+def overlay_model_selector() -> None:
+    """`/model` opens the picker, Enter takes a row, and the footer follows.
+
+    The session is booted with a registry over two faux models, because "switch
+    model" needs something to switch *to* — the real registry resolves
+    credentials and arrives in 7.11, and this is the half of it the overlay
+    asks for.
+    """
+    from cortex.code.config import SettingsManager
+    from cortex.code.config.settings_storage import InMemorySettingsStorage
+
+    settings = SettingsManager.from_storage(InMemorySettingsStorage())
+    faux = faux_session(
+        cwd="/w/project",
+        settings=settings,
+        models=_two_faux_models(),
+        with_model_registry=True,
+    )
+    try:
+        with boot_shell(settings=settings, session=faux.session) as h:
+            h.assert_shows("faux-1", scrollback=False)
+
+            h.type("/model")
+            h.key("enter")
+            h.wait_for(lambda: _overlay_open(h))
+
+            # The overlay lists both models and says which one is in use.
+            h.assert_shows("faux-1", "faux-2", scrollback=False)
+
+            # Down then Enter takes the *other* model, which is the whole point:
+            # picking the one already in use would prove nothing.
+            h.key("down")
+            h.key("enter")
+            h.wait_for(lambda: faux.session.model.id == "faux-2")
+
+            # The overlay closed, the editor is back, and the footer names the
+            # model that is now in use rather than the one that was.
+            h.wait_for(lambda: not _overlay_open(h))
+            h.wait_for(lambda: h.contains("faux-2", scrollback=False))
+            h.assert_shows("Model: faux-2")
+            assert settings.get_default_model() == "faux-2", (
+                "the switch did not reach the settings manager"
+            )
+    finally:
+        faux.unregister()
+
+
+# `/resume` and its session selector are 7.10's, with the machinery they need.
+#
+# `session-selector.ts` is one half of what this scenario asks for: it lists the
+# sessions on disk. The other half — *loading* the one you pick — is
+# `AgentSessionRuntime`'s session-replacement half plus `renderCurrentSessionState`,
+# both of which `cortex.code.session.runtime` defers to 7.10 in its own docstring
+# and which are exactly what `--continue` needs to put a transcript back on the
+# screen. Shipping the list without the load would put a command in the `/` menu
+# that opens a picker you cannot pick from, which is the one thing 7.8's
+# convention rules out. So the scenario moves to the step that builds what it
+# needs, as `commands/clear` did before it, and `/resume` stays unadvertised
+# until then.
+pending("overlay/session-selector", "`/resume` lists sessions and loads one", "7.10")
+
+
+@scenario("overlay/settings", "`/settings` opens settings and a change persists", "7.9")
+def overlay_settings() -> None:
+    """`/settings` opens the settings list, and a row that is changed stays changed.
+
+    Tool output display is the row under test because it is a leaf setting with
+    an effect on both sides: the settings manager records it, and the tool blocks
+    already in the transcript re-render at the new level. The check is that the
+    *setting* took — reopening the overlay shows the new value, which is what a
+    user means by "it stuck".
+    """
+    from cortex.code.config import SettingsManager
+    from cortex.code.config.settings_storage import InMemorySettingsStorage
+
+    settings = SettingsManager.from_storage(InMemorySettingsStorage())
+    assert settings.get_tool_output_display() == "standard", (
+        "this scenario assumes the default it is about to change"
+    )
+
+    with boot_shell(settings=settings) as h:
+        h.type("/settings")
+        h.key("enter")
+        h.wait_for(lambda: _overlay_open(h))
+        h.assert_shows("Auto-compact", "Tool output display", scrollback=False)
+
+        # The list searches: typing narrows it to the row, Enter cycles its
+        # value. No space in the query — space is the activate key in a settings
+        # list, so it never reaches the search box.
+        h.type("tooloutput")
+        h.wait_for(lambda: not h.contains("Auto-compact", scrollback=False))
+        h.assert_shows("Tool output display", scrollback=False)
+        h.key("enter")
+        h.wait_for(lambda: settings.get_tool_output_display() == "collapsed")
+
+        # Escape closes the overlay; reopening it shows the value that was set,
+        # not the one it opened on the first time.
+        h.key("escape")
+        h.wait_for(lambda: not _overlay_open(h))
+
+        h.type("/settings")
+        h.key("enter")
+        h.wait_for(lambda: _overlay_open(h))
+        h.type("tooloutput")
+        h.wait_for(lambda: not h.contains("Auto-compact", scrollback=False))
+        h.assert_shows("collapsed", scrollback=False)
+
+
+@scenario("overlay/escape-closes", "Escape closes an overlay and restores editor focus", "7.9")
+def overlay_escape_closes() -> None:
+    """Escape out of an overlay and the editor has the keyboard again.
+
+    Focus is the part worth checking on the screen rather than in a field: an
+    overlay that is gone but still holding the keyboard looks exactly like one
+    that closed properly, right up until the next thing you type disappears.
+    """
+    with boot_shell() as h:
+        h.type("/settings")
+        h.key("enter")
+        h.wait_for(lambda: _overlay_open(h))
+        # The overlay is on screen and the editor is not.
+        h.assert_shows("Auto-compact", scrollback=False)
+
+        h.key("escape")
+        h.wait_for(lambda: not _overlay_open(h))
+
+        # The editor is back, empty (the command consumed the line), and it is
+        # the thing receiving keystrokes.
+        h.type("after")
+        h.wait_for(lambda: h.contains("> after", scrollback=False))
+
 
 # ===========================================================================
 # 7.10 — sessions

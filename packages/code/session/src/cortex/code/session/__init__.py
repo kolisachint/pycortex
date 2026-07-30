@@ -10,6 +10,7 @@ from cortex.code.session.agent_session import (
     AgentSessionConfig,
     AgentSessionEvent,
     AgentSessionEventListener,
+    ModelCycleResult,
     ModelRegistryLike,
     PromptOptions,
 )
@@ -40,6 +41,14 @@ from cortex.code.session.manager import (
     find_most_recent_session,
     get_default_session_dir,
     get_latest_compaction_entry,
+)
+from cortex.code.session.model_resolver import (
+    ParsedModelResult,
+    ScopedModel,
+    find_exact_model_reference_match,
+    is_alias,
+    parse_model_pattern,
+    resolve_model_scope,
 )
 from cortex.code.session.retry import AutoRetryController
 from cortex.code.session.runtime import (
@@ -79,6 +88,7 @@ __all__ = [
     "AgentSessionConfig",
     "AgentSessionEvent",
     "AgentSessionEventListener",
+    "ModelCycleResult",
     "ModelRegistryLike",
     "PromptOptions",
     # Runtime
@@ -128,6 +138,13 @@ __all__ = [
     "SkillExpansionError",
     "expand_skill_command",
     "parse_skill_block",
+    # Model resolution
+    "ParsedModelResult",
+    "ScopedModel",
+    "find_exact_model_reference_match",
+    "is_alias",
+    "parse_model_pattern",
+    "resolve_model_scope",
     # Retry
     "AutoRetryController",
     # Compaction

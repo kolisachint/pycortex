@@ -1,5 +1,5 @@
 {
-  "generated_from": "29be25d",
+  "generated_from": "4d3cf2a",
   "note": "Written by scripts/tui_e2e.py. Consumed by scripts/migrate_next.py --status. A Phase 7 step cannot be ticked while it still owns unmet scenarios.",
   "passing": [
     "chat/abort-turn",
@@ -21,6 +21,9 @@
     "input/history-recall",
     "input/multiline",
     "input/type-and-submit",
+    "overlay/escape-closes",
+    "overlay/model-selector",
+    "overlay/settings",
     "shell/boot-banner",
     "shell/ctrl-c-exits",
     "shell/editor-prompt",
@@ -57,28 +60,10 @@
       "title": "A clean install boots, prompts, answers and exits cleanly"
     },
     {
-      "id": "overlay/escape-closes",
-      "status": "pending",
-      "blocked_by": "7.9",
-      "title": "Escape closes an overlay and restores editor focus"
-    },
-    {
-      "id": "overlay/model-selector",
-      "status": "pending",
-      "blocked_by": "7.9",
-      "title": "`/model` switches model and the footer follows"
-    },
-    {
       "id": "overlay/session-selector",
       "status": "pending",
-      "blocked_by": "7.9",
-      "title": "`/sessions` lists sessions and loads one"
-    },
-    {
-      "id": "overlay/settings",
-      "status": "pending",
-      "blocked_by": "7.9",
-      "title": "`/settings` opens settings and a change persists"
+      "blocked_by": "7.10",
+      "title": "`/resume` lists sessions and loads one"
     },
     {
       "id": "session/persist-across-restart",

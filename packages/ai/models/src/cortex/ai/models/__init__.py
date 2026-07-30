@@ -20,6 +20,7 @@ from cortex.ai.models.image_models import (
     get_image_providers,
 )
 from cortex.ai.models.models import (
+    EXTENDED_THINKING_LEVELS,
     calculate_cost,
     clamp_thinking_level,
     get_model,
@@ -42,6 +43,7 @@ __all__ = [
     "get_image_models",
     "get_image_providers",
     # Models
+    "EXTENDED_THINKING_LEVELS",
     "calculate_cost",
     "clamp_thinking_level",
     "get_model",

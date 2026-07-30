@@ -25,8 +25,10 @@ rather than faked, and each is named where it would have been:
   messages the agent emits is its own step, not a side effect of this one.
   :attr:`AgentSession.retry_attempt` is 0 until then, and the interactive mode
   reads it exactly where the TS does;
-* **model management** (``setModel``, ``cycleModel``, thinking levels) — step
-  7.9/7.11, with the model registry and the selector overlays;
+* **model management** (``setModel``, ``cycleModel``, thinking levels) — landed
+  in 7.9 with the selector overlays. What it asks a model registry for is
+  :class:`ModelRegistryLike`; the registry that answers is still 7.11's, and
+  every branch that would consult one says what it does without;
 * **skill and prompt-template expansion** in :meth:`AgentSession.prompt` — step
   7.8, which is where ``/``-commands start meaning anything. Until then the
   submitted line reaches the agent as typed, so a ``/`` prefix is prompt text.
@@ -47,8 +49,14 @@ import inspect
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Literal, Protocol
+from typing import Any, Literal, Protocol, cast
 
+from cortex.ai.models import (
+    EXTENDED_THINKING_LEVELS,
+    clamp_thinking_level,
+    get_supported_thinking_levels,
+    models_are_equal,
+)
 from cortex.code.config import (
     format_no_api_key_found_message,
     format_no_model_selected_message,
@@ -67,6 +75,7 @@ __all__ = [
     "AgentSessionConfig",
     "AgentSessionEvent",
     "AgentSessionEventListener",
+    "ModelCycleResult",
     "ModelRegistryLike",
     "PromptOptions",
 ]
@@ -81,12 +90,51 @@ AgentSessionEventListener = Callable[[AgentSessionEvent], Any]
 StreamingBehavior = Literal["steer", "followUp"]
 
 
+@dataclass(frozen=True)
+class ModelCycleResult:
+    """What :meth:`AgentSession.cycle_model` moved to. Port of ``ModelCycleResult``."""
+
+    model: Any
+    thinking_level: str
+    is_scoped: bool
+
+
+def _index_of_model(models: list[Any], current: Any) -> int:
+    """Where ``current`` sits in ``models``; 0 when it is not among them.
+
+    The TS's ``findIndex`` + ``if (currentIndex === -1) currentIndex = 0``: a
+    session on a model outside the list cycles onto the list's second entry
+    rather than nowhere.
+    """
+    for index, model in enumerate(models):
+        if models_are_equal(model, current):
+            return index
+    return 0
+
+
+def _step_index(current_index: int, length: int, direction: str) -> int:
+    """One step around a ring of ``length``, wrapping at both ends."""
+    if direction == "forward":
+        return (current_index + 1) % length
+    return (current_index - 1 + length) % length
+
+
 class ModelRegistryLike(Protocol):
-    """The slice of ``ModelRegistry`` the prompt preflight uses (step 7.11)."""
+    """The slice of ``ModelRegistry`` this leaf uses.
+
+    Two callers, two halves: the prompt preflight asks whether a model has
+    credentials, and the model management below asks what there is to switch to.
+    The registry that answers both is step 7.11's; the protocol is what it will
+    have to satisfy, and what a caller can satisfy by hand in the meantime.
+    """
 
     def has_configured_auth(self, model: Any) -> bool: ...
 
     def is_using_oauth(self, model: Any) -> bool: ...
+
+    def refresh(self) -> None: ...
+
+    async def get_available(self) -> list[Any]: ...
 
 
 @dataclass
@@ -394,6 +442,187 @@ class AgentSession:
         and the footer re-derives the name on the next frame anyway.
         """
         self.session_manager.append_session_info(name)
+
+    # =====================================================================
+    # Model management
+    # =====================================================================
+    #
+    # The half of ``agent-session.ts`` that ``/model``, ``/scoped-models`` and
+    # the cycle keys drive (step 7.9). Every switch does the same four things in
+    # the TS's order — check auth, move the agent's model, record the change in
+    # the session file, and remember it as the default — because the order is
+    # what makes a rejected switch leave nothing behind.
+    #
+    # ``_emitModelSelect`` is the one line with nothing to call: it notifies the
+    # extension runner, which is unported, and it is a notification rather than
+    # a step in the switch. Its guard (skip when the model did not actually
+    # change) is not reproduced because there is nothing to skip.
+
+    async def set_model(self, model: Any) -> None:
+        """Switch to ``model``. Raises when it has no credentials configured.
+
+        The registry is the authority on that, so with none configured there is
+        nothing to check against and the switch is allowed: a session built by
+        hand — a test's, or a booted-in-a-test app's — has no auth story at all,
+        and refusing every model would make the selector untestable rather than
+        safe. Step 7.11 supplies the registry that makes the check real.
+        """
+        registry = self._model_registry
+        if registry is not None and not registry.has_configured_auth(model):
+            raise RuntimeError(f"No API key for {model.provider}/{model.id}")
+
+        thinking_level = self._get_thinking_level_for_model_switch()
+        self.agent.state.model = model
+        self.session_manager.append_model_change(model.provider, model.id)
+        self.settings_manager.set_default_model_and_provider(model.provider, model.id)
+
+        # Re-clamp the thinking level to what the new model can do.
+        self.set_thinking_level(thinking_level)
+
+    async def cycle_model(self, direction: str = "forward") -> ModelCycleResult | None:
+        """Step to the next/previous model. ``None`` when there is only one.
+
+        Scoped models win when there are any: that is what ``--models`` and
+        ``/scoped-models`` are for.
+        """
+        if self._scoped_models:
+            return self._cycle_scoped_model(direction)
+        return await self._cycle_available_model(direction)
+
+    def _cycle_scoped_model(self, direction: str) -> ModelCycleResult | None:
+        registry = self._model_registry
+        scoped_models = [
+            scoped
+            for scoped in self._scoped_models
+            if registry is None or registry.has_configured_auth(scoped.model)
+        ]
+        if len(scoped_models) <= 1:
+            return None
+
+        current_model = self.model
+        current_index = _index_of_model([scoped.model for scoped in scoped_models], current_model)
+        next_index = _step_index(current_index, len(scoped_models), direction)
+        next_scoped = scoped_models[next_index]
+        thinking_level = self._get_thinking_level_for_model_switch(
+            getattr(next_scoped, "thinking_level", None)
+        )
+
+        self.agent.state.model = next_scoped.model
+        self.session_manager.append_model_change(next_scoped.model.provider, next_scoped.model.id)
+        self.settings_manager.set_default_model_and_provider(
+            next_scoped.model.provider, next_scoped.model.id
+        )
+
+        # An explicit level on the scoped model overrides the session's; an
+        # absent one inherits it. Either way `set_thinking_level` clamps.
+        self.set_thinking_level(thinking_level)
+
+        return ModelCycleResult(next_scoped.model, self.thinking_level, True)
+
+    async def _cycle_available_model(self, direction: str) -> ModelCycleResult | None:
+        registry = self._model_registry
+        available_models: list[Any] = await registry.get_available() if registry else []
+        if len(available_models) <= 1:
+            return None
+
+        current_index = _index_of_model(available_models, self.model)
+        next_model = available_models[_step_index(current_index, len(available_models), direction)]
+
+        thinking_level = self._get_thinking_level_for_model_switch()
+        self.agent.state.model = next_model
+        self.session_manager.append_model_change(next_model.provider, next_model.id)
+        self.settings_manager.set_default_model_and_provider(next_model.provider, next_model.id)
+
+        self.set_thinking_level(thinking_level)
+
+        return ModelCycleResult(next_model, self.thinking_level, False)
+
+    # =====================================================================
+    # Thinking level management
+    # =====================================================================
+
+    def set_thinking_level(self, level: str) -> None:
+        """Set the thinking level, clamped to what the current model supports.
+
+        Only a level that actually changes is written down: the TS guards the
+        session entry, the settings write and the event on that, and re-clamping
+        after every model switch would otherwise append an entry per switch.
+        """
+        available_levels = self.get_available_thinking_levels()
+        effective_level = level if level in available_levels else self._clamp_thinking_level(level)
+
+        previous_level = self.agent.state.thinking_level
+        is_changing = effective_level != previous_level
+
+        self.agent.state.thinking_level = effective_level
+
+        if is_changing:
+            self.session_manager.append_thinking_level_change(effective_level)
+            if self.supports_thinking() or effective_level != "off":
+                self.settings_manager.set_default_thinking_level(effective_level)
+            self._emit({"type": "thinking_level_changed", "level": effective_level})
+
+    def cycle_thinking_level(self) -> str | None:
+        """Step to the next level. ``None`` when the model does not think."""
+        if not self.supports_thinking():
+            return None
+
+        levels = self.get_available_thinking_levels()
+        current_index = levels.index(self.thinking_level) if self.thinking_level in levels else -1
+        next_level = levels[(current_index + 1) % len(levels)]
+
+        self.set_thinking_level(next_level)
+        return next_level
+
+    def get_available_thinking_levels(self) -> list[str]:
+        """The levels the current model offers; all of them when there is none."""
+        if not self.model:
+            return list(EXTENDED_THINKING_LEVELS)
+        return list(get_supported_thinking_levels(self.model))
+
+    def supports_thinking(self) -> bool:
+        return bool(getattr(self.model, "reasoning", False))
+
+    def _get_thinking_level_for_model_switch(self, explicit_level: str | None = None) -> str:
+        """The level a switch should carry over.
+
+        A model that cannot think has had its level clamped to ``off``, so
+        carrying the *current* level across would strand a session on ``off``
+        after passing through one such model. The stored default is what the
+        user last chose deliberately, which is why the TS reaches for it here.
+        """
+        if explicit_level is not None:
+            return explicit_level
+        if not self.supports_thinking():
+            return self.settings_manager.get_default_thinking_level() or "off"
+        return self.thinking_level
+
+    def _clamp_thinking_level(self, level: str) -> str:
+        if not self.model:
+            return "off"
+        return str(clamp_thinking_level(self.model, cast(Any, level)))
+
+    # =====================================================================
+    # Queue mode management
+    # =====================================================================
+
+    @property
+    def steering_mode(self) -> str:
+        return str(self.agent.steering_mode)
+
+    def set_steering_mode(self, mode: str) -> None:
+        """How queued steering messages are delivered. Saved to settings."""
+        self.agent.steering_mode = mode
+        self.settings_manager.set_steering_mode(mode)
+
+    @property
+    def follow_up_mode(self) -> str:
+        return str(self.agent.follow_up_mode)
+
+    def set_follow_up_mode(self, mode: str) -> None:
+        """How queued follow-up messages are delivered. Saved to settings."""
+        self.agent.follow_up_mode = mode
+        self.settings_manager.set_follow_up_mode(mode)
 
     # =====================================================================
     # Prompting

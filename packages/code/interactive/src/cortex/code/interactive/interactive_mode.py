@@ -64,6 +64,17 @@ opens the file one, and a submitted ``/command`` is dispatched by
   holds the handlers — the app itself is the ``CommandContext`` they read
   through.
 
+Step 7.9 gave it overlays. :meth:`InteractiveMode.show_selector` is the TS's
+``showSelector`` — the component takes the *editor's place* in its container and
+the keyboard with it, and the ``done`` it is handed puts both back, which is what
+makes Escape out of any overlay land back at the prompt. Three commands reach it:
+``/settings`` (:meth:`InteractiveMode.show_settings_selector`, the whole settings
+screen over what this port can drive), ``/model`` and ``/scoped-models`` (both
+through :class:`~cortex.code.interactive.model_controller.ModelController`, which
+also answers Ctrl+L and the two cycle keys). ``/resume``, ``/fork`` and ``/tree``
+are 7.10's: each loads a different point in the session, which is the runtime's
+session-replacement half.
+
 Shutdown is a callback, not ``process.exit``. The TS exits the process from
 inside ``shutdown()``; doing that here would make the exit path the one thing the
 end-to-end corpus could never watch. :meth:`InteractiveMode.shutdown` tears down
@@ -89,6 +100,13 @@ from cortex.code.interactive.command_executor import CommandExecutor
 from cortex.code.interactive.components.assistant_message import AssistantMessageComponent
 from cortex.code.interactive.components.custom_editor import CustomEditor
 from cortex.code.interactive.components.footer import FooterComponent
+from cortex.code.interactive.components.settings_selector import (
+    SettingsCallbacks,
+    SettingsConfig,
+    SettingsSelectorComponent,
+    ToolGroupInfo,
+    ToolToggleInfo,
+)
 from cortex.code.interactive.components.tool_execution import (
     ToolExecutionComponent,
     ToolExecutionOptions,
@@ -98,9 +116,16 @@ from cortex.code.interactive.components.tool_execution import (
 from cortex.code.interactive.components.user_message import UserMessageComponent
 from cortex.code.interactive.footer_data_provider import FooterDataProvider
 from cortex.code.interactive.keybindings import KeybindingsManager
+from cortex.code.interactive.model_controller import ModelController, SelectorFactory
 from cortex.code.interactive.slash_commands import BUILTIN_SLASH_COMMANDS
 from cortex.code.interactive.startup_progress import startup_progress
-from cortex.code.interactive.theme import get_editor_theme, get_markdown_theme, get_theme
+from cortex.code.interactive.theme import (
+    get_available_themes,
+    get_editor_theme,
+    get_markdown_theme,
+    get_theme,
+    set_theme,
+)
 from cortex.code.interactive.tool_renderers import resolve_tool_renderer
 from cortex.code.interactive.wordmark import CompactWordmarkOptions, build_compact_wordmark
 from cortex.tui.components import (
@@ -147,6 +172,22 @@ STREAM_RENDER_THROTTLE_MS = 100
 #: component tree, so the store's subscriber is throttled the same way the TS's
 #: task-panel subscriber is.
 TASK_RENDER_THROTTLE_MS = 50
+
+
+def _schedule(coro: Any) -> None:
+    """Run a coroutine reached from a keystroke, loop or no loop.
+
+    Every overlay entry point is async (a model list has to be fetched) and
+    every key handler is not, so this is the join. Without a running loop —
+    a synchronous driver, a unit test — it is run to completion here rather
+    than dropped, which is the only way a keystroke can be honoured at all.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        asyncio.run(coro)
+        return
+    _ = asyncio.ensure_future(coro)
 
 
 def _throttled(ms: int, fn: Callable[[], None]) -> Callable[[], None]:
@@ -446,6 +487,11 @@ class InteractiveMode:
         )
         self.autocomplete_provider: CombinedAutocompleteProvider | None = None
         self._command_executor: CommandExecutor | None = None
+
+        # Overlays (7.9): the model flows live off the app, as in the TS, and
+        # the app is the context they read through.
+        self._model_controller: ModelController | None = None
+
         self._slash_commands = self.create_built_in_slash_commands()
 
     @property
@@ -471,6 +517,13 @@ class InteractiveMode:
         if self._command_executor is None:
             self._command_executor = CommandExecutor(self)
         return self._command_executor
+
+    @property
+    def model_controller(self) -> ModelController:
+        """The model flows, built on first use. The app is its context too."""
+        if self._model_controller is None:
+            self._model_controller = ModelController(self)
+        return self._model_controller
 
     # ------------------------------------------------------------------
     # Startup
@@ -637,15 +690,56 @@ class InteractiveMode:
         """Bind the app actions the editor dispatches.
 
         The TS registers eighteen of these in ``setupKeyHandlers``; the rest
-        drive a model controller, a task panel, selectors and an external editor,
-        none of which exist before 7.7–7.9. What is here is what there is
-        something to do: clear the editor, exit from an empty one, abort a turn,
-        and expand tool output.
+        drive a task panel, an external editor and the session tree, none of
+        which exist yet. What is here is what there is something to do: clear
+        the editor, exit from an empty one, abort a turn, expand tool output,
+        and (7.9) the three model keys — open the picker, and step forward or
+        back through the models in scope.
         """
         self.editor.on_escape = self.handle_escape
         self.editor.on_action("app.clear", self.handle_ctrl_c)
         self.editor.on_action("app.tools.expand", self.toggle_tool_output_expansion)
+        self.editor.on_action(
+            "app.model.select", lambda: _schedule(self.model_controller.show_model_selector())
+        )
+        self.editor.on_action(
+            "app.model.cycleForward",
+            lambda: _schedule(self.model_controller.cycle_model("forward")),
+        )
+        self.editor.on_action(
+            "app.model.cycleBackward",
+            lambda: _schedule(self.model_controller.cycle_model("backward")),
+        )
+        self.editor.on_action("app.thinking.cycle", self.cycle_thinking_level)
         self.editor.on_ctrl_d = self.handle_ctrl_d
+
+    def cycle_thinking_level(self) -> None:
+        """Step the thinking level, and say where it landed.
+
+        A model that cannot reason has nothing to cycle, and the TS says so
+        rather than silently doing nothing — the key is otherwise
+        indistinguishable from an unbound one.
+        """
+        level = self.session.cycle_thinking_level()
+        if level is None:
+            self.show_status("Model does not support thinking")
+            return
+        self.footer.invalidate()
+        self.update_editor_border_color()
+        self.show_status(f"Thinking level: {level}")
+
+    def update_editor_border_color(self) -> None:
+        """Recolour the editor border for the current thinking level.
+
+        The border is the only always-visible sign of how hard the model is
+        being asked to think, which is why every model and thinking change goes
+        through here.
+        """
+        theme = get_theme()
+        self.editor.border_color = theme.get_thinking_border_color(
+            self.session.thinking_level or "off"
+        )
+        self.ui.request_render()
 
     def handle_escape(self) -> None:
         """Escape: abort the turn in flight.
@@ -736,7 +830,23 @@ class InteractiveMode:
             clear_editor()
             self.shutdown()
 
+        def run_settings(_text: str) -> None:
+            self.show_settings_selector()
+            clear_editor()
+
+        def run_scoped_models(_text: str) -> None:
+            clear_editor()
+            _schedule(self.model_controller.show_models_selector())
+
+        def run_model(text: str) -> None:
+            search_term = text[len("/model ") :].strip() if text.startswith("/model ") else None
+            clear_editor()
+            _schedule(self.command_executor.handle_model(search_term or None))
+
         return {
+            "/settings": BuiltInSlashCommand(run_settings),
+            "/scoped-models": BuiltInSlashCommand(run_scoped_models),
+            "/model": BuiltInSlashCommand(run_model, with_args=True),
             "/name": BuiltInSlashCommand(run_name, with_args=True),
             "/session": BuiltInSlashCommand(run_session),
             "/changelog": BuiltInSlashCommand(run_changelog),
@@ -854,6 +964,289 @@ class InteractiveMode:
 
         task.add_done_callback(finished)
         self._bash_task = task
+
+    # ------------------------------------------------------------------
+    # Selectors
+    # ------------------------------------------------------------------
+
+    def show_selector(self, create: SelectorFactory) -> None:
+        """Put an overlay where the editor is, and give it the keyboard.
+
+        The overlay *replaces* the editor rather than floating over it — the
+        editor container is cleared and the component put in its place — so the
+        transcript above it never moves. ``done`` is what puts the editor back,
+        and every selector calls it: on cancel, and on a choice once the choice
+        has been applied.
+
+        The factory is handed ``done`` rather than the app handing the component
+        a callback afterwards, because a selector needs to be able to close
+        itself from inside a callback it was constructed with.
+        """
+
+        def done() -> None:
+            self.editor_container.clear()
+            self.editor_container.add_child(self.editor)
+            self.ui.set_focus(self.editor)
+
+        component, focus = create(done)
+        self.editor_container.clear()
+        self.editor_container.add_child(component)
+        self.ui.set_focus(focus)
+        self.ui.request_render()
+
+    def show_settings_selector(self) -> None:
+        """``/settings``: the whole settings overlay, over what this port can drive.
+
+        Two of the TS's lists come through empty, and neither is a stub:
+
+        * **tools** — the TS unions the session's live tool registry with the
+          persisted disabled set. This port's sessions are built with no tools
+          (the agent's tool wiring is not part of any step so far), so the union
+          is the disabled set alone: empty on a fresh install, and exactly the
+          re-enable list for anyone who has disabled tools before. The four
+          *group* switches beside it are settings rather than registry state, so
+          they work today;
+        * **flags** — extension-registered, and there is no extension runner.
+          The TS omits the row entirely when there are none, so the absence is
+          the TS's own behaviour rather than a hole this port left.
+
+        Everything else on the screen is live: a change reaches the setting it
+        names, and the ones with an immediate effect (theme, tool output
+        display, images, cursor, padding, autocomplete) apply to what is already
+        drawn rather than waiting for a restart.
+        """
+        settings = self.settings_manager
+
+        def create(done: Callable[[], None]) -> tuple[Any, Any]:
+            disabled_tool_names = set(settings.get_disabled_tools())
+            tool_toggle_names = sorted(disabled_tool_names)
+            tool_toggles = [ToolToggleInfo(name, False) for name in tool_toggle_names]
+
+            tool_groups = [
+                ToolGroupInfo(
+                    "web",
+                    "Web tools",
+                    "webfetch + websearch (network access).",
+                    settings.get_enable_web_tools(),
+                ),
+                ToolGroupInfo(
+                    "browser",
+                    "Browser tools",
+                    "browser_run + browser_continue (browsertools engine).",
+                    settings.get_enable_browser_tools(),
+                ),
+                ToolGroupInfo(
+                    "file",
+                    "Document tools",
+                    "DocRead/DocEdit/DocWrite + DocScan/DocGrep/DocPeek (filetools binary).",
+                    settings.get_enable_file_tools(),
+                ),
+                ToolGroupInfo(
+                    "embsearch",
+                    "Semantic search",
+                    "Semantic index layer fused into the always-on search tool.",
+                    settings.get_enable_embsearch_tools(),
+                ),
+            ]
+
+            selector = SettingsSelectorComponent(
+                SettingsConfig(
+                    auto_compact=settings.get_compaction_enabled(),
+                    tools=tool_toggles,
+                    tool_groups=tool_groups,
+                    flags=[],
+                    tool_output_display=self.tool_output_display,
+                    tool_output_max_bytes=settings.get_tool_output_max_bytes(),
+                    tool_output_max_lines=settings.get_tool_output_max_lines(),
+                    context_gc=settings.get_context_gc_enabled(),
+                    show_images=settings.get_show_images(),
+                    image_width_cells=settings.get_image_width_cells(),
+                    auto_resize_images=settings.get_image_auto_resize(),
+                    block_images=settings.get_block_images(),
+                    enable_skill_commands=settings.get_enable_skill_commands(),
+                    steering_mode=settings.get_steering_mode(),
+                    follow_up_mode=settings.get_follow_up_mode(),
+                    transport=settings.get_transport(),
+                    thinking_level=self.session.thinking_level,
+                    available_thinking_levels=self.session.get_available_thinking_levels(),
+                    current_theme=settings.get_theme() or "dark",
+                    available_themes=get_available_themes(),
+                    hide_thinking_block=self.hide_thinking_block,
+                    collapse_changelog=settings.get_collapse_changelog(),
+                    enable_install_telemetry=settings.get_enable_install_telemetry(),
+                    double_escape_action=settings.get_double_escape_action(),
+                    tree_filter_mode=settings.get_tree_filter_mode(),
+                    show_hardware_cursor=settings.get_show_hardware_cursor(),
+                    editor_padding_x=settings.get_editor_padding_x(),
+                    autocomplete_max_visible=settings.get_autocomplete_max_visible(),
+                    quiet_startup=settings.get_quiet_startup(),
+                    clear_on_shrink=settings.get_clear_on_shrink(),
+                    show_terminal_progress=settings.get_show_terminal_progress(),
+                    warnings=settings.get_warnings(),
+                    voice_silence_ms=settings.get_voice_silence_ms(),
+                    webtools_timeout_secs=settings.get_webtools_timeout_secs(),
+                ),
+                self._settings_callbacks(done),
+            )
+            return selector, selector.get_settings_list()
+
+        self.show_selector(create)
+
+    def _settings_callbacks(self, done: Callable[[], None]) -> SettingsCallbacks:
+        """What each settings row does. Port of the callback object in the TS."""
+        settings = self.settings_manager
+
+        def on_tool_enabled_change(name: str, enabled: bool) -> None:
+            # Persisted for future sessions; this is what feeds the startup
+            # denylist. The TS also applies it to the live tool registry, which
+            # this port's sessions do not have (see `show_settings_selector`).
+            disabled = set(settings.get_disabled_tools())
+            disabled.discard(name) if enabled else disabled.add(name)
+            settings.set_disabled_tools(sorted(disabled))
+
+        def on_tool_group_change(group_id: str, enabled: bool) -> None:
+            # Master switches: they gate tool creation when a session is built,
+            # so they persist and take effect on the next one.
+            if group_id == "web":
+                settings.set_enable_web_tools(enabled)
+            elif group_id == "browser":
+                settings.set_enable_browser_tools(enabled)
+            elif group_id == "file":
+                settings.set_enable_file_tools(enabled)
+            elif group_id == "embsearch":
+                settings.set_enable_embsearch_tools(enabled)
+
+        def on_tool_output_display_change(level: str) -> None:
+            self.tool_output_display = cast(ToolOutputDisplayLevel, level)
+            settings.set_tool_output_display(level)
+            for child in self.chat_container.children:
+                if isinstance(child, ToolExecutionComponent):
+                    child.set_display_level(cast(ToolOutputDisplayLevel, level))
+            self.ui.request_render()
+
+        def on_show_images_change(enabled: bool) -> None:
+            settings.set_show_images(enabled)
+            for child in self.chat_container.children:
+                if isinstance(child, ToolExecutionComponent):
+                    child.set_show_images(enabled)
+
+        def on_image_width_cells_change(width: int) -> None:
+            settings.set_image_width_cells(width)
+            for child in self.chat_container.children:
+                if isinstance(child, ToolExecutionComponent):
+                    child.set_image_width_cells(width)
+
+        def on_enable_skill_commands_change(enabled: bool) -> None:
+            settings.set_enable_skill_commands(enabled)
+            self.setup_autocomplete_provider()
+
+        def on_thinking_level_change(level: str) -> None:
+            self.session.set_thinking_level(level)
+            self.footer.invalidate()
+            self.update_editor_border_color()
+
+        def on_theme_change(theme_name: str) -> None:
+            result = set_theme(theme_name)
+            settings.set_theme(theme_name)
+            self.ui.invalidate()
+            if not result.success:
+                self.show_error(
+                    f'Failed to load theme "{theme_name}": {result.error}\nFell back to dark theme.'
+                )
+
+        def on_theme_preview(theme_name: str) -> None:
+            if set_theme(theme_name).success:
+                self.ui.invalidate()
+                self.ui.request_render()
+
+        def on_hide_thinking_block_change(hidden: bool) -> None:
+            self.hide_thinking_block = hidden
+            settings.set_hide_thinking_block(hidden)
+            for child in self.chat_container.children:
+                if isinstance(child, AssistantMessageComponent):
+                    child.set_hide_thinking_block(hidden)
+            # The TS clears the log and rebuilds it from the session's messages
+            # here, because a message drawn with thinking hidden has already
+            # thrown the block away. `rebuildChatFromMessages` is the same
+            # machinery `renderCurrentSessionState` needs and lands with it in
+            # 7.10; until then the setting reaches the components that are still
+            # live, which is every one of them that can honour it.
+
+        def on_show_hardware_cursor_change(enabled: bool) -> None:
+            settings.set_show_hardware_cursor(enabled)
+            self.ui.set_show_hardware_cursor(enabled)
+
+        def on_editor_padding_x_change(padding: int) -> None:
+            settings.set_editor_padding_x(padding)
+            self.editor.set_padding_x(padding)
+
+        def on_autocomplete_max_visible_change(max_visible: int) -> None:
+            settings.set_autocomplete_max_visible(max_visible)
+            self.editor.set_autocomplete_max_visible(max_visible)
+
+        def on_clear_on_shrink_change(enabled: bool) -> None:
+            settings.set_clear_on_shrink(enabled)
+            self.ui.set_clear_on_shrink(enabled)
+
+        def on_cancel() -> None:
+            done()
+            self.ui.request_render()
+
+        return SettingsCallbacks(
+            on_auto_compact_change=self.footer.set_auto_compact_enabled,
+            on_tool_enabled_change=on_tool_enabled_change,
+            on_tool_group_change=on_tool_group_change,
+            on_tool_output_display_change=on_tool_output_display_change,
+            on_tool_output_max_bytes_change=settings.set_tool_output_max_bytes,
+            on_tool_output_max_lines_change=settings.set_tool_output_max_lines,
+            on_context_gc_change=settings.set_context_gc_enabled,
+            on_show_images_change=on_show_images_change,
+            on_image_width_cells_change=on_image_width_cells_change,
+            on_auto_resize_images_change=settings.set_image_auto_resize,
+            on_block_images_change=settings.set_block_images,
+            on_enable_skill_commands_change=on_enable_skill_commands_change,
+            on_steering_mode_change=self.session.set_steering_mode,
+            on_follow_up_mode_change=self.session.set_follow_up_mode,
+            on_transport_change=settings.set_transport,
+            on_thinking_level_change=on_thinking_level_change,
+            on_theme_change=on_theme_change,
+            on_theme_preview=on_theme_preview,
+            on_hide_thinking_block_change=on_hide_thinking_block_change,
+            on_collapse_changelog_change=settings.set_collapse_changelog,
+            on_enable_install_telemetry_change=settings.set_enable_install_telemetry,
+            on_double_escape_action_change=settings.set_double_escape_action,
+            on_tree_filter_mode_change=settings.set_tree_filter_mode,
+            on_show_hardware_cursor_change=on_show_hardware_cursor_change,
+            on_editor_padding_x_change=on_editor_padding_x_change,
+            on_autocomplete_max_visible_change=on_autocomplete_max_visible_change,
+            on_quiet_startup_change=settings.set_quiet_startup,
+            on_clear_on_shrink_change=on_clear_on_shrink_change,
+            on_show_terminal_progress_change=settings.set_show_terminal_progress,
+            on_warnings_change=settings.set_warnings,
+            on_voice_silence_ms_change=settings.set_voice_silence_ms,
+            on_webtools_timeout_secs_change=settings.set_webtools_timeout_secs,
+            on_cancel=on_cancel,
+        )
+
+    async def find_exact_model_match(self, search_term: str) -> Any:
+        """Part of the command context; the controller does the work."""
+        return await self.model_controller.find_exact_model_match(search_term)
+
+    async def maybe_warn_about_anthropic_subscription_auth(self, model: Any) -> None:
+        """Part of the command context; the controller does the work."""
+        await self.model_controller.maybe_warn_about_anthropic_subscription_auth(model)
+
+    async def show_model_selector(self, search_term: str | None = None) -> None:
+        """Part of the command context; the controller does the work."""
+        await self.model_controller.show_model_selector(search_term)
+
+    def set_available_provider_count(self, count: int) -> None:
+        """Part of the model controller's context: the footer's provider badge."""
+        self.footer_data_provider.set_available_provider_count(count)
+
+    def invalidate_footer(self) -> None:
+        """Part of the model controller's context."""
+        self.footer.invalidate()
 
     # ------------------------------------------------------------------
     # Tool output

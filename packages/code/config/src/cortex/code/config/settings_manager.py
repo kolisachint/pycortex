@@ -402,6 +402,20 @@ class SettingsManager:
         self._settings.default_model = model
         self._mark_modified("default_model")
 
+    def set_default_model_and_provider(self, provider: str, model_id: str) -> None:
+        """Set both halves of the default model at once.
+
+        Its own method rather than two calls because the TS's is: the pair is
+        one choice, and a save between the two writes a settings file naming a
+        model that belongs to the previous provider.
+        """
+        self._global_settings.default_provider = provider
+        self._settings.default_provider = provider
+        self._global_settings.default_model = model_id
+        self._settings.default_model = model_id
+        self._mark_modified("default_provider")
+        self._mark_modified("default_model")
+
     def get_default_thinking_level(self) -> str | None:
         return self._settings.default_thinking_level
 
@@ -424,8 +438,18 @@ class SettingsManager:
     def get_steering_mode(self) -> str:
         return self._settings.steering_mode
 
+    def set_steering_mode(self, mode: str) -> None:
+        self._global_settings.steering_mode = mode  # type: ignore
+        self._settings.steering_mode = mode  # type: ignore
+        self._mark_modified("steering_mode")
+
     def get_follow_up_mode(self) -> str:
         return self._settings.follow_up_mode
+
+    def set_follow_up_mode(self, mode: str) -> None:
+        self._global_settings.follow_up_mode = mode  # type: ignore
+        self._settings.follow_up_mode = mode  # type: ignore
+        self._mark_modified("follow_up_mode")
 
     def get_compaction_enabled(self) -> bool:
         return self._settings.compaction.enabled
@@ -573,8 +597,18 @@ class SettingsManager:
     def get_collapse_changelog(self) -> bool:
         return self._settings.collapse_changelog
 
+    def set_collapse_changelog(self, collapsed: bool) -> None:
+        self._global_settings.collapse_changelog = collapsed
+        self._settings.collapse_changelog = collapsed
+        self._mark_modified("collapse_changelog")
+
     def get_enable_install_telemetry(self) -> bool:
         return self._settings.enable_install_telemetry
+
+    def set_enable_install_telemetry(self, enabled: bool) -> None:
+        self._global_settings.enable_install_telemetry = enabled
+        self._settings.enable_install_telemetry = enabled
+        self._mark_modified("enable_install_telemetry")
 
     def get_packages(self) -> list[PackageSource]:
         return list(self._settings.packages)

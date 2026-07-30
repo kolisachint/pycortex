@@ -3,7 +3,8 @@
 Port of ``modes/interactive/components/``. Step 7.3 adds the custom editor and
 the user message component, 7.5 the assistant message, 7.6 the tool-execution
 block with its diff colouring and the bash-mode block, and 7.8 the rule the
-command output is framed between; the selector components arrive with 7.9.
+command output is framed between, and 7.9 the overlays: the model picker, the
+cycling-scope picker, the settings screen and the theme list.
 """
 
 from cortex.code.interactive.components.assistant_message import (
@@ -32,6 +33,24 @@ from cortex.code.interactive.components.keybinding_hints import (
     matches_app_key,
     raw_key_hint,
 )
+from cortex.code.interactive.components.model_selector import (
+    ModelItem,
+    ModelSelectorComponent,
+)
+from cortex.code.interactive.components.scoped_models_selector import (
+    ModelsCallbacks,
+    ModelsConfig,
+    ScopedModelsSelectorComponent,
+)
+from cortex.code.interactive.components.settings_selector import (
+    FlagInfo,
+    SettingsCallbacks,
+    SettingsConfig,
+    SettingsSelectorComponent,
+    ToolGroupInfo,
+    ToolToggleInfo,
+)
+from cortex.code.interactive.components.theme_selector import ThemeSelectorComponent
 from cortex.code.interactive.components.tool_execution import (
     PrefixFirstLine,
     ToolExecutionComponent,
@@ -49,12 +68,24 @@ __all__ = [
     "BashExecutionComponent",
     "CustomEditor",
     "DynamicBorder",
+    "FlagInfo",
     "FooterComponent",
+    "ModelItem",
+    "ModelSelectorComponent",
+    "ModelsCallbacks",
+    "ModelsConfig",
     "PREVIEW_LINES",
     "PrefixFirstLine",
+    "ScopedModelsSelectorComponent",
+    "SettingsCallbacks",
+    "SettingsConfig",
+    "SettingsSelectorComponent",
+    "ThemeSelectorComponent",
     "ToolExecutionComponent",
     "ToolExecutionOptions",
     "ToolExecutionResult",
+    "ToolGroupInfo",
+    "ToolToggleInfo",
     "UserMessageComponent",
     "VisualTruncateResult",
     "app_key_label",

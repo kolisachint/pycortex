@@ -124,3 +124,68 @@ class TestBuiltinTheme:
     def test_derived_component_themes_colourise(self):
         assert get_select_list_theme().selected_text("x") != "x"
         assert get_editor_theme().border_color("x") != "x"
+
+
+class TestThemeSwitching:
+    """`get_available_themes` reads the directory, so adding a palette is adding a file."""
+
+    def test_both_built_in_palettes_are_offered(self):
+        from cortex.code.interactive.theme import get_available_themes
+
+        assert get_available_themes() == ["dark", "light"]
+
+    def test_setting_a_theme_makes_it_the_active_one(self):
+        from cortex.code.interactive.theme import get_theme_name, set_theme
+
+        try:
+            result = set_theme("light")
+            assert result.success is True
+            assert get_theme_name() == "light"
+            assert get_theme().name == "light"
+        finally:
+            set_theme("dark")
+
+    def test_an_unknown_theme_falls_back_to_dark_and_reports_why(self):
+        from cortex.code.interactive.theme import get_theme_name, set_theme
+
+        try:
+            result = set_theme("no-such-theme")
+            assert result.success is False
+            assert result.error
+            # A failure still leaves a usable palette installed: the caller
+            # reports the error into the transcript, and it has to render.
+            assert get_theme_name() == "dark"
+            assert get_theme().fg("accent", "x")
+        finally:
+            set_theme("dark")
+
+    def test_the_settings_list_theme_colourises(self):
+        from cortex.code.interactive.theme import get_settings_list_theme
+
+        theme = get_settings_list_theme()
+        assert theme.label("x", True) != "x", "the selected label was not highlighted"
+        assert theme.label("x", False) == "x", "an unselected label should be left plain"
+        assert theme.value("x", False) != "x"
+        assert theme.cursor.strip()
+
+    def test_the_thinking_border_differs_per_level(self):
+        theme = load_builtin_theme("dark", "truecolor")
+        borders = {
+            level: theme.get_thinking_border_color(level)("─")
+            for level in ("off", "minimal", "low", "medium", "high", "xhigh")
+        }
+        assert len(set(borders.values())) == len(borders), (
+            "two thinking levels paint the same border"
+        )
+
+    def test_an_unknown_level_falls_back_to_off(self):
+        theme = load_builtin_theme("dark", "truecolor")
+        assert theme.get_thinking_border_color("nonsense")("─") == (
+            theme.get_thinking_border_color("off")("─")
+        )
+
+    def test_bash_mode_has_its_own_border(self):
+        theme = load_builtin_theme("dark", "truecolor")
+        assert theme.get_bash_mode_border_color()("─") != theme.get_thinking_border_color("off")(
+            "─"
+        )
