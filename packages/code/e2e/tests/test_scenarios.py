@@ -28,9 +28,17 @@ def test_implemented_scenarios_pass(target: Scenario) -> None:
 
 
 def test_pending_scenarios_report_pending_rather_than_raising() -> None:
-    pending = next(s for s in SCENARIOS if s.pending)
-    result = run_scenario(pending)
+    # Built here rather than found in the corpus: 7.12 was the last step with a
+    # pending scenario in it, and the reporting path still has to work — the
+    # corpus is the ledger for whatever is added to it next.
+    result = run_scenario(Scenario("x/pending", "a scenario nobody has built yet", "7.1"))
     assert result.status == "pending"
+
+
+def test_the_corpus_has_nothing_left_pending() -> None:
+    """7.12's own definition of done: `tui_e2e.py` exits 0 with zero pending."""
+    pending = [s.id for s in SCENARIOS if s.pending]
+    assert pending == [], f"still pending: {pending}"
 
 
 def test_a_raising_scenario_is_failing_not_an_error() -> None:

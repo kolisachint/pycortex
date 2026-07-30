@@ -18,6 +18,7 @@ scenario answers "does the screen show the thing", which a stub cannot fake.
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import traceback
@@ -1754,9 +1755,174 @@ def auth_missing_key_message() -> None:
 
 # ===========================================================================
 # 7.12 — the whole product
+#
+# The one scenario that fakes nothing above the socket. Every other scenario
+# swaps the provider out (`faux_session`) and hands the app a settings manager
+# with no file behind it, because they are about what the screen does. This one
+# is about what a person gets when they install the thing and run it, so the
+# only stand-in is the endpoint: a clean config directory, the real registry
+# over it, the real Anthropic provider, and an HTTP server on localhost where
+# api.anthropic.com would be.
 # ===========================================================================
 
-pending("e2e/first-run", "A clean install boots, prompts, answers and exits cleanly", "7.12")
+
+@dataclass
+class CleanInstall:
+    """A machine with the tool freshly installed on it, and nothing else."""
+
+    #: The project the user is running in.
+    cwd: str
+    #: `HOOCODE_CODING_AGENT_DIR` for this run: no settings, no auth, no sessions.
+    agent_dir: str
+    #: The endpoint `models.json` points `anthropic` at.
+    api: Any
+
+    def sessions_written(self) -> list[str]:
+        """Session files this install has produced, newest last."""
+        root = os.path.join(self.agent_dir, "sessions")
+        if not os.path.isdir(root):
+            return []
+        found = [
+            os.path.join(parent, name)
+            for parent, _dirs, files in os.walk(root)
+            for name in files
+            if name.endswith(".jsonl")
+        ]
+        return sorted(found)
+
+
+@contextmanager
+def clean_install(*, reply: str) -> Generator[CleanInstall]:
+    """A fresh config directory, one credential, and an endpoint that answers.
+
+    What a first run really is, minus the network: nothing in the agent
+    directory, so settings, `auth.json` and the session directory are all
+    created by the run itself; `ANTHROPIC_API_KEY` in the environment, which is
+    the fastest of the ways the TS lets a new user supply a key; and a
+    `models.json` pointing the provider at :class:`AnthropicApiStub`, which is
+    the same override a user aims at a gateway.
+
+    The environment is restored afterwards — the corpus runs in one process, and
+    a scenario that leaked `HOOCODE_CODING_AGENT_DIR` would point every scenario
+    after it at a directory that no longer exists.
+    """
+    import tempfile
+
+    from cortex.code.config import ENV_AGENT_DIR
+    from cortex.code.e2e._api_stub import AnthropicApiStub
+
+    previous = {name: os.environ.get(name) for name in (ENV_AGENT_DIR, "ANTHROPIC_API_KEY", "HOME")}
+    with tempfile.TemporaryDirectory() as root, AnthropicApiStub(reply=reply) as api:
+        agent_dir = os.path.join(root, "config")
+        cwd = os.path.join(root, "project")
+        os.makedirs(agent_dir)
+        os.makedirs(cwd)
+        with open(os.path.join(agent_dir, "models.json"), "w", encoding="utf-8") as handle:
+            json.dump({"providers": {"anthropic": {"base_url": api.base_url}}}, handle)
+
+        os.environ[ENV_AGENT_DIR] = agent_dir
+        os.environ["ANTHROPIC_API_KEY"] = "sk-ant-first-run"
+        # Nothing should read `HOME` once the agent dir is set; pointing it at the
+        # sandbox too means a component that does writes there rather than into a
+        # real home directory.
+        os.environ["HOME"] = root
+        try:
+            yield CleanInstall(cwd=cwd, agent_dir=agent_dir, api=api)
+        finally:
+            for name, value in previous.items():
+                if value is None:
+                    os.environ.pop(name, None)
+                else:
+                    os.environ[name] = value
+
+
+@scenario("e2e/first-run", "A clean install boots, prompts, answers and exits cleanly", "7.12")
+def e2e_first_run() -> None:
+    """Install, run, ask, quit — with the provider code in the loop.
+
+    The startup is `main`'s, not a copy of it: `resolve_session_manager` picks
+    the session file and `build_startup_session` builds settings, registry,
+    model and session, which is exactly what `run_interactive_mode` does before
+    it opens a terminal. What this scenario adds is everything either side —
+    that the resolution finds the provider whose key is in the environment, that
+    the request really goes out over HTTP with that key, that the answer comes
+    back through the SSE parser onto the screen, and that quitting leaves a
+    session file behind and a terminal that was put back.
+    """
+    from cortex.code.interactive import build_startup_session, format_display_path
+
+    with clean_install(reply="Ada Lovelace wrote the first algorithm.") as install:
+        session_manager = resolve_session_manager(install.cwd)
+        startup = build_startup_session(cwd=install.cwd, session_manager=session_manager)
+
+        # Startup resolved a model on its own: no settings file to read a default
+        # from, so this is the `ANTHROPIC_API_KEY` branch of `find_initial_model`
+        # finding the one provider this machine can reach.
+        assert startup.error is None, f"startup failed: {startup.error}"
+        model = startup.session.agent.state.model
+        assert model is not None and model.provider == "anthropic", (
+            f"a clean install with an Anthropic key opened on {model!r}"
+        )
+        assert model.base_url == install.api.base_url, (
+            f"models.json did not redirect the provider: {model.base_url}"
+        )
+
+        exits: list[int] = []
+        with boot_app(
+            cwd=install.cwd,
+            settings=startup.settings,
+            session=startup.session,
+            on_exit=exits.append,
+        ) as h:
+            # It boots: banner, the cwd it is working in (abbreviated against
+            # `$HOME`, as the banner and footer both do), an editor with focus,
+            # and a footer naming the model that will answer.
+            where = format_display_path(install.cwd)
+            h.assert_shows("hoo│code", where, f"⬢ BUILD  {where}", model.id)
+            assert _prompt_row(h) >= 0, f"no editor prompt on a fresh install\n\n{h.snapshot()}"
+
+            # It answers. The wait is on the screen rather than on the app's busy
+            # flag because the turn is real I/O: a socket the harness's loop has
+            # to poll, not a callback already queued.
+            h.type("who wrote the first algorithm?")
+            h.key("enter")
+            h.wait_for(lambda: h.contains("Ada Lovelace wrote the first algorithm."), timeout=10)
+            h.assert_shows("who wrote the first algorithm?")
+            assert _prompt_row(h) >= 0, f"the editor did not come back\n\n{h.snapshot()}"
+
+            # The answer came from the provider, not from a shortcut: one POST to
+            # the Messages endpoint, carrying the environment's key and the
+            # model the footer names, with the question in the body.
+            assert len(install.api.requests) == 1, (
+                f"expected one provider request, got {len(install.api.requests)}"
+            )
+            request = install.api.requests[0]
+            assert request.path == "/v1/messages", f"posted to {request.path}"
+            assert request.headers.get("x-api-key") == "sk-ant-first-run", (
+                "the environment's API key never reached the request"
+            )
+            assert request.body["model"] == model.id, f"asked {request.body['model']}"
+            assert "who wrote the first algorithm?" in json.dumps(request.body), (
+                "the prompt never reached the provider"
+            )
+
+            # And the usage the provider reported is on the footer, which is the
+            # half of a turn that only a real response can produce.
+            h.assert_shows("↑11", "↓7", scrollback=False)
+
+            h.key("ctrl+c")
+            h.key("ctrl+c")
+            assert exits == [0], f"two Ctrl+C presses did not exit cleanly: {exits!r}"
+            assert h.terminal.stopped, "the terminal was never stopped"
+            assert h.terminal.cursor_hidden is False, "the cursor was left hidden"
+
+        # The install left its state where it was told to: a session file under
+        # the agent directory, holding the exchange that just happened.
+        sessions = install.sessions_written()
+        assert len(sessions) == 1, f"expected one session file, found {sessions!r}"
+        written = open(sessions[0], encoding="utf-8").read()
+        assert "who wrote the first algorithm?" in written, "the question was not persisted"
+        assert "Ada Lovelace wrote the first algorithm." in written, "the answer was not persisted"
 
 
 # ---------------------------------------------------------------------------

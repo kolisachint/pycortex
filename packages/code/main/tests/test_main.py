@@ -9,13 +9,67 @@ code.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
 import pytest
-from cortex.code.config import APP_NAME, VERSION
+from cortex.code.config import APP_NAME, ENV_AGENT_DIR, ENV_SESSION_DIR, VERSION
 from cortex.code.interactive import InteractiveModeOptions, resolve_session_manager
-from cortex.code.main import main
+from cortex.code.main import main, resolve_session_dir
+
+
+@pytest.fixture
+def clean_agent_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """A config directory with nothing in it, and one provider key.
+
+    Every test that reaches the registry, the settings file or the session
+    directory needs this: without it the run reads whatever the machine running
+    the suite happens to have configured, which is both flaky and rude.
+    """
+    agent_dir = tmp_path / "config"
+    agent_dir.mkdir()
+    monkeypatch.setenv(ENV_AGENT_DIR, str(agent_dir))
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+    for name in ("OPENAI_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY", ENV_SESSION_DIR):
+        monkeypatch.delenv(name, raising=False)
+    return agent_dir
+
+
+@pytest.fixture
+def faux_startup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Any:
+    """`build_startup_session` answering with a session on the faux provider."""
+    from cortex.ai.providers.faux import faux_assistant_message, register_faux_provider
+    from cortex.code.config import SettingsManager
+    from cortex.code.config.settings_storage import InMemorySettingsStorage
+    from cortex.code.interactive import StartupSession
+    from cortex.code.session import SessionManager, create_agent_session
+
+    registration = register_faux_provider()
+    settings = SettingsManager.from_storage(InMemorySettingsStorage())
+    created = create_agent_session(
+        cwd=str(tmp_path),
+        settings_manager=settings,
+        session_manager=SessionManager(str(tmp_path), "", persist=False),
+        model=registration.get_model(),
+    )
+
+    class Startup:
+        session = created.session
+
+        @staticmethod
+        def set_responses(texts: list[str]) -> None:
+            registration.set_responses([faux_assistant_message(text) for text in texts])
+
+    def startup(**_kwargs: Any) -> StartupSession:
+        return StartupSession(session=created.session, settings=settings, cwd=str(tmp_path))
+
+    monkeypatch.setattr("cortex.code.main.build_startup_session", startup)
+    monkeypatch.setattr("cortex.code.main.resolve_session_manager", _RecordingResolver())
+    try:
+        yield Startup()
+    finally:
+        registration.unregister()
 
 
 class TestHelpAndVersion:
@@ -24,37 +78,139 @@ class TestHelpAndVersion:
         assert APP_NAME in capsys.readouterr().out
 
     def test_version_reports_the_release(self, capsys: pytest.CaptureFixture[str]):
+        # Bare, as `main.ts` prints it — `hoocode --version | …` reads a version.
         assert main(["--version"]) == 0
-        assert capsys.readouterr().out.strip() == f"{APP_NAME} {VERSION}"
+        assert capsys.readouterr().out.strip() == VERSION
+
+    def test_help_names_the_environment_variables_that_work(
+        self, capsys: pytest.CaptureFixture[str]
+    ):
+        # The help named `HOOCODE_AGENT_DIR`, which nothing reads: the variable
+        # is `HOOCODE_CODING_AGENT_DIR`, and a user following the help would have
+        # set one that does nothing.
+        assert main(["--help"]) == 0
+        out = capsys.readouterr().out
+        assert ENV_AGENT_DIR in out
+        assert ENV_SESSION_DIR in out
 
 
 class TestUnavailableFlags:
     @pytest.mark.parametrize(
-        ("argv", "flag", "step"),
+        ("argv", "flag"),
         [
-            (["--list-models"], "--list-models", "7.11"),
-            (["--export", "out.md"], "--export", "7.12"),
-            (["--resume"], "--resume", "7.11"),
-            (["--print-token-surface"], "--print-token-surface", "7.4"),
+            (["--export", "out.md"], "--export"),
+            (["--resume"], "--resume"),
+            (["--print-token-surface"], "--print-token-surface"),
         ],
     )
-    def test_fails_loudly_and_names_the_step(
+    def test_fails_loudly_and_names_the_flag(
         self,
         argv: list[str],
         flag: str,
-        step: str,
         capsys: pytest.CaptureFixture[str],
     ):
         assert main(argv) != 0
         err = capsys.readouterr().err
         assert flag in err
-        assert step in err
+        assert "does not have" in err
+
+
+class TestListModels:
+    """`--list-models`, which four error messages in this port already promise."""
+
+    def test_lists_the_models_a_key_makes_reachable(
+        self, clean_agent_dir: Path, capsys: pytest.CaptureFixture[str]
+    ):
+        assert main(["--list-models"]) == 0
+        out = capsys.readouterr().out
+        assert out.splitlines()[0].split() == [
+            "provider",
+            "model",
+            "context",
+            "max-out",
+            "thinking",
+            "images",
+        ]
+        assert "anthropic" in out
+        # The table is about reachability, so a provider with no credentials is
+        # not in it — that is the difference between this and a model catalogue.
+        assert "openai" not in out
+        # Sorted by provider, then by model id: the list is read by eye, and an
+        # unordered one is a different (worse) thing to read.
+        rows = [line.split() for line in out.splitlines()[1:] if line.strip()]
+        keys = [(row[0], row[1]) for row in rows]
+        assert keys == sorted(keys), keys
+
+    def test_a_pattern_filters(self, clean_agent_dir: Path, capsys: pytest.CaptureFixture[str]):
+        # The filter is `fuzzy_filter`, so the pattern is a subsequence rather
+        # than a substring — `opus` alone also matches `claude-sOnnet…` — which
+        # is the TS's behaviour and why the pattern here is a longer one.
+        assert main(["--list-models", "claude-opus"]) == 0
+        rows = [line for line in capsys.readouterr().out.splitlines()[1:] if line.strip()]
+        assert rows, "the pattern matched nothing at all"
+        assert all("opus" in row for row in rows), rows
+
+    def test_a_pattern_that_matches_nothing_says_so(
+        self, clean_agent_dir: Path, capsys: pytest.CaptureFixture[str]
+    ):
+        assert main(["--list-models", "zzzz"]) == 0
+        assert 'No models matching "zzzz"' in capsys.readouterr().out
+
+    def test_no_credentials_explains_itself(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        clean_agent_dir: Path,
+        capsys: pytest.CaptureFixture[str],
+    ):
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        assert main(["--list-models"]) == 0
+        assert "No models available" in capsys.readouterr().out
 
 
 class TestPrintMode:
-    def test_reports_the_message_it_would_send(self, capsys: pytest.CaptureFixture[str]):
-        assert main(["--print", "hello"]) == 0
-        assert "hello" in capsys.readouterr().out
+    """`-p`, wired to the real `cortex.code.print` at 7.12.
+
+    Startup is stubbed at :func:`build_startup_session` — the seam `main` shares
+    with the TUI — so the mode runs for real against the faux provider instead
+    of reaching for the machine's credentials.
+    """
+
+    def test_answers_on_stdout_and_exits_zero(
+        self, faux_startup: Any, capsys: pytest.CaptureFixture[str]
+    ):
+        faux_startup.set_responses(["Grace Hopper wrote the first compiler."])
+        assert main(["-p", "who wrote the first compiler?"]) == 0
+        out = capsys.readouterr().out
+        assert out.strip() == "Grace Hopper wrote the first compiler."
+
+    def test_later_messages_are_sent_as_further_turns(
+        self, faux_startup: Any, capsys: pytest.CaptureFixture[str]
+    ):
+        faux_startup.set_responses(["first answer", "second answer"])
+        assert main(["-p", "one", "two"]) == 0
+        # Only the last assistant message is printed in text mode, and both
+        # prompts reached the session.
+        assert capsys.readouterr().out.strip() == "second answer"
+        roles = [getattr(message, "role", "") for message in faux_startup.session.messages]
+        assert roles == ["user", "assistant", "user", "assistant"]
+
+    def test_an_unresolvable_model_is_fatal(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ):
+        from cortex.code.interactive import StartupSession
+
+        def failing(**_kwargs: Any) -> StartupSession:
+            return StartupSession(
+                session=None,
+                settings=None,  # pyright: ignore[reportArgumentType]
+                cwd=".",
+                error="Model not found: nope/nope",
+            )
+
+        monkeypatch.setattr("cortex.code.main.build_startup_session", failing)
+        monkeypatch.setattr("cortex.code.main.resolve_session_manager", _RecordingResolver())
+        assert main(["-p", "hello"]) == 1
+        assert "Model not found" in capsys.readouterr().err
 
     def test_print_with_no_message_fails(self, capsys: pytest.CaptureFixture[str]):
         assert main(["--print"]) == 1
@@ -97,12 +253,44 @@ class _RecordingResolver:
 
 
 @pytest.fixture
-def interactive(monkeypatch: pytest.MonkeyPatch) -> tuple[_RecordingRunner, _RecordingResolver]:
+def interactive(
+    monkeypatch: pytest.MonkeyPatch, clean_agent_dir: Path
+) -> tuple[_RecordingRunner, _RecordingResolver]:
     runner = _RecordingRunner()
     resolver = _RecordingResolver()
     monkeypatch.setattr("cortex.code.main.run_interactive_mode", runner)
     monkeypatch.setattr("cortex.code.main.resolve_session_manager", resolver)
     return runner, resolver
+
+
+class TestResolveSessionDir:
+    """Where sessions are written. Port of `main.ts`'s three-way resolution."""
+
+    def test_the_flag_wins(self, clean_agent_dir: Path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv(ENV_SESSION_DIR, "/from/env")
+        assert resolve_session_dir("/from/flag", str(clean_agent_dir)) == "/from/flag"
+
+    def test_then_the_environment(self, clean_agent_dir: Path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv(ENV_SESSION_DIR, "/from/env")
+        assert resolve_session_dir(None, str(clean_agent_dir)) == "/from/env"
+
+    def test_the_environment_expands_a_tilde(
+        self, clean_agent_dir: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        monkeypatch.setenv(ENV_SESSION_DIR, "~/sessions")
+        resolved = resolve_session_dir(None, str(clean_agent_dir))
+        assert resolved is not None and not resolved.startswith("~")
+
+    def test_then_the_setting(self, clean_agent_dir: Path, tmp_path: Path):
+        (clean_agent_dir / "settings.json").write_text(
+            json.dumps({"session_dir": str(tmp_path / "kept")}), encoding="utf-8"
+        )
+        assert resolve_session_dir(None, str(tmp_path)) == str(tmp_path / "kept")
+
+    def test_otherwise_the_default(self, clean_agent_dir: Path, tmp_path: Path):
+        # `None` means "beside the agent directory", which `SessionManager`
+        # works out for itself.
+        assert resolve_session_dir(None, str(tmp_path)) is None
 
 
 class TestInteractive:

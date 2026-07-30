@@ -106,6 +106,7 @@ from __future__ import annotations
 import asyncio
 import os
 import shutil
+import sys
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
@@ -2250,15 +2251,70 @@ async def resolve_startup_model(
     )
 
 
+@dataclass
+class StartupSession:
+    """The session a process opens on, and what startup wants to say about it.
+
+    The return of ``createAgentSessionRuntime`` as this port needs it: the
+    session itself, the settings manager it shares with the app, and the two
+    messages the resolution can produce — ``fallback_message`` (the saved model
+    was unreachable, here is the one you got) and ``error`` (the model asked for
+    does not exist, which is fatal and belongs to ``code/main``).
+    """
+
+    session: Any
+    settings: SettingsManager
+    cwd: str
+    fallback_message: str | None = None
+    error: str | None = None
+
+
+def build_startup_session(
+    *,
+    cwd: str | None = None,
+    settings: SettingsManager | None = None,
+    session_manager: SessionManager | None = None,
+) -> StartupSession:
+    """Build the session a fresh process starts on. Port of ``main.ts``'s startup.
+
+    Settings and a session file for the cwd, a registry over the user's
+    credentials, and the model that registry resolves — the same three steps for
+    whichever mode is about to run, which is why this is a seam rather than the
+    body of :func:`run_interactive_mode`. The end-to-end corpus boots through it
+    too: ``e2e/first-run`` is about what a clean install does, and a scenario
+    that re-implemented these steps would be testing its own copy of them.
+    """
+    effective_cwd = cwd if cwd is not None else os.getcwd()
+    # One settings manager, shared: the session reads the same file the app
+    # does, and reading it twice is how the two drift.
+    effective_settings = settings if settings is not None else SettingsManager.create(effective_cwd)
+    registry = build_model_registry()
+    initial = asyncio.run(resolve_startup_model(registry, effective_settings))
+    created = create_agent_session(
+        cwd=effective_cwd,
+        settings_manager=effective_settings,
+        session_manager=session_manager,
+        model=initial.model,
+        model_registry=registry,
+        thinking_level=initial.thinking_level,
+    )
+    return StartupSession(
+        session=created.session,
+        settings=effective_settings,
+        cwd=effective_cwd,
+        fallback_message=initial.fallback_message,
+        error=initial.error,
+    )
+
+
 def run_interactive_mode(
     options: InteractiveModeOptions | None = None,
     session_manager: SessionManager | None = None,
 ) -> int:
     """Run interactive mode against the real terminal. Returns the exit code.
 
-    Builds the session the mode talks to, the way ``main.ts`` does through
-    ``createAgentSessionRuntime``: settings and a session file for the cwd, a
-    registry over the user's credentials, and the model that registry resolves.
+    Builds the session the mode talks to (:func:`build_startup_session`) unless
+    the caller brought one.
 
     ``session_manager`` is how ``--continue`` reaches here: the file is chosen
     before the session is built (:func:`resolve_session_manager`), so the app
@@ -2267,23 +2323,24 @@ def run_interactive_mode(
     resolved = options if options is not None else InteractiveModeOptions()
 
     if resolved.session is None:
-        cwd = resolved.cwd if resolved.cwd is not None else os.getcwd()
-        # One settings manager, shared: the session reads the same file the app
-        # does, and reading it twice is how the two drift.
-        settings = (
-            resolved.settings if resolved.settings is not None else SettingsManager.create(cwd)
+        startup = build_startup_session(
+            cwd=resolved.cwd, settings=resolved.settings, session_manager=session_manager
         )
-        registry = build_model_registry()
-        initial = asyncio.run(resolve_startup_model(registry, settings))
-        created = create_agent_session(
-            cwd=cwd,
-            settings_manager=settings,
-            session_manager=session_manager,
-            model=initial.model,
-            model_registry=registry,
-            thinking_level=initial.thinking_level,
+        # An unresolvable model is fatal, and says so on stderr rather than
+        # opening a TUI that cannot answer: ``findInitialModel`` prints and
+        # exits(1) in the TS, and this is where that exit code comes from.
+        if startup.error:
+            print(f"{APP_NAME}: {startup.error}", file=sys.stderr)
+            return 1
+        resolved = replace(
+            resolved,
+            cwd=startup.cwd,
+            settings=startup.settings,
+            session=startup.session,
+            # The startup fallback ("your saved model has no key, using this
+            # one") is the option's whole purpose, and nothing had ever set it.
+            model_fallback_message=resolved.model_fallback_message or startup.fallback_message,
         )
-        resolved = replace(resolved, cwd=cwd, settings=settings, session=created.session)
 
     async def _run() -> int:
         app = InteractiveMode(TUI(ProcessTerminal()), resolved)

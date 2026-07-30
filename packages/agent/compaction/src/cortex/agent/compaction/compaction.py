@@ -8,11 +8,19 @@ from __future__ import annotations
 
 import json
 import math
+import time
 from dataclasses import dataclass, field
 from typing import Any
 
 from cortex.agent.types import AgentMessage, ThinkingLevel
-from cortex.ai.types import Message, Usage
+from cortex.ai.types import (
+    Context,
+    Message,
+    SimpleStreamOptions,
+    TextContent,
+    Usage,
+    UserMessage,
+)
 
 from .utils import (
     SUMMARIZATION_SYSTEM_PROMPT,
@@ -681,6 +689,42 @@ UPDATE_SUMMARIZATION_PROMPT = (
 )
 
 
+def _summarization_prompt(prompt_text: str) -> UserMessage:
+    """The one user message a summarization request carries."""
+    return UserMessage(content=[TextContent(text=prompt_text)], timestamp=int(time.time() * 1000))
+
+
+def _summarization_options(
+    *,
+    max_tokens: int,
+    api_key: str,
+    headers: dict[str, str] | None,
+    signal: Any,
+    model: Any,
+    thinking_level: ThinkingLevel | None,
+) -> SimpleStreamOptions:
+    """Options for a summarization request. Port of the TS's inline literal.
+
+    Both call sites built a **dict with camelCase keys** (``maxTokens``,
+    ``apiKey``) and passed a dict for the context too — TS object literals kept
+    as dicts. Providers here read attributes off pydantic models, so compaction
+    could only ever have worked against a stand-in that accepts both, and
+    ``/compact`` on a real provider raised. Reasoning is only sent for a
+    reasoning model with thinking on, which is the TS's ternary.
+    """
+    return SimpleStreamOptions(
+        max_tokens=max_tokens,
+        signal=signal,
+        api_key=api_key,
+        headers=headers,
+        reasoning=(
+            thinking_level
+            if getattr(model, "reasoning", False) and thinking_level and thinking_level != "off"
+            else None
+        ),
+    )
+
+
 async def generate_summary(
     current_messages: list[AgentMessage],
     model: Any,
@@ -715,31 +759,20 @@ async def generate_summary(
         prompt_text += f"<previous-summary>\n{previous_summary}\n</previous-summary>\n\n"
     prompt_text += base_prompt
 
-    summarization_messages = [
-        {
-            "role": "user",
-            "content": [{"type": "text", "text": prompt_text}],
-            "timestamp": 0,  # Will be replaced by complete_simple
-        }
-    ]
-
-    # Build completion options
-    completion_options: dict[str, Any] = {"maxTokens": max_tokens}
-    if signal:
-        completion_options["signal"] = signal
-    if api_key:
-        completion_options["apiKey"] = api_key
-    if headers:
-        completion_options["headers"] = headers
-
-    # Add reasoning only for reasoning models with thinking enabled
-    if getattr(model, "reasoning", False) and thinking_level and thinking_level != "off":
-        completion_options["reasoning"] = thinking_level
-
     response = await complete_simple(
         model,
-        {"systemPrompt": SUMMARIZATION_SYSTEM_PROMPT, "messages": summarization_messages},
-        completion_options,
+        Context(
+            system_prompt=SUMMARIZATION_SYSTEM_PROMPT,
+            messages=[_summarization_prompt(prompt_text)],
+        ),
+        _summarization_options(
+            max_tokens=max_tokens,
+            api_key=api_key,
+            headers=headers,
+            signal=signal,
+            model=model,
+            thinking_level=thinking_level,
+        ),
     )
 
     if getattr(response, "stop_reason", None) == "error":
@@ -797,31 +830,20 @@ async def generate_turn_prefix_summary(
         f"{TURN_PREFIX_SUMMARIZATION_PROMPT}"
     )
 
-    summarization_messages = [
-        {
-            "role": "user",
-            "content": [{"type": "text", "text": prompt_text}],
-            "timestamp": 0,
-        }
-    ]
-
-    # Build completion options
-    completion_options: dict[str, Any] = {"maxTokens": max_tokens}
-    if signal:
-        completion_options["signal"] = signal
-    if api_key:
-        completion_options["apiKey"] = api_key
-    if headers:
-        completion_options["headers"] = headers
-
-    # Add reasoning only for reasoning models with thinking enabled
-    if getattr(model, "reasoning", False) and thinking_level and thinking_level != "off":
-        completion_options["reasoning"] = thinking_level
-
     response = await complete_simple(
         model,
-        {"systemPrompt": SUMMARIZATION_SYSTEM_PROMPT, "messages": summarization_messages},
-        completion_options,
+        Context(
+            system_prompt=SUMMARIZATION_SYSTEM_PROMPT,
+            messages=[_summarization_prompt(prompt_text)],
+        ),
+        _summarization_options(
+            max_tokens=max_tokens,
+            api_key=api_key,
+            headers=headers,
+            signal=signal,
+            model=model,
+            thinking_level=thinking_level,
+        ),
     )
 
     if getattr(response, "stop_reason", None) == "error":

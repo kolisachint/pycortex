@@ -559,3 +559,46 @@ class TestComputeContextUsage:
         )
         assert usage is not None
         assert usage.tokens is None
+
+
+class TestDefaultSessionDir:
+    """Where sessions land when nobody names a directory (7.12).
+
+    The default was hard-coded to `~/.hoocode/agent` — the env var ignored and
+    an `agent` segment the TS does not have — so a process pointed at another
+    config directory wrote its sessions into the home one, and a user coming
+    from hoocode would find `--continue` opening on nothing.
+    """
+
+    def test_it_follows_the_agent_directory_environment_variable(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from cortex.code.config import ENV_AGENT_DIR
+        from cortex.code.session import get_default_session_dir
+
+        agent_dir = tmp_path / "config"
+        monkeypatch.setenv(ENV_AGENT_DIR, str(agent_dir))
+
+        resolved = get_default_session_dir("/w/project")
+
+        assert resolved.startswith(str(agent_dir))
+        assert os.path.isdir(resolved)
+
+    def test_sessions_sit_directly_under_the_agent_directory(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from cortex.code.config import ENV_AGENT_DIR
+        from cortex.code.session import get_default_session_dir
+
+        monkeypatch.setenv(ENV_AGENT_DIR, str(tmp_path))
+
+        resolved = get_default_session_dir("/w/project")
+
+        assert resolved == os.path.join(str(tmp_path), "sessions", "--w-project--")
+
+    def test_an_explicit_directory_still_wins(self, tmp_path: Path) -> None:
+        from cortex.code.session import get_default_session_dir
+
+        resolved = get_default_session_dir("/w/project", str(tmp_path / "elsewhere"))
+
+        assert resolved.startswith(str(tmp_path / "elsewhere"))

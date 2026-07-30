@@ -20,6 +20,7 @@ from cortex.code.print import (
     SessionProtocol,
     run_print_mode,
 )
+from cortex.code.session import PromptOptions
 
 
 @dataclass
@@ -50,8 +51,12 @@ class MockState:
 def create_mock_session(
     messages: list[Any] | None = None,
     prompt_side_effect: Any = None,
-) -> SessionProtocol:
-    """Create a mock session for testing."""
+) -> Any:
+    """Create a mock session for testing.
+
+    Typed `Any` rather than `SessionProtocol`: what comes back is a `MagicMock`
+    *shaped* like one, and the tests read `call_args` off its methods.
+    """
     session = MagicMock(spec=SessionProtocol)
     session.session_manager = MagicMock()
     session.session_manager.get_header = MagicMock(return_value=None)
@@ -66,9 +71,9 @@ def create_mock_session(
 
 
 def create_mock_runtime_host(
-    session: SessionProtocol | None = None,
+    session: Any = None,
     dispose_side_effect: Any = None,
-) -> RuntimeHostProtocol:
+) -> Any:
     """Create a mock runtime host for testing."""
     host = MagicMock(spec=RuntimeHostProtocol)
     host.session = session or create_mock_session()
@@ -99,7 +104,13 @@ async def test_text_mode_outputs_final_message():
         )
 
     assert exit_code == 0
-    session.prompt.assert_called_once_with("Say hello", [])
+    # The prompt goes through `PromptOptions`, not a bare list: `AgentSession.prompt`
+    # reads `options.preflight_result` first thing, so passing the images list
+    # itself (which is what this did until 7.12) killed every `-p` run.
+    prompt_args = session.prompt.call_args
+    assert prompt_args.args[0] == "Say hello"
+    assert isinstance(prompt_args.args[1], PromptOptions)
+    assert prompt_args.args[1].images == []
     mock_write.assert_called_with("Hello, world!\n")
 
 
@@ -126,7 +137,9 @@ async def test_text_mode_outputs_with_images():
     )
 
     assert exit_code == 0
-    session.prompt.assert_called_once_with("Analyze image", images)
+    prompt_args = session.prompt.call_args
+    assert prompt_args.args[0] == "Analyze image"
+    assert prompt_args.args[1].images == images
 
 
 @pytest.mark.asyncio

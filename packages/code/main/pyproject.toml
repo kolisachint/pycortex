@@ -7,6 +7,9 @@ requires-python = ">=3.11"
 dependencies = [
     "cortexcode-cli-config>=0.0.3,<0.1.0",
     "cortexcode-cli-interactive>=0.0.1,<0.1.0",
+    "cortexcode-cli-print>=0.0.3,<0.1.0",
+    "cortexcode-cli-session>=0.0.3,<0.1.0",
+    "cortexcode-tui-fuzzy>=0.0.3,<0.1.0",
 ]
 
 [tool.cortex]
@@ -20,6 +23,9 @@ packages = [
 [tool.uv.sources]
 cortexcode-cli-config = { workspace = true }
 cortexcode-cli-interactive = { workspace = true }
+cortexcode-cli-print = { workspace = true }
+cortexcode-cli-session = { workspace = true }
+cortexcode-tui-fuzzy = { workspace = true }
 
 [build-system]
 requires = [

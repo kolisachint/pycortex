@@ -11,12 +11,15 @@ from typing import Any, Generic, Literal, TypeVar
 
 from cortex.ai.types import (
     AssistantMessage,
+    CacheRetention,
     ImageContent,
     Message,
     Model,
     TextContent,
+    ThinkingBudgets,
     ToolCall,
     ToolResultMessage,
+    Transport,
 )
 
 # Type variables for generic types
@@ -402,7 +405,19 @@ In practice, this is a union of event dataclasses:
 
 @dataclass
 class AgentLoopConfig:
-    """Configuration for the agent loop."""
+    """Configuration for the agent loop.
+
+    The TS is ``interface AgentLoopConfig extends SimpleStreamOptions``, and the
+    inheritance is load-bearing rather than decorative: ``streamAssistantResponse``
+    spreads the whole config into the stream call, so every field below the divider
+    is what the *provider* is told about the request — the reasoning level, the
+    session id, the transport, the retry budget. This port had the loop half of that
+    (a dict of ``vars(config)``) and not the fields, so the eight the agent sets
+    were dropped on the floor: a turn asked for at thinking level ``high`` reached
+    Anthropic with no thinking block at all. Found by the first end-to-end turn
+    against a real provider (7.12); the faux provider reads options with
+    ``getattr``-or-``dict`` and could not see it.
+    """
 
     model: Model[Any] | None = None
     convert_to_llm: Callable[..., Any] | None = None
@@ -418,3 +433,25 @@ class AgentLoopConfig:
     tool_execution: ToolExecutionMode = "parallel"
     before_tool_call: Callable[..., Any] | None = None
     after_tool_call: Callable[..., Any] | None = None
+
+    # -- SimpleStreamOptions (the TS's `extends`) --------------------------
+    # Same names and defaults as `cortex.ai.types.SimpleStreamOptions`; the loop
+    # copies them into one before calling the provider (`stream_options_of`).
+    temperature: float | None = None
+    max_tokens: int | None = None
+    signal: Any | None = None
+    api_key: str | None = None
+    transport: Transport | None = None
+    cache_retention: CacheRetention | None = None
+    session_id: str | None = None
+    on_payload: Callable[..., Any] | None = None
+    on_response: Callable[..., Any] | None = None
+    headers: dict[str, str] | None = None
+    timeout_ms: int | None = None
+    max_retries: int | None = None
+    max_retry_delay_ms: int | None = None
+    metadata: dict[str, Any] | None = None
+    constrain_tool_calls: bool | None = None
+    reasoning: ThinkingLevel | None = None
+    thinking_budgets: ThinkingBudgets | None = None
+    thinking_display: Literal["summarized", "omitted"] | None = None

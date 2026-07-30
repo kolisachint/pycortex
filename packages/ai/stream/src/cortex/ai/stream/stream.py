@@ -9,7 +9,7 @@ from typing import Any
 
 from cortex.ai.models import ApiProvider, get_api_provider
 from cortex.ai.stream.event_stream import AssistantMessageEventStream
-from cortex.ai.types import AssistantMessage, Context, Model
+from cortex.ai.types import AssistantMessage, Context, Model, SimpleStreamOptions
 
 
 def _resolve_api_provider(api: str) -> ApiProvider:
@@ -22,8 +22,10 @@ def _resolve_api_provider(api: str) -> ApiProvider:
 def stream(
     model: Model,
     context: Context,
-    options: dict[str, Any] | None = None,
+    options: Any = None,
 ) -> AssistantMessageEventStream:
+    """The TS's ``options?: ProviderStreamOptions`` — a union this port does not
+    spell out, since each provider declares its own options class."""
     provider = _resolve_api_provider(model.api)
     return provider.stream(model, context, options)
 
@@ -31,7 +33,7 @@ def stream(
 async def complete(
     model: Model,
     context: Context,
-    options: dict[str, Any] | None = None,
+    options: Any = None,
 ) -> AssistantMessage:
     s = stream(model, context, options)
     return await s.result()
@@ -40,7 +42,7 @@ async def complete(
 def stream_simple(
     model: Model,
     context: Context,
-    options: dict[str, Any] | None = None,
+    options: SimpleStreamOptions | None = None,
 ) -> AssistantMessageEventStream:
     provider = _resolve_api_provider(model.api)
     return provider.stream_simple(model, context, options)
@@ -49,7 +51,7 @@ def stream_simple(
 async def complete_simple(
     model: Model,
     context: Context,
-    options: dict[str, Any] | None = None,
+    options: SimpleStreamOptions | None = None,
 ) -> AssistantMessage:
     s = stream_simple(model, context, options)
     return await s.result()

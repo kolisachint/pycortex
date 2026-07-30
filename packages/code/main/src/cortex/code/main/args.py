@@ -8,6 +8,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Literal
 
+from cortex.code.config import ENV_AGENT_DIR, ENV_SESSION_DIR
+
 APP_NAME = "hoocode"
 CONFIG_DIR_NAME = ".hoocode"
 
@@ -390,6 +392,7 @@ Environment Variables:
   ANTHROPIC_API_KEY              - Anthropic Claude API key
   OPENAI_API_KEY                 - OpenAI GPT API key
   GEMINI_API_KEY                 - Google Gemini API key
-  {f"{'HOOCODE_AGENT_DIR':<32} - Config directory (default: ~/{CONFIG_DIR_NAME}/agent)"}"""
+  {f"{ENV_AGENT_DIR:<32} - Config directory (default: ~/{CONFIG_DIR_NAME}/agent)"}
+  {f"{ENV_SESSION_DIR:<32} - Session storage directory (overridden by --session-dir)"}"""
 
     print(help_text)

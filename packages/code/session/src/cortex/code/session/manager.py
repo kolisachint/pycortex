@@ -16,6 +16,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from cortex.code.config import get_agent_dir
+
 CURRENT_SESSION_VERSION = 3
 
 #: Called with ``(loaded, total)`` while a session listing walks the files it
@@ -459,9 +461,17 @@ def build_session_context(
 
 
 def get_default_session_dir(cwd: str, agent_dir: str | None = None) -> str:
-    """Compute the default session directory for a cwd."""
+    """Compute the default session directory for a cwd.
+
+    The TS defaults ``agentDir`` to ``getAgentDir()``, and this hard-coded
+    ``~/.hoocode/agent`` instead — wrong twice over: it ignored
+    ``HOOCODE_CODING_AGENT_DIR``, so a process pointed at another config directory
+    still wrote its sessions under the home one, and it added an ``agent``
+    segment the TS does not have, so a user coming from hoocode would find
+    ``--continue`` opening on nothing.
+    """
     if agent_dir is None:
-        agent_dir = os.path.expanduser("~/.hoocode/agent")
+        agent_dir = get_agent_dir()
 
     stripped = cwd.lstrip("/").lstrip("\\")
     safe_path = "--" + stripped.replace("/", "-").replace("\\", "-").replace(":", "-") + "--"

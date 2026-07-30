@@ -14,9 +14,10 @@ import signal
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import Any, Literal, Protocol, runtime_checkable
 
 from cortex.ai.types import ImageContent
+from cortex.code.session import PromptOptions
 
 
 @dataclass
@@ -38,32 +39,34 @@ class PrintModeOptions:
     max_turns: int | None = None
 
 
-# pyright: reportUnknownLambdaType=false
+@runtime_checkable
+class SessionProtocol(Protocol):
+    """What print mode needs of a session. The TS's `AgentSession` interface.
 
-
-@dataclass
-class SessionProtocol:
-    """Protocol for the session object used by print mode."""
+    Structural, as the TS type is: `code/main` hands this the real
+    `AgentSession` and the tests hand it a mock, and neither inherits from
+    anything. It was a `@dataclass` until 7.12 — nothing could satisfy it
+    without *being* it, so the first real caller was a type error.
+    """
 
     session_manager: Any
     agent: Any
     state: Any
-    subscribe: Callable[..., Any]
-    prompt: Callable[..., Any]
-    abort: Callable[..., Any] = lambda: None
-    steer: Callable[..., Any] = lambda _: None
+
+    def subscribe(self, *args: Any, **kwargs: Any) -> Any: ...
+    def prompt(self, *args: Any, **kwargs: Any) -> Any: ...
+    def abort(self, *args: Any, **kwargs: Any) -> Any: ...
+    def steer(self, *args: Any, **kwargs: Any) -> Any: ...
 
 
-@dataclass
-class RuntimeHostProtocol:
-    """Protocol for the runtime host used by print mode."""
+@runtime_checkable
+class RuntimeHostProtocol(Protocol):
+    """What print mode needs of a runtime host: the session, and teardown."""
 
-    session: SessionProtocol
-    new_session: Callable[..., Any] = lambda _: None
-    fork: Callable[..., Any] = lambda _: None
-    switch_session: Callable[..., Any] = lambda _: None
-    dispose: Callable[..., Any] = lambda: None
-    set_rebind_session: Callable[..., Any] = lambda _: None
+    @property
+    def session(self) -> Any: ...
+
+    def dispose(self) -> None: ...
 
 
 def write_raw_stdout(text: str) -> None:
@@ -133,9 +136,12 @@ async def run_print_mode(
 
             unsubscribe = session.subscribe(on_event)
 
-        # Send initial message
+        # Send initial message. The TS passes `{ images: initialImages }`, and
+        # this passed the *list* — so `prompt` read `options.preflight_result`
+        # off a list and every `-p` run with the real session died there. It
+        # could not have been caught before 7.12: print mode had no caller.
         if initial_message:
-            await session.prompt(initial_message, initial_images)
+            await session.prompt(initial_message, PromptOptions(images=list(initial_images)))
 
         # Send additional messages
         for message in messages:
