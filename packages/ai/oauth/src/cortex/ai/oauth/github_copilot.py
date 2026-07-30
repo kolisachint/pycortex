@@ -12,7 +12,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 import httpx
-from cortex.ai.oauth.types import OAuthCredentials
+from cortex.ai.oauth.types import LOGIN_CANCELLED, OAuthCredentials
 
 __all__ = [
     "GitHubCopilotOAuthProvider",
@@ -112,13 +112,52 @@ async def _start_device_flow(domain: str) -> dict[str, Any]:
     return data
 
 
+def _aborted(signal: Any) -> bool:
+    """Whether an abort signal has been tripped.
+
+    ``getattr`` rather than a type, because this port has no ``AbortSignal``
+    type: anything with a boolean ``aborted`` is one (see MIGRATION_NOTES).
+    """
+    return bool(getattr(signal, "aborted", False))
+
+
+async def _abortable_sleep(seconds: float, signal: Any = None) -> None:
+    """Port of ``abortableSleep``.
+
+    The TS listens for the abort event; there is no event here, so the wait is
+    broken into short slices and the flag is checked between them. A cancelled
+    login has to stop within a beat of Escape rather than at the end of the
+    current poll interval, which can be tens of seconds.
+    """
+    if _aborted(signal):
+        raise RuntimeError(LOGIN_CANCELLED)
+    if signal is None:
+        await asyncio.sleep(seconds)
+        return
+
+    slice_seconds = 0.1
+    remaining = seconds
+    while remaining > 0:
+        await asyncio.sleep(min(slice_seconds, remaining))
+        if _aborted(signal):
+            raise RuntimeError(LOGIN_CANCELLED)
+        remaining -= slice_seconds
+
+
 async def _poll_for_access_token(
     domain: str,
     device_code: str,
     interval_seconds: int,
     expires_in: int,
+    signal: Any = None,
 ) -> str:
-    """Poll for access token."""
+    """Poll for access token.
+
+    ``signal`` arrives with step 7.11, the first caller to pass one: the login
+    dialog trips it on Escape, and without it a cancelled Copilot login kept
+    polling until the device code expired — up to a quarter of an hour after the
+    user thought they had backed out.
+    """
     urls = _get_urls(domain)
     deadline = time.time() + expires_in
     interval_ms = max(1000, interval_seconds * 1000)
@@ -126,9 +165,12 @@ async def _poll_for_access_token(
     slow_down_responses = 0
 
     while time.time() < deadline:
+        if _aborted(signal):
+            raise RuntimeError(LOGIN_CANCELLED)
+
         remaining_ms = (deadline - time.time()) * 1000
         wait_ms = min(interval_ms * interval_multiplier, remaining_ms)
-        await asyncio.sleep(wait_ms / 1000)
+        await _abortable_sleep(wait_ms / 1000, signal)
 
         raw = await _fetch_json(
             urls["accessTokenUrl"],
@@ -240,6 +282,7 @@ async def login_github_copilot(
         device["device_code"],
         device["interval"],
         device["expires_in"],
+        signal,
     )
 
     credentials = await refresh_github_copilot_token(github_access_token, enterprise_domain)

@@ -2402,3 +2402,192 @@ the tri-state exists. 29/30 after.
 - 5.6's `publish = false` on `code/_meta` is still untouched, for the reason
   7.1–7.9 all gave: flipping it puts `cortexcode-code` on PyPI, which is a
   release decision.
+
+## 7.11 auth + model registry — DONE
+
+The app can be logged into. `core/auth-storage.ts` (524) + `core/model-registry.ts`
+(954) + `core/resolve-config-value.ts` (142) + `core/provider-display-names.ts`
+→ `packages/code/config/`; the startup half of `core/model-resolver.ts`
+(`resolveCliModel`, `findInitialModel`, `restoreModelFromSession`,
+`defaultModelPerProvider`) → `packages/code/session/`; `login-controller.ts`
+(434) + `components/{oauth-selector,login-dialog,extension-selector}.ts` (511)
+→ `packages/code/interactive/`; `getOAuthApiKey` → `cortex.ai.oauth`, which had
+never ported it. 2 e2e scenarios, 200 + 59 + 56 tests across the leaves,
+56/60 mutations caught.
+
+1. **`setFallbackResolver` is defined and never called, and wiring it breaks two
+   things.** It looked like an obvious loose end — the storage has a hook for
+   "keys that only exist in `models.json`" and the registry is the thing that
+   knows them — so this port wired it in the registry's constructor. That is
+   wrong twice, and the tests said so within a minute: `get_auth_status` then
+   reports *every* `models.json` provider as `source="fallback"`, so the branch
+   the provider selector actually wants is unreachable; and `has_auth` starts
+   calling the resolver, which resolves `!command` keys, so merely listing models
+   shells out once per provider. The TS's asymmetry is the design:
+   `has_configured_auth` checks `models.json` beside the storage's answer, and
+   `get_provider_auth_status` inspects it *after* the storage declines. A grep
+   for the call site is what settled it — there is none.
+2. **`models.json` keys are snake_case here, and that is not a free choice.**
+   `settings.json` in this port is already read by dataclass field name
+   (`_dict_to_dataclass`), so an on-disk config file in camelCase would make the
+   two files disagree with each other. `base_url`, `api_key`, `model_overrides`,
+   `context_window`, compat flags — all snake. The one exception is the `cost`
+   block, whose keys are not schema fields: they merge into `Model.cost`, which
+   is `input`/`output`/`cacheRead`/`cacheWrite` throughout `cortex.ai`, so
+   `models.json` has to spell them that way or the per-field merge misses.
+3. **Which compat *class* a merged block becomes is load-bearing, and the TS
+   cannot tell you so.** There it is one `as` cast. Here `Model.compat` is a
+   union of three pydantic models, they ignore unknown fields, and
+   `provider-anthropic` reads compat back with
+   `isinstance(compat, AnthropicMessagesCompat)` — so choosing by field coverage
+   alone (widest first) hands an anthropic model an `OpenAICompletionsCompat` and
+   **every flag the user set in `models.json` is silently dropped**. Selection is
+   by the model's `api` now, with coverage as the fallback. Found by a mutation,
+   not by reading: the first version passed all 182 tests because every test
+   asserted a flag's *value*, which survives either way.
+4. **`cortex.ai.oauth` accepted an abort signal and never used it.** 7.11 is the
+   first caller to pass one (the dialog trips it on Escape), and
+   `login_github_copilot` threaded it as far as `_poll_for_access_token`'s
+   parameter list and no further — so a cancelled Copilot login kept polling
+   until the device code expired, up to a quarter of an hour after the user
+   backed out. Fixed here with `_abortable_sleep`, which slices the wait rather
+   than listening for an event (there is no event to listen for), so Escape takes
+   effect within a beat instead of at the end of a poll interval.
+5. **The cancel sentinel is one constant now, in `cortex.ai.oauth.types`.** The
+   TS writes `new Error("Login cancelled")` in three packages and compares
+   against the literal in a fourth. That works there and is a drift waiting to
+   happen; here the providers, the dialog and the controller share
+   `LOGIN_CANCELLED`, and `test_login_dialog.py` asserts the identity from the
+   side that depends on the other (the `ai/oauth` tests must not import
+   `code/interactive`).
+6. **`findInitialModel` returns its error instead of exiting.** The TS prints
+   with chalk and calls `process.exit(1)`, which a leaf that `print` and `rpc`
+   also import must not do. `InitialModelResult.error` is this port's field and
+   the only deviation in the file; `code/main` is where it becomes an exit code.
+   `restoreModelFromSession`'s chalk colouring is dropped too — those lines print
+   before the TUI exists and there is no styling helper for that path.
+7. **The saved default is only honoured when its provider has auth, and that
+   branch is why startup works at all.** A settings file naming
+   `anthropic/claude-opus-4-7` on a machine with only an OpenAI key would
+   otherwise pin a model that cannot answer, and the user would read "No API key
+   found" on every turn with a working provider sitting unused. A mutation that
+   dropped the `has_configured_auth` check passed nothing.
+8. **`DEFAULT_MODEL_PER_PROVIDER`'s insertion order is the preference list**, not
+   decoration: `find_initial_model` walks it looking for the first available
+   default, so it decides which provider answers for a user with three keys. And
+   a default naming a model its provider does not have would make that provider
+   skip silently — so a test resolves all 29 against the real model data rather
+   than trusting the table.
+9. **`proper-lockfile`'s `onCompromised` is not ported, and the TS's test for it
+   could not be.** That callback fires when the library's own refresh timer
+   notices its lockfile was deleted; `_DirectoryLock` has no refresh timer, so
+   the behaviour it protects is absent. What is here — `mkdir` for atomicity, a
+   30s staleness break so a killed process cannot wedge `auth.json` forever,
+   release in a `finally` — is what the token-refresh path relies on, and each
+   has its own test. Written down because the missing piece is invisible
+   otherwise.
+10. **The refresh path re-reads the file inside the lock, and that is the whole
+    reason the lock exists.** Several processes share one `auth.json` and an
+    expired token has all of them wanting to refresh it; the winner's new refresh
+    token must not be overwritten by a loser holding a stale one, because using a
+    refresh token consumes it. Same reason `_persist_provider_change` merges over
+    what is on disk rather than dumping its own state: another process may have
+    added a provider since this one loaded.
+11. **A credential row this build cannot read is skipped, not fatal.**
+    `auth.json` is shared with other versions of the tool, and `JSON.parse` +
+    `as` accepts anything in the TS. Reviving by hand here means an unknown
+    `type` has to be *decided*: raising would cost the user every other
+    credential in the file over one row, so it is dropped and the rest load.
+12. **The app had no registry at all until this step, and the wiring is the
+    difference between the step being real and being dead code.**
+    `run_interactive_mode` built every session with `model_registry=None` — the
+    docstring said "until the model registry lands in 7.11, is none" — so
+    `/login` would have hit `None.auth_storage`. It now builds
+    `ModelRegistry.create(AuthStorage.create())` and resolves the opening model
+    through `find_initial_model`. `create_replacement_session` already carried
+    the registry over, so `/new`, `/resume` and `/fork` needed nothing.
+13. **A session with no registry is still reachable, so `/login` explains rather
+    than raises.** `_create_unpersisted_session` builds one, and so does every
+    test or scenario that brings its own session. `NO_REGISTRY_MESSAGE` is a
+    status, not an error.
+14. **Escape in the provider list goes *back*, not out.** Ported deliberately:
+    the auth-type screen is otherwise unreachable after a mis-step. And
+    `show_prompt` **appends** where `show_auth` clears — you cannot read a code
+    off a page whose address has been wiped off the screen. Both are the kind of
+    detail a "tidy-up" refactor loses, and both now have a test.
+
+MUTATION TESTING: 60 mutations, 40 caught on the first honest run of 53 (the run
+was killed by a hang — see below — and the remainder ran separately). Ten of the
+thirteen misses were real gaps and are closed above with *discriminating* tests
+rather than more of them: the resolution order (every test set one source at a
+time, so any reordering passed), a failing command that also prints (`!exit 1`
+prints nothing, so the empty-output rule alone made the status check look
+covered), the routing merge with both sides populated, `auth_header` with no key
+*at all* rather than a failing one, the OAuth display name beating the table,
+rule 2 of `is_api_key_login_provider` in isolation, what `refresh()` actually
+buys (re-reading `models.json`, since `has_configured_auth` reads the storage
+live either way), and the dialog's append-vs-clear rule. 56/60 after.
+
+**A mutation hung the run and left the module mutated on disk.** Deleting the
+future-failing branch in `LoginDialogComponent.cancel` made
+`test_escape_cancels_quietly` *await forever* rather than fail, pytest had no
+timeout, and the script's `finally` never ran — and because `login_dialog.py` was
+a new file, `git diff` showed nothing to restore. This is the notes' existing
+warning about `| head` arriving by a different door: the danger is any way the
+runner dies before its restore. The awaits in the dialog tests are
+`asyncio.wait_for(..., timeout=5)` now, so a hang is a failure.
+
+**The four uncaught mutations are equivalent, and each for a stated reason:**
+
+- `auth/refresh-ignores-fresh-file` — deleting the "another process already
+  refreshed" short-circuit inside the lock changes nothing, because
+  `get_oauth_api_key` re-checks expiry itself and returns the stored credentials
+  without calling `refresh_token`. The only difference is a redundant rewrite of
+  a file with identical contents. Kept: it is what the TS does, and it is the
+  line that says the race is expected.
+- `resolver/literal-id-loses-to-provider-inference` — the early literal match in
+  `resolve_cli_model` runs only when provider inference *failed*, and
+  `parse_model_pattern`'s first act is `find_exact_model_reference_match`, which
+  handles both the bare-id and `provider/id` forms. No input distinguishes them:
+  ambiguous ids resolve to the same model either way (equal sort keys, stable
+  sort). Belt-and-braces in the TS, kept as such.
+- `login/logout-lists-everything` — `auth_storage.list()` returns the keys of the
+  same dict `get()` reads, so the `credential is None` guard is unreachable.
+- `dialog/copilot-poll-ignores-the-signal` — the abort check at the top of the
+  poll loop is redundant with `_abortable_sleep`'s own check on entry, which runs
+  immediately after it. Both are in the TS; both are kept.
+
+### Found here, deliberately not fixed
+
+- **`--model`, `--provider` and `--api-key` are not threaded from the CLI.**
+  `resolve_cli_model` is ported, exported and tested, and
+  `AuthStorage.set_runtime_api_key` is what `--api-key` needs; what is missing is
+  the argument parsing in `code/main` and the plumbing into
+  `run_interactive_mode`, which is that leaf's change rather than this one's.
+  `resolve_startup_model` is the seam — it takes the settings defaults today and
+  has room for the flags.
+- **`restore_model_from_session` is ported but not called.** 7.10 recorded that a
+  resumed session keeps whatever model the process is on rather than the one in
+  the file, and named the registry as the blocker. The registry exists now and
+  the resolver does too; wiring them is a change inside
+  `create_replacement_session`, where the session's saved provider/model has to
+  be read back out of the session file first.
+- **`--list-models` does not exist**, though every error message above points at
+  it ("Use --list-models to see available models"), because that is the TS's
+  wording and the registry can now answer it. A `code/main` flag.
+- **The Bedrock setup notice has no route to the screen.** `show_info` is ported
+  for it, and the TS reaches it from a provider branch in the login flow that
+  this port does not have — `anthropic-bedrock` is not among the built-in
+  providers here, so there is nothing to select that would show it.
+- **`registerProvider`'s `stream_simple` is registered but never exercised.**
+  Nothing in this port has an extension runner to call `register_provider`, so
+  the API-provider registration path is covered by tests and by no user.
+- **Built-in API providers are still never registered at import.**
+  `cortex.ai.models.register_builtins` was dead code — nothing imported it — and
+  this step needed `reset_api_providers` from it, which is now exported.
+  Importing the module registers the built-in stream functions as a side effect,
+  as the TS's index does, but nothing yet *calls* a real provider; a turn against
+  a live model is 7.12's.
+- 5.6's `publish = false` on `code/_meta` is still untouched, for the reason
+  7.1–7.10 all gave: flipping it puts `cortexcode-code` on PyPI, which is a
+  release decision.

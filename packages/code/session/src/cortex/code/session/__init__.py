@@ -46,12 +46,21 @@ from cortex.code.session.manager import (
     get_latest_compaction_entry,
 )
 from cortex.code.session.model_resolver import (
+    DEFAULT_MODEL_PER_PROVIDER,
+    DEFAULT_THINKING_LEVEL,
+    InitialModelResult,
     ParsedModelResult,
+    ResolveCliModelResult,
+    RestoredModelResult,
     ScopedModel,
+    StartupModelRegistry,
     find_exact_model_reference_match,
+    find_initial_model,
     is_alias,
     parse_model_pattern,
+    resolve_cli_model,
     resolve_model_scope,
+    restore_model_from_session,
 )
 from cortex.code.session.retry import AutoRetryController
 from cortex.code.session.runtime import (
@@ -153,12 +162,21 @@ __all__ = [
     "expand_skill_command",
     "parse_skill_block",
     # Model resolution
+    "DEFAULT_MODEL_PER_PROVIDER",
+    "DEFAULT_THINKING_LEVEL",
+    "InitialModelResult",
     "ParsedModelResult",
+    "ResolveCliModelResult",
+    "RestoredModelResult",
+    "StartupModelRegistry",
     "ScopedModel",
     "find_exact_model_reference_match",
+    "find_initial_model",
     "is_alias",
     "parse_model_pattern",
+    "resolve_cli_model",
     "resolve_model_scope",
+    "restore_model_from_session",
     # Retry
     "AutoRetryController",
     # Compaction

@@ -11,6 +11,9 @@ for OAuth-based providers:
 
 from __future__ import annotations
 
+import time
+from dataclasses import dataclass
+
 from cortex.ai.oauth.anthropic import (
     AnthropicOAuthProvider,
     anthropic_oauth_provider,
@@ -32,6 +35,7 @@ from cortex.ai.oauth.openai_codex import (
     refresh_openai_codex_token,
 )
 from cortex.ai.oauth.types import (
+    LOGIN_CANCELLED,
     OAuthAuthInfo,
     OAuthCredentials,
     OAuthPrompt,
@@ -60,6 +64,8 @@ __all__ = [
     "openai_codex_oauth_provider",
     "refresh_openai_codex_token",
     # Types
+    "LOGIN_CANCELLED",
+    "OAuthApiKeyResult",
     "OAuthAuthInfo",
     "OAuthCredentials",
     "OAuthProviderId",
@@ -68,12 +74,22 @@ __all__ = [
     "OAuthSelectOption",
     "OAuthSelectPrompt",
     # Registry functions
+    "get_oauth_api_key",
     "get_oauth_provider",
     "get_oauth_providers",
     "register_oauth_provider",
     "reset_oauth_providers",
     "unregister_oauth_provider",
 ]
+
+
+@dataclass(frozen=True)
+class OAuthApiKeyResult:
+    """What :func:`get_oauth_api_key` answers with: the key, and the credentials
+    it came from — which may be newer than the ones passed in."""
+
+    new_credentials: OAuthCredentials
+    api_key: str
 
 
 # ============================================================================
@@ -126,3 +142,41 @@ def reset_oauth_providers() -> None:
 def get_oauth_providers() -> list[OAuthProviderInterface]:
     """Get all registered OAuth providers."""
     return list(_oauth_provider_registry.values())
+
+
+async def get_oauth_api_key(
+    provider_id: OAuthProviderId,
+    credentials: dict[str, OAuthCredentials],
+) -> OAuthApiKeyResult | None:
+    """Resolve a provider's API key from stored credentials, refreshing if expired.
+
+    Port of ``getOAuthApiKey``. Ported with step 7.11, which is the first caller:
+    :class:`cortex.code.config.AuthStorage` needs the refresh-and-report-back
+    shape — the *new* credentials come back beside the key so the caller can
+    persist them under the same lock it read them under.
+
+    The three outcomes are distinct on purpose: an unknown provider raises, a
+    provider with no stored credentials returns ``None``, and a refresh that
+    fails raises rather than returning ``None`` so the caller can tell "nothing
+    to refresh" from "refreshing did not work".
+    """
+    provider = get_oauth_provider(provider_id)
+    if provider is None:
+        raise ValueError(f"Unknown OAuth provider: {provider_id}")
+
+    creds = credentials.get(provider_id)
+    if creds is None:
+        return None
+
+    if _now_ms() >= creds.expires:
+        try:
+            creds = await provider.refresh_token(creds)
+        except Exception as error:  # noqa: BLE001 - the TS's catch, one for one
+            raise RuntimeError(f"Failed to refresh OAuth token for {provider_id}") from error
+
+    return OAuthApiKeyResult(new_credentials=creds, api_key=provider.get_api_key(creds))
+
+
+def _now_ms() -> int:
+    """``Date.now()`` — epoch milliseconds."""
+    return int(time.time() * 1000)

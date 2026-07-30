@@ -5,9 +5,13 @@ Mechanical port of hoocode's oauth tests (if any).
 
 from __future__ import annotations
 
+import time
+
 from cortex.ai.oauth import (
+    LOGIN_CANCELLED,
     OAuthCredentials,
     anthropic_oauth_provider,
+    get_oauth_api_key,
     get_oauth_provider,
     get_oauth_providers,
     github_copilot_oauth_provider,
@@ -239,3 +243,175 @@ class TestGitHubCopilotUtils:
         result = normalize_domain("not a domain")
         # Just verify it doesn't raise an exception
         assert result is None or isinstance(result, str)
+
+
+# ---------------------------------------------------------------------------
+# get_oauth_api_key (ported with step 7.11, its first caller)
+# ---------------------------------------------------------------------------
+
+
+class _CountingProvider:
+    """A provider whose refresh succeeds and is counted."""
+
+    id = "test-get-api-key"
+    name = "Counting Provider"
+    uses_callback_server = False
+
+    def __init__(self) -> None:
+        self.refreshes = 0
+
+    async def login(self, callbacks: object) -> OAuthCredentials:  # pragma: no cover
+        raise AssertionError("not used")
+
+    async def refresh_token(self, credentials: OAuthCredentials) -> OAuthCredentials:
+        self.refreshes += 1
+        return OAuthCredentials(
+            refresh=credentials.refresh,
+            access="fresh-access",
+            expires=_now_ms() + 60_000,
+        )
+
+    def get_api_key(self, credentials: OAuthCredentials) -> str:
+        return f"Bearer {credentials.access}"
+
+
+def _now_ms() -> int:
+    import time
+
+    return int(time.time() * 1000)
+
+
+class TestGetOAuthApiKey:
+    async def test_unexpired_credentials_are_used_as_they_are(self) -> None:
+        provider = _CountingProvider()
+        register_oauth_provider(provider)
+        try:
+            creds = OAuthCredentials(refresh="r", access="live-access", expires=_now_ms() + 60_000)
+            result = await get_oauth_api_key(provider.id, {provider.id: creds})
+
+            assert result is not None
+            assert result.api_key == "Bearer live-access"
+            assert provider.refreshes == 0
+        finally:
+            reset_oauth_providers()
+
+    async def test_expired_credentials_are_refreshed_and_handed_back(self) -> None:
+        """The *new* credentials come back beside the key so the caller can persist
+        them under the same lock it read the old ones under."""
+        provider = _CountingProvider()
+        register_oauth_provider(provider)
+        try:
+            creds = OAuthCredentials(refresh="r", access="stale-access", expires=_now_ms() - 1000)
+            result = await get_oauth_api_key(provider.id, {provider.id: creds})
+
+            assert result is not None
+            assert result.api_key == "Bearer fresh-access"
+            assert result.new_credentials.access == "fresh-access"
+            assert result.new_credentials.expires > _now_ms()
+            assert provider.refreshes == 1
+        finally:
+            reset_oauth_providers()
+
+    async def test_no_stored_credentials_is_none_not_an_error(self) -> None:
+        provider = _CountingProvider()
+        register_oauth_provider(provider)
+        try:
+            assert await get_oauth_api_key(provider.id, {}) is None
+        finally:
+            reset_oauth_providers()
+
+    async def test_an_unknown_provider_raises(self) -> None:
+        import pytest
+
+        with pytest.raises(ValueError, match="Unknown OAuth provider"):
+            await get_oauth_api_key("no-such-provider", {})
+
+    async def test_a_failing_refresh_raises_rather_than_returning_none(self) -> None:
+        """The three outcomes have to stay distinct: the caller must be able to
+        tell "nothing to refresh" from "refreshing did not work"."""
+        import pytest
+
+        class Failing(_CountingProvider):
+            id = "test-failing-refresh"
+
+            async def refresh_token(self, credentials: OAuthCredentials) -> OAuthCredentials:
+                raise RuntimeError("network down")
+
+        provider = Failing()
+        register_oauth_provider(provider)
+        try:
+            creds = OAuthCredentials(refresh="r", access="a", expires=_now_ms() - 1000)
+            with pytest.raises(RuntimeError, match="Failed to refresh OAuth token"):
+                await get_oauth_api_key(provider.id, {provider.id: creds})
+        finally:
+            reset_oauth_providers()
+
+
+# ---------------------------------------------------------------------------
+# Cancelling a login (the abort signal, wired with step 7.11)
+# ---------------------------------------------------------------------------
+
+
+class _Signal:
+    """Anything with a boolean ``aborted`` is an abort signal in this port."""
+
+    def __init__(self, aborted: bool = False) -> None:
+        self.aborted = aborted
+
+
+class TestLoginCancellation:
+    def test_the_sentinel_has_the_value_the_ts_uses(self) -> None:
+        """Pinned because it is a contract across packages, not a private detail:
+        the dialog in ``cortex.code.interactive`` raises it and
+        ``login_controller`` compares against it. That the two agree is asserted
+        on the far side, in ``test_login_dialog.py`` — this leaf must not import
+        the one that depends on it."""
+        assert LOGIN_CANCELLED == "Login cancelled"
+
+    async def test_an_already_aborted_signal_stops_the_sleep_immediately(self) -> None:
+        import pytest
+        from cortex.ai.oauth.github_copilot import (
+            _abortable_sleep,  # pyright: ignore[reportPrivateUsage]
+        )
+
+        with pytest.raises(RuntimeError, match=LOGIN_CANCELLED):
+            await _abortable_sleep(60.0, _Signal(aborted=True))
+
+    async def test_a_sleep_with_no_signal_still_sleeps(self) -> None:
+        from cortex.ai.oauth.github_copilot import (
+            _abortable_sleep,  # pyright: ignore[reportPrivateUsage]
+        )
+
+        await _abortable_sleep(0.01, None)
+
+    async def test_aborting_mid_sleep_stops_within_a_beat(self) -> None:
+        """A cancel must not wait out the poll interval, which can be tens of
+        seconds — pressing Escape has to take effect roughly when it is pressed."""
+        import asyncio
+
+        import pytest
+        from cortex.ai.oauth.github_copilot import (
+            _abortable_sleep,  # pyright: ignore[reportPrivateUsage]
+        )
+
+        signal = _Signal()
+
+        async def abort_soon() -> None:
+            await asyncio.sleep(0.05)
+            signal.aborted = True
+
+        started = time.monotonic()
+        with pytest.raises(RuntimeError, match=LOGIN_CANCELLED):
+            await asyncio.gather(_abortable_sleep(30.0, signal), abort_soon())
+        assert time.monotonic() - started < 5
+
+    async def test_the_poll_loop_refuses_to_start_when_already_aborted(self) -> None:
+        """Regression: the signal was accepted and never used, so a cancelled
+        Copilot login kept polling until the device code expired."""
+        import pytest
+        from cortex.ai.oauth.github_copilot import (
+            _poll_for_access_token,  # pyright: ignore[reportPrivateUsage]
+        )
+
+        with pytest.raises(RuntimeError, match=LOGIN_CANCELLED):
+            await _poll_for_access_token("github.com", "device-code", 5, 900, _Signal(aborted=True))

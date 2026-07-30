@@ -8,6 +8,18 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+#: What a cancelled login raises with, everywhere. Callers compare against it
+#: rather than reporting it, so that pressing Escape closes the dialog quietly
+#: instead of showing an error.
+#:
+#: One constant rather than the TS's repeated ``new Error("Login cancelled")``,
+#: because the string is a contract *between packages*: the dialog in
+#: ``cortex.code.interactive`` raises it, the providers here raise it, and
+#: ``login_controller`` is what compares. A literal in three places is a drift
+#: waiting to happen — and a drifted one shows the user an error for something
+#: they did on purpose.
+LOGIN_CANCELLED = "Login cancelled"
+
 
 @dataclass
 class OAuthCredentials:

@@ -400,6 +400,20 @@ requires-dist = [{ name = "cortexcode-ai-types", editable = "packages/ai/types" 
 name = "cortexcode-cli-config"
 version = "0.0.3"
 source = { editable = "packages/code/config" }
+dependencies = [
+    { name = "cortexcode-ai-env" },
+    { name = "cortexcode-ai-models" },
+    { name = "cortexcode-ai-oauth" },
+    { name = "cortexcode-ai-types" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cortexcode-ai-env", editable = "packages/ai/env" },
+    { name = "cortexcode-ai-models", editable = "packages/ai/models" },
+    { name = "cortexcode-ai-oauth", editable = "packages/ai/oauth" },
+    { name = "cortexcode-ai-types", editable = "packages/ai/types" },
+]
 
 [[package]]
 name = "cortexcode-cli-e2e"
@@ -435,6 +449,7 @@ version = "0.0.1"
 source = { editable = "packages/code/interactive" }
 dependencies = [
     { name = "cortexcode-ai-models" },
+    { name = "cortexcode-ai-oauth" },
     { name = "cortexcode-ai-types" },
     { name = "cortexcode-cli-config" },
     { name = "cortexcode-cli-prompts" },
@@ -452,6 +467,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "cortexcode-ai-models", editable = "packages/ai/models" },
+    { name = "cortexcode-ai-oauth", editable = "packages/ai/oauth" },
     { name = "cortexcode-ai-types", editable = "packages/ai/types" },
     { name = "cortexcode-cli-config", editable = "packages/code/config" },
     { name = "cortexcode-cli-prompts", editable = "packages/code/prompts" },

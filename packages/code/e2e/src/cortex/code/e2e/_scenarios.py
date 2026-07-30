@@ -206,6 +206,8 @@ def faux_session(
     tools: list[Any] | None = None,
     models: list[Any] | None = None,
     with_model_registry: bool = False,
+    model_registry: Any = None,
+    model: Any = None,
     session_manager: Any = None,
 ) -> FauxSession:
     """Build the session the shell scenarios prompt against.
@@ -229,6 +231,13 @@ def faux_session(
     `session_manager` is 7.10's: the scenarios about a session outliving the
     process need one that writes, and they bring a temporary directory of their
     own to write into.
+
+    `model_registry` and `model` are 7.11's, and the auth scenarios need both to
+    be *real*: the question those scenarios ask is which providers you can log
+    into and whether the one you are on has a key, and `FauxModelRegistry` — or
+    the faux model, whose provider needs no key at all — answers "yes" to
+    everything. Both are constructor arguments rather than assignments because
+    `AgentSession.model_registry` is read-only and `model` lives on the agent.
     """
     from cortex.ai.providers.faux import register_faux_provider
     from cortex.code.session import SessionManager, create_agent_session
@@ -242,10 +251,14 @@ def faux_session(
             if session_manager is not None
             else SessionManager(cwd, "", persist=False)
         ),
-        model=registration.get_model(),
+        model=model if model is not None else registration.get_model(),
         stream_fn=stream_fn,
         tools=tools,
-        model_registry=FauxModelRegistry(registration.models) if with_model_registry else None,
+        model_registry=(
+            model_registry
+            if model_registry is not None
+            else (FauxModelRegistry(registration.models) if with_model_registry else None)
+        ),
     )
     return FauxSession(
         session=created.session,
@@ -1641,8 +1654,103 @@ def session_persist_across_restart() -> None:
 # 7.11 — auth and models
 # ===========================================================================
 
-pending("auth/login-dialog", "`/login` opens the provider picker", "7.11")
-pending("auth/missing-key-message", "A missing API key explains itself instead of crashing", "7.11")
+
+@scenario("auth/login-dialog", "`/login` opens the provider picker", "7.11")
+def auth_login_dialog() -> None:
+    """`/login`, three screens deep, over the *real* registry.
+
+    `FauxModelRegistry` is deliberately not used here: what this scenario is
+    about is the machinery that decides which providers you can log into, and a
+    stand-in that answers "all of them" would prove nothing. So the session gets
+    a real `ModelRegistry` over an in-memory `AuthStorage` — every built-in
+    provider, and no credentials for any of them.
+    """
+    from cortex.code.config import AuthStorage, ModelRegistry, SettingsManager
+    from cortex.code.config.settings_storage import InMemorySettingsStorage
+
+    settings = SettingsManager.from_storage(InMemorySettingsStorage())
+    registry = ModelRegistry.in_memory(AuthStorage.in_memory())
+    faux = faux_session(cwd="/w/project", settings=settings, model_registry=registry)
+    try:
+        with boot_shell(settings=settings, session=faux.session) as h:
+            h.type("/login")
+            h.key("enter")
+            h.wait_for(lambda: _overlay_open(h))
+
+            # Screen one: how do you want to authenticate.
+            h.assert_shows(
+                "Select authentication method:",
+                "Use a subscription",
+                "Use an API key",
+                scrollback=False,
+            )
+
+            # Screen two: which provider. Down+Enter takes "Use an API key",
+            # because that is the branch nearly every provider is on.
+            h.key("down")
+            h.key("enter")
+            h.wait_for(lambda: "Select provider to configure:" in h.snapshot())
+
+            # The rows are real providers with a real auth column, and with no
+            # credentials anywhere that column says so rather than being blank.
+            h.assert_shows("Select provider to configure:", "unconfigured", scrollback=False)
+
+            # Escape goes *back*, not out — the auth-type screen is reachable
+            # again after a mis-step.
+            h.key("escape")
+            h.wait_for(lambda: "Select authentication method:" in h.snapshot())
+
+            # Escape again closes, and the editor has the keyboard back.
+            h.key("escape")
+            h.wait_for(lambda: not _overlay_open(h))
+            h.type("back in the editor")
+            h.assert_shows("> back in the editor", scrollback=False)
+    finally:
+        faux.unregister()
+
+
+@scenario(
+    "auth/missing-key-message", "A missing API key explains itself instead of crashing", "7.11"
+)
+def auth_missing_key_message() -> None:
+    """Enter, on a real provider with no key: a message, and a usable app.
+
+    This is the screen a fresh install shows, and the whole point is what it is
+    *not* — a traceback, and a dead prompt. The preflight raises before the
+    provider is ever reached, the message names `/login`, and the editor still
+    takes the next keystroke.
+    """
+    from cortex.ai.models import get_models
+    from cortex.code.config import AuthStorage, ModelRegistry, SettingsManager
+    from cortex.code.config.settings_storage import InMemorySettingsStorage
+
+    settings = SettingsManager.from_storage(InMemorySettingsStorage())
+    registry = ModelRegistry.in_memory(AuthStorage.in_memory())
+    # A real provider's model, with no credentials for it. The faux model would
+    # not do: its provider needs no key, so the preflight would pass.
+    faux = faux_session(
+        cwd="/w/project",
+        settings=settings,
+        model_registry=registry,
+        model=get_models("anthropic")[0],
+    )
+    try:
+        with boot_shell(settings=settings, session=faux.session) as h:
+            h.type("hello")
+            h.key("enter")
+            h.wait_for(lambda: "No API key found" in h.snapshot())
+
+            # It names the provider, points at `/login`, and points at the docs —
+            # `format_no_api_key_found_message`, reached through the real
+            # preflight rather than called directly.
+            h.assert_shows("No API key found for anthropic", "Use /login to log into a provider")
+
+            # Not a crash: the app is still up and the editor still takes input.
+            h.type("still alive")
+            h.assert_shows("> still alive", scrollback=False)
+    finally:
+        faux.unregister()
+
 
 # ===========================================================================
 # 7.12 — the whole product

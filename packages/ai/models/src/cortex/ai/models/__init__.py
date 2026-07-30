@@ -29,6 +29,10 @@ from cortex.ai.models.models import (
     get_supported_thinking_levels,
     models_are_equal,
 )
+from cortex.ai.models.register_builtins import (
+    register_built_in_api_providers,
+    reset_api_providers,
+)
 
 __all__ = [
     # API Registry
@@ -37,6 +41,8 @@ __all__ = [
     "get_api_provider",
     "get_api_providers",
     "register_api_provider",
+    "register_built_in_api_providers",
+    "reset_api_providers",
     "unregister_api_providers",
     # Image Models
     "get_image_model",

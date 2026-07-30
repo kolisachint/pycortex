@@ -64,6 +64,11 @@ from cortex.code.interactive.keybindings import (
     migrate_keybindings_config,
     order_keybindings_config,
 )
+from cortex.code.interactive.login_controller import (
+    LoginController,
+    LoginControllerDeps,
+    is_api_key_login_provider,
+)
 from cortex.code.interactive.model_controller import (
     ANTHROPIC_SUBSCRIPTION_AUTH_WARNING,
     ModelController,
@@ -128,8 +133,11 @@ __all__ = [
     "InteractiveModeOptions",
     "KEYBINDINGS",
     "KeybindingsManager",
+    "LoginController",
+    "LoginControllerDeps",
     "ModelController",
     "ModelControllerDeps",
+    "is_api_key_login_provider",
     "ModelSelectorComponent",
     "ReadonlyFooterDataProvider",
     "SEGMENT_SEP",

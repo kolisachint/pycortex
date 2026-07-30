@@ -117,6 +117,8 @@ from cortex.code.config import (
     APP_NAME,
     APP_TITLE,
     VERSION,
+    AuthStorage,
+    ModelRegistry,
     SettingsManager,
     get_agent_dir,
     get_bin_dir,
@@ -149,6 +151,7 @@ from cortex.code.interactive.components.user_message_selector import (
 )
 from cortex.code.interactive.footer_data_provider import FooterDataProvider
 from cortex.code.interactive.keybindings import KeybindingsManager
+from cortex.code.interactive.login_controller import LoginController
 from cortex.code.interactive.model_controller import ModelController, SelectorFactory
 from cortex.code.interactive.slash_commands import BUILTIN_SLASH_COMMANDS
 from cortex.code.interactive.startup_progress import startup_progress
@@ -165,9 +168,11 @@ from cortex.code.session import (
     AgentSessionRuntime,
     AgentSessionServices,
     CreateAgentSessionResult,
+    InitialModelResult,
     MissingSessionCwdError,
     SessionManager,
     create_agent_session,
+    find_initial_model,
 )
 from cortex.tui.components import (
     CombinedAutocompleteProvider,
@@ -575,6 +580,7 @@ class InteractiveMode:
         # Overlays (7.9): the model flows live off the app, as in the TS, and
         # the app is the context they read through.
         self._model_controller: ModelController | None = None
+        self._login_controller: LoginController | None = None
 
         self._slash_commands = self.create_built_in_slash_commands()
 
@@ -680,6 +686,26 @@ class InteractiveMode:
         if self._model_controller is None:
             self._model_controller = ModelController(self)
         return self._model_controller
+
+    @property
+    def login_controller(self) -> LoginController:
+        """The auth flows, built on first use. The app is its context too."""
+        if self._login_controller is None:
+            self._login_controller = LoginController(self)
+        return self._login_controller
+
+    def get_editor(self) -> Any:
+        """Part of the login controller's context: the editor, read at call time.
+
+        A method rather than the ``editor`` attribute because the dialogs put the
+        editor back *after* a flow that can outlive a session replacement, and by
+        then the attribute may point at a different one.
+        """
+        return self.editor
+
+    async def update_available_provider_count(self) -> None:
+        """Part of the login controller's context; the model controller counts."""
+        await self.model_controller.update_available_provider_count()
 
     # ------------------------------------------------------------------
     # Startup
@@ -1034,6 +1060,14 @@ class InteractiveMode:
             clear_editor()
             self.show_tree_selector()
 
+        def run_login(_text: str) -> None:
+            clear_editor()
+            _schedule(self.login_controller.show_oauth_selector("login"))
+
+        def run_logout(_text: str) -> None:
+            clear_editor()
+            _schedule(self.login_controller.show_oauth_selector("logout"))
+
         return {
             "/settings": BuiltInSlashCommand(run_settings),
             "/scoped-models": BuiltInSlashCommand(run_scoped_models),
@@ -1050,6 +1084,8 @@ class InteractiveMode:
             "/resume": BuiltInSlashCommand(run_resume),
             "/fork": BuiltInSlashCommand(run_fork),
             "/tree": BuiltInSlashCommand(run_tree),
+            "/login": BuiltInSlashCommand(run_login),
+            "/logout": BuiltInSlashCommand(run_logout),
         }
 
     def create_base_autocomplete_provider(self) -> CombinedAutocompleteProvider:
@@ -1596,8 +1632,13 @@ class InteractiveMode:
         """Part of the command context; the controller does the work."""
         return await self.model_controller.find_exact_model_match(search_term)
 
-    async def maybe_warn_about_anthropic_subscription_auth(self, model: Any) -> None:
-        """Part of the command context; the controller does the work."""
+    async def maybe_warn_about_anthropic_subscription_auth(self, model: Any = None) -> None:
+        """Part of the command context; the controller does the work.
+
+        ``model`` defaults to ``None`` — meaning the session's current model —
+        because the login flows call it both ways: with the model they just
+        selected, and bare after a login that selected nothing.
+        """
         await self.model_controller.maybe_warn_about_anthropic_subscription_auth(model)
 
     async def show_model_selector(self, search_term: str | None = None) -> None:
@@ -2180,6 +2221,35 @@ def resolve_session_manager(
     return SessionManager.create(cwd, session_dir)
 
 
+def build_model_registry() -> ModelRegistry:
+    """The process's registry, over the real ``auth.json`` and ``models.json``.
+
+    Arrives with step 7.11. Before it, every session was built without one, which
+    meant the auth preflight had nothing to ask and ``/login`` had nothing to
+    write to — the machinery existed and the app never reached it.
+    """
+    return ModelRegistry.create(AuthStorage.create())
+
+
+async def resolve_startup_model(
+    registry: ModelRegistry, settings: SettingsManager
+) -> InitialModelResult:
+    """Which model the process opens on. Port of ``sdk.ts``'s startup resolution.
+
+    The saved default from settings, then whatever has a key, preferring each
+    provider's default. CLI ``--model``/``--provider`` are not threaded here yet:
+    they are ``code/main``'s arguments, and this leaf is not where they are
+    parsed. :func:`~cortex.code.session.resolve_cli_model` is exported for
+    whoever wires them.
+    """
+    return await find_initial_model(
+        default_provider=settings.get_default_provider(),
+        default_model_id=settings.get_default_model(),
+        default_thinking_level=settings.get_default_thinking_level(),
+        model_registry=registry,
+    )
+
+
 def run_interactive_mode(
     options: InteractiveModeOptions | None = None,
     session_manager: SessionManager | None = None,
@@ -2187,9 +2257,8 @@ def run_interactive_mode(
     """Run interactive mode against the real terminal. Returns the exit code.
 
     Builds the session the mode talks to, the way ``main.ts`` does through
-    ``createAgentSessionRuntime``: settings and a session file for the cwd, and
-    whatever model has been resolved for it — which, until the model registry
-    lands in 7.11, is none.
+    ``createAgentSessionRuntime``: settings and a session file for the cwd, a
+    registry over the user's credentials, and the model that registry resolves.
 
     ``session_manager`` is how ``--continue`` reaches here: the file is chosen
     before the session is built (:func:`resolve_session_manager`), so the app
@@ -2204,8 +2273,15 @@ def run_interactive_mode(
         settings = (
             resolved.settings if resolved.settings is not None else SettingsManager.create(cwd)
         )
+        registry = build_model_registry()
+        initial = asyncio.run(resolve_startup_model(registry, settings))
         created = create_agent_session(
-            cwd=cwd, settings_manager=settings, session_manager=session_manager
+            cwd=cwd,
+            settings_manager=settings,
+            session_manager=session_manager,
+            model=initial.model,
+            model_registry=registry,
+            thinking_level=initial.thinking_level,
         )
         resolved = replace(resolved, cwd=cwd, settings=settings, session=created.session)
 

@@ -8,6 +8,17 @@ from cortex.code.config.auth_guidance import (
     format_no_models_available_message,
     get_provider_login_help,
 )
+from cortex.code.config.auth_storage import (
+    ApiKeyCredential,
+    AuthCredential,
+    AuthStatus,
+    AuthStorage,
+    AuthStorageBackend,
+    FileAuthStorageBackend,
+    InMemoryAuthStorageBackend,
+    LockResult,
+    OAuthCredential,
+)
 from cortex.code.config.config import (
     APP_NAME,
     APP_TITLE,
@@ -48,6 +59,22 @@ from cortex.code.config.config import (
     get_update_instruction,
     is_bun_binary,
     is_bun_runtime,
+)
+from cortex.code.config.model_registry import (
+    ModelDefinitionInput,
+    ModelRegistry,
+    ProviderConfigInput,
+    ResolvedRequestAuth,
+    clear_api_key_cache,
+)
+from cortex.code.config.provider_display_names import BUILT_IN_PROVIDER_DISPLAY_NAMES
+from cortex.code.config.resolve_config_value import (
+    clear_config_value_cache,
+    resolve_config_value,
+    resolve_config_value_or_throw,
+    resolve_config_value_uncached,
+    resolve_headers,
+    resolve_headers_or_throw,
 )
 
 # Re-export settings defaults
@@ -160,4 +187,29 @@ __all__ = [
     "SettingsStorage",
     # Settings manager
     "SettingsManager",
+    # Auth storage
+    "ApiKeyCredential",
+    "AuthCredential",
+    "AuthStatus",
+    "AuthStorage",
+    "AuthStorageBackend",
+    "FileAuthStorageBackend",
+    "InMemoryAuthStorageBackend",
+    "LockResult",
+    "OAuthCredential",
+    # Model registry
+    "ModelDefinitionInput",
+    "ModelRegistry",
+    "ProviderConfigInput",
+    "ResolvedRequestAuth",
+    "clear_api_key_cache",
+    # Provider display names
+    "BUILT_IN_PROVIDER_DISPLAY_NAMES",
+    # Config value resolution
+    "clear_config_value_cache",
+    "resolve_config_value",
+    "resolve_config_value_or_throw",
+    "resolve_config_value_uncached",
+    "resolve_headers",
+    "resolve_headers_or_throw",
 ]
