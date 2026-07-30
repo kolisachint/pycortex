@@ -1922,6 +1922,146 @@ The editor got a command line. `core/slash-commands.ts` (41) +
   7.1, 7.2, 7.5, 7.6 and 7.7 all gave: flipping it puts `cortexcode-code` on
   PyPI, which is a release decision.
 
+## 7.9 overlays + selectors — DONE
+
+The editor got somewhere to go. `model-selector.ts` (333) +
+`scoped-models-selector.ts` (355) + `settings-selector.ts` (1015) +
+`theme-selector.ts` (67) + `model-controller.ts` (229) →
+`packages/code/interactive/`, with the model/thinking half of `agent-session.ts`
+and the reference-resolution half of `model-resolver.ts` →
+`packages/code/session/`: 3 e2e scenarios, 616 + 143 tests across the two
+leaves, 17/18 mutations caught.
+
+1. **`showSelector` is the whole architecture, and it is nine lines.** An overlay
+   *replaces the editor in its container* rather than floating over it, so the
+   transcript above never moves and there is no z-order to reason about. The
+   factory is handed the `done` callback rather than the app wiring one up
+   afterwards, because every selector has to be able to close itself from inside
+   a callback it was constructed with. `done` restores the editor **and the
+   focus**, which is the half a screenshot cannot see: an overlay that is gone
+   but still holding the keyboard looks exactly like one that closed properly
+   until the next keystroke disappears. Two mutations tested exactly that and
+   both were initially missed — the tests now assert on `focused`.
+2. **Three of the six commands the plan named for this step moved to 7.10, and
+   the reason is the same one three times.** `/resume`, `/fork` and `/tree` all
+   *load a different point in the session*: `runtimeHost.switchSession` / `fork`
+   / `navigateTree` plus `renderCurrentSessionState`, which is the runtime's
+   session-replacement half — **already deferred to 7.10 by 7.4**, in
+   `cortex.code.session.runtime`'s own docstring. Their selectors
+   (`session-selector.ts`, `user-message-selector.ts`, `tree-selector.ts`) are
+   not ported either: shipping a picker you cannot pick from would put exactly
+   the kind of dead entry in the `/` menu that 7.8's convention rules out. The
+   `overlay/session-selector` scenario moved with them, as `commands/clear` did
+   before it, and the plan's 7.9 and 7.10 entries both say so.
+3. **`model-resolver.ts` was split, not skipped.** The file does two jobs: turn a
+   reference *the user typed* into a model, and decide which model a session
+   *starts* on. `/model <name>` and `/scoped-models` need the first
+   (`findExactModelReferenceMatch`, `parseModelPattern`, `resolveModelScope`);
+   the second (`resolveCliModel`, `findInitialModel`, `restoreModelFromSession`)
+   is startup resolution over stored credentials and belongs with the auth
+   storage in 7.11. Only the first half is in
+   `cortex.code.session.model_resolver`, and the module says which half and why,
+   so 7.11 finishes the file rather than unpicking it.
+4. **The glob matcher is load-bearing and `fnmatch` would have been wrong.**
+   `resolveModelScope` matches each pattern against `provider/id` *and* against
+   the bare `id`, which only makes sense because minimatch's `*` does not cross a
+   `/`. With `fnmatch` (whose `*` swallows the separator) the second attempt is
+   dead code and `*sonnet*` quietly starts matching by full id — so this uses
+   `cortex.code.tools.native_search.minimatch`, the port's own translation of
+   those semantics, and a test asserts that a bare glob reaches every provider.
+5. **`enabled_ids` is three-valued and that is the whole scoped-models design.**
+   `None` means *no filter* — every model in scope — and is not the empty list,
+   which means a filter is on and nothing is selected. The consequences are
+   everywhere: the first toggle turns `None` into a one-element list rather than
+   removing something; enabling the last model collapses back to `None` rather
+   than persisting a list of everything as a filter. Two mutations landed exactly
+   there (`/scoped-models` persisting a full selection, and applying one as a
+   session scope) and both are now closed by a test that toggles every model on
+   by hand rather than reaching for Ctrl+A.
+6. **`_getThinkingLevelForModelSwitch` reads the *stored default*, not the
+   current level, and it took a mutation to make me look at why.** A model that
+   cannot reason has had its level clamped to `off`; carrying that across the
+   next switch would strand the session on `off` for good. The stored default is
+   what the user last chose deliberately, which is why the TS reaches for it —
+   and `set_thinking_level`'s "only record a change" guard is what stops the
+   re-clamp after every model switch from appending an entry per switch.
+7. **The model selector loads synchronously here and asynchronously there.** The
+   TS awaits `loadModels()` off the constructor, so the overlay paints empty and
+   fills in when the registry answers. This port takes the resolved list: the
+   only caller is `ModelController`, which is already inside `async` code when it
+   opens the overlay, so awaiting one level up costs nothing and removes a frame
+   nobody wanted. That is also why `showModelSelector` is `async` here.
+8. **Every selector callback is reached from a keystroke, and the work behind it
+   is not.** `_schedule` is the join: with a loop running the coroutine goes onto
+   it, and without one — a component driven directly by a test — it is run to
+   completion rather than dropped. It exists twice (app and controller) because
+   the two reach it from different sides of the protocol.
+9. **`SettingsManager` was missing five setters the settings screen needs**
+   (`set_default_model_and_provider`, `set_steering_mode`, `set_follow_up_mode`,
+   `set_collapse_changelog`, `set_enable_install_telemetry`) and `AgentSession`
+   two (`set_steering_mode`, `set_follow_up_mode`, which set the *agent's* mode
+   and persist it, as the TS does). `set_default_model_and_provider` is one
+   method rather than two calls for the TS's reason: the pair is one choice, and
+   a save between the two writes a settings file naming a model that belongs to
+   the previous provider.
+10. **`light.json` shipped with this step.** The theme selector lists what is on
+    disk (`get_available_themes` reads the package directory, so adding a palette
+    is adding a file), and with only `dark.json` there the list had one row and
+    nothing to prove. The file is a verbatim copy of the TS's, like `dark.json`.
+11. **The `/` menu outgrew its window, and a 7.8 scenario noticed.**
+    `commands/slash-autocomplete` asserted that `/hotkeys` was among the visible
+    rows; three new commands pushed it below the fold and added a `(1/8)` scroll
+    counter that the helper read as a suggestion. Both were the *scenario*
+    checking the window rather than the menu: `_menu_rows` now drops the counter,
+    and `/hotkeys` is reached by filtering. The product was right both times.
+
+MUTATION TESTING: 18 mutations, 11 caught on the first honest run. Six of the
+seven misses were real and are closed above (cycle-from-an-unknown-model,
+current-model-sorted-first, the two scoped-models set-algebra ones, and the two
+focus ones). **The seventh is equivalent and worth writing down**: moving where
+the trailing settings rows are spliced into the flat `items` list changes
+nothing, because the flat order is only ever read back through `by_id` (a dict)
+and through the explicit `pick(ids)` lists the category rows are built from. The
+splice order is kept anyway — it is what the TS does, and the next person to add
+a row will follow it. 17/18 after.
+
+### Found here, deliberately not fixed
+
+- **`SettingsManager` setters do not reach disk, and `/settings` is the first
+  screen where that shows.** The TS's every setter calls `save()`, which enqueues
+  a write; this port's setters mark the field modified and `flush()` writes —
+  and **nothing calls `flush()` anywhere in the workspace**. So a change made in
+  the overlay is live for the session and gone on restart. It predates this step
+  (the setters have behaved this way since Phase 4), it is one shared code path
+  for ~100 setters, and every leaf's tests run against it, so it is a settings
+  job rather than an overlay one. `overlay/settings` asserts on the live change
+  and on reopening the overlay, which is what this port can honestly claim.
+- **The tools list in `/settings` is the persisted disabled set, not a registry.**
+  The TS unions the session's live tools with it; this port's sessions are built
+  with no tools at all (nothing so far has needed one), so the union is the
+  disabled set alone — empty on a fresh install, and exactly the re-enable list
+  for anyone who has disabled tools before. The four *group* switches beside it
+  are settings rather than registry state and work today.
+- **The flags row is absent, and that is the TS's own behaviour.** Flags come
+  from the extension runner; with none there are no flags, and the TS omits the
+  row entirely when the list is empty.
+- **`hide-thinking` does not rebuild the transcript.** The TS clears the chat log
+  and rebuilds it from the session's messages, because a message already drawn
+  with thinking hidden has thrown the block away. `rebuildChatFromMessages` is
+  the same machinery `renderCurrentSessionState` needs, so it lands with 7.10;
+  until then the setting reaches every component still holding its message.
+- **`ModelRegistryLike` grew `refresh` and `get_available`** so the session's
+  model management has something to ask. Nothing in the workspace implements it
+  yet — 7.11 does — so `/model` opens on an empty list saying so, which is the
+  screen hoocode shows a user with no providers configured.
+- **The theme watcher is not ported.** `setTheme(name, true)` starts an `fs.watch`
+  so an edited theme file reloads live. That is part of the resource-loading half
+  this port has not reached, and its absence changes nothing about what a selected
+  theme looks like.
+- 5.6's `publish = false` on `code/_meta` is still untouched, for the reason
+  7.1–7.8 all gave: flipping it puts `cortexcode-code` on PyPI, which is a
+  release decision.
+
 ## Windows support — bug-fix session, NOT a plan step
 
 `uv run pycortex` on Windows rendered the first frame and then ignored every

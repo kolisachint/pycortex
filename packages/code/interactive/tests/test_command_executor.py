@@ -57,6 +57,16 @@ class FakeSessionManager:
         return "entry-1"
 
 
+class FakeModel:
+    """The four fields the model handlers read."""
+
+    def __init__(self, provider: str, model_id: str, name: str | None = None) -> None:
+        self.provider = provider
+        self.id = model_id
+        self.name = name if name is not None else model_id
+        self.reasoning = False
+
+
 class FakeSession:
     def __init__(
         self,
@@ -67,6 +77,8 @@ class FakeSession:
         self.session_manager = session_manager
         self.messages = messages if messages is not None else []
         self._stats = stats
+        self.model: Any = None
+        self.set_model_error: str | None = None
 
     def get_session_stats(self) -> SessionStats:
         assert self._stats is not None, "this context was not given stats"
@@ -74,6 +86,19 @@ class FakeSession:
 
     def set_session_name(self, name: str) -> None:
         self.session_manager.append_session_info(name)
+
+    async def set_model(self, model: Any) -> None:
+        if self.set_model_error is not None:
+            raise RuntimeError(self.set_model_error)
+        self.model = model
+
+
+class FakeFooter:
+    def __init__(self) -> None:
+        self.invalidations = 0
+
+    def invalidate(self) -> None:
+        self.invalidations += 1
 
 
 class Context:
@@ -94,6 +119,13 @@ class Context:
         self._keybindings = KeybindingsManager()
         self.warnings: list[str] = []
         self.statuses: list[str] = []
+        self.errors: list[str] = []
+        self.border_updates = 0
+        self.selector_searches: list[str | None] = []
+        self.warned_models: list[Any] = []
+        #: What `find_exact_model_match` answers with, by search term.
+        self.model_matches: dict[str, Any] = {}
+        self._footer = FakeFooter()
 
     @property
     def session(self) -> Any:
@@ -121,8 +153,27 @@ class Context:
     def show_warning(self, message: str) -> None:
         self.warnings.append(message)
 
+    def show_error(self, message: str) -> None:
+        self.errors.append(message)
+
     def get_markdown_theme_with_settings(self) -> MarkdownTheme:
         return get_markdown_theme()
+
+    @property
+    def footer(self) -> Any:
+        return self._footer
+
+    def update_editor_border_color(self) -> None:
+        self.border_updates += 1
+
+    async def find_exact_model_match(self, search_term: str) -> Any:
+        return self.model_matches.get(search_term)
+
+    async def maybe_warn_about_anthropic_subscription_auth(self, model: Any) -> None:
+        self.warned_models.append(model)
+
+    async def show_model_selector(self, search_term: str | None) -> None:
+        self.selector_searches.append(search_term)
 
 
 def _stats(**overrides: Any) -> SessionStats:
@@ -427,3 +478,44 @@ class TestChatComponents:
         ctx = Context()
         CommandExecutor(ctx).handle_name("/name x")
         assert [type(c) for c in ctx.chat_container.children] == [Spacer, Text]
+
+
+class TestHandleModel:
+    """`/model` with an argument switches outright; without one it opens the picker."""
+
+    async def test_a_bare_command_opens_the_picker(self):
+        ctx = Context()
+        await CommandExecutor(ctx).handle_model(None)
+        assert ctx.selector_searches == [None]
+
+    async def test_an_exact_match_switches_without_opening_anything(self):
+        ctx = Context()
+        model = FakeModel("openai", "gpt-5-mini")
+        ctx.model_matches["gpt-5-mini"] = model
+        await CommandExecutor(ctx).handle_model("gpt-5-mini")
+
+        assert ctx.session.model is model
+        assert ctx.selector_searches == [], "an exact match should not open the picker"
+        assert ctx.statuses == ["Model: gpt-5-mini"]
+        assert ctx.footer.invalidations == 1
+        assert ctx.border_updates == 1
+        assert ctx.warned_models == [model]
+
+    async def test_a_term_that_matches_nothing_opens_the_picker_pre_filtered(self):
+        """Better than "no such model": the half-remembered name becomes the
+        search, so the list opens on whatever it does match."""
+        ctx = Context()
+        await CommandExecutor(ctx).handle_model("sonn")
+        assert ctx.selector_searches == ["sonn"]
+
+    async def test_a_refused_switch_is_reported(self):
+        ctx = Context()
+        model = FakeModel("openai", "gpt-5-mini")
+        ctx.model_matches["gpt-5-mini"] = model
+        ctx.session.set_model_error = "No API key for openai/gpt-5-mini"
+
+        await CommandExecutor(ctx).handle_model("gpt-5-mini")
+
+        assert ctx.errors == ["No API key for openai/gpt-5-mini"]
+        assert ctx.statuses == []
+        assert ctx.selector_searches == []

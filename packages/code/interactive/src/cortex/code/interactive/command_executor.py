@@ -5,9 +5,9 @@ dependencies through a :class:`CommandContext` rather than through ``this``;
 this port keeps that shape, and for the same payoff — a handler is testable
 against a context built by hand, with no TUI, no terminal and no session file.
 
-**Six of the thirteen handlers are here, and the other seven are not stranded —
-they are waiting on machinery that belongs to a later step.** ``/model`` and its
-selector need the model registry (7.11); ``/new``, ``/clone`` and ``/import``
+**Seven of the thirteen handlers are here, and the other six are not stranded —
+they are waiting on machinery that belongs to a later step.** ``/new``,
+``/clone`` and ``/import``
 need ``AgentSessionRuntime``'s session-replacement half, which
 :mod:`cortex.code.session.runtime` defers to 7.10 and which is also what
 ``renderCurrentSessionState`` rebuilds from; ``/subagent`` needs the subagent
@@ -69,13 +69,26 @@ class CommandContext(Protocol):
     @property
     def keybindings(self) -> Any: ...
 
+    @property
+    def footer(self) -> Any: ...
+
     # Positional-only: the app names these parameters after what they carry
     # (`warning_message`), and a protocol that pinned a name would reject it.
     def show_status(self, message: str, /) -> None: ...
 
     def show_warning(self, message: str, /) -> None: ...
 
+    def show_error(self, message: str, /) -> None: ...
+
     def get_markdown_theme_with_settings(self) -> MarkdownTheme: ...
+
+    def update_editor_border_color(self) -> None: ...
+
+    async def find_exact_model_match(self, search_term: str, /) -> Any: ...
+
+    async def maybe_warn_about_anthropic_subscription_auth(self, model: Any, /) -> None: ...
+
+    async def show_model_selector(self, search_term: str | None, /) -> None: ...
 
 
 class CommandExecutor:
@@ -87,6 +100,32 @@ class CommandExecutor:
     # =========================================================================
     # Slash command handlers
     # =========================================================================
+
+    async def handle_model(self, search_term: str | None = None) -> None:
+        """``/model`` — switch outright when the argument names one model.
+
+        A bare ``/model`` opens the picker, and so does an argument that matches
+        nothing or matches ambiguously: the TS passes the term on as the
+        picker's initial search rather than reporting "no such model", so a
+        half-remembered name lands you in the list already filtered.
+        """
+        if not search_term:
+            await self._ctx.show_model_selector(None)
+            return
+
+        model = await self._ctx.find_exact_model_match(search_term)
+        if model is not None:
+            try:
+                await self._ctx.session.set_model(model)
+                self._ctx.footer.invalidate()
+                self._ctx.update_editor_border_color()
+                self._ctx.show_status(f"Model: {model.id}")
+                await self._ctx.maybe_warn_about_anthropic_subscription_auth(model)
+            except Exception as error:  # noqa: BLE001 - the TS catch, one for one
+                self._ctx.show_error(str(error))
+            return
+
+        await self._ctx.show_model_selector(search_term)
 
     def handle_name(self, text: str) -> None:
         """``/name`` — set the session's display name, or print the current one.

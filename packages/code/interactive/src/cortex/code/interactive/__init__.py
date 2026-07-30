@@ -4,7 +4,9 @@ Port of ``packages/coding-agent/src/modes/interactive/``. Step 7.2 lands the
 shell — the component tree, the startup banner, the editor prompt, the footer and
 the Ctrl+C exit path; 7.3 the editor and chat log, 7.4 the session bridge, 7.5
 streaming, 7.6 the tool blocks, their diffs and bash mode, 7.7 the footer in
-full, and 7.8 the slash commands and their autocomplete. Overlays follow in 7.9.
+full, 7.8 the slash commands and their autocomplete, and 7.9 the overlays —
+``/settings``, ``/model`` and ``/scoped-models``, each taking the editor's place
+until Escape hands it back.
 """
 
 from cortex.code.interactive.bash_execution_controller import (
@@ -30,6 +32,12 @@ from cortex.code.interactive.components import (
     BashExecutionComponent,
     DynamicBorder,
     FooterComponent,
+    ModelSelectorComponent,
+    ScopedModelsSelectorComponent,
+    SettingsCallbacks,
+    SettingsConfig,
+    SettingsSelectorComponent,
+    ThemeSelectorComponent,
     ToolExecutionComponent,
     ToolExecutionOptions,
     ToolExecutionResult,
@@ -54,6 +62,12 @@ from cortex.code.interactive.keybindings import (
     KeybindingsManager,
     migrate_keybindings_config,
     order_keybindings_config,
+)
+from cortex.code.interactive.model_controller import (
+    ANTHROPIC_SUBSCRIPTION_AUTH_WARNING,
+    ModelController,
+    ModelControllerDeps,
+    SelectorFactory,
 )
 from cortex.code.interactive.slash_commands import (
     BUILTIN_SLASH_COMMANDS,
@@ -86,6 +100,7 @@ from cortex.code.interactive.wordmark import (
 )
 
 __all__ = [
+    "ANTHROPIC_SUBSCRIPTION_AUTH_WARNING",
     "AppKeybinding",
     "BRAND_MARK",
     "BRAND_NAME",
@@ -112,13 +127,22 @@ __all__ = [
     "InteractiveModeOptions",
     "KEYBINDINGS",
     "KeybindingsManager",
+    "ModelController",
+    "ModelControllerDeps",
+    "ModelSelectorComponent",
     "ReadonlyFooterDataProvider",
     "SEGMENT_SEP",
+    "ScopedModelsSelectorComponent",
+    "SelectorFactory",
+    "SettingsCallbacks",
+    "SettingsConfig",
+    "SettingsSelectorComponent",
     "SlashCommandInfo",
     "SlashCommandSource",
     "StartupProgress",
     "StartupProgressStore",
     "Theme",
+    "ThemeSelectorComponent",
     "ToolExecutionComponent",
     "ToolExecutionOptions",
     "ToolExecutionResult",

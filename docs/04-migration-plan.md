@@ -396,16 +396,28 @@ visible capability at a time.
       session-replacement runtime 7.4 deferred to 7.10, so `commands/clear` moves
       there with it. Only the built-ins with a handler are advertised; the rest
       arrive with the machinery they reach for (7.9–7.11).
-- [ ] **7.9 overlays + selectors** — `components/{model-selector,session-selector,
+- [x] **7.9 overlays + selectors** — `components/{model-selector,scoped-models-selector,
       settings-selector,theme-selector}.ts`, `model-controller.ts` →
-      `packages/code/interactive/`. Overlays open, change state, and Escape restores
-      editor focus. Wires `/settings`, `/model`, `/scoped-models`, `/fork`,
-      `/tree` and `/resume` into 7.8's command table.
+      `packages/code/interactive/`, plus the model/thinking half of
+      `core/agent-session.ts` and the reference-resolution half of
+      `core/model-resolver.ts` → `packages/code/session/`. Overlays open, change
+      state, and Escape restores editor focus. Wires `/settings`, `/model` and
+      `/scoped-models` into 7.8's command table, with Ctrl+L, Ctrl+P and the
+      thinking-level key. **`/resume`, `/fork` and `/tree` move to 7.10**: each
+      one *loads* a different point in the session, which is the runtime's
+      session-replacement half plus `renderCurrentSessionState` — already
+      deferred there — so the selector without them would be a picker you cannot
+      pick from. `overlay/session-selector` moves with them.
 - [ ] **7.10 session persistence** — `core/session-manager.ts` wiring into interactive
       mode → `packages/code/session/`. `--continue` restores the transcript on
       screen; a turn survives quit and relaunch. The same machinery — the runtime's
       session-replacement half plus `renderCurrentSessionState` — is what `/new`,
-      `/clone` and `/import` need, so those land here too.
+      `/clone` and `/import` need, so those land here too, and with them the three
+      commands 7.9 moved down: `/resume` (`components/session-selector.ts` plus
+      `SessionManager.list`/`listAll`, unported), `/fork`
+      (`components/user-message-selector.ts` over the runtime's `fork`) and
+      `/tree` (`components/tree-selector.ts` over `navigateTree`, whose
+      controller is ported but unwired).
 - [ ] **7.11 auth + model registry** — `core/{model-registry,model-resolver,auth-storage}.ts`,
       `login-controller.ts` → `packages/code/config/`, `packages/code/interactive/`.
       `/login` opens the provider picker; a missing key explains itself.

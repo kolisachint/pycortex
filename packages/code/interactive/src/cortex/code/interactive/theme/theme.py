@@ -3,8 +3,15 @@
 Port of the colour core of ``modes/interactive/theme/theme.ts``: the colour-mode
 detection, the hex -> truecolor/256-colour conversion, the :class:`Theme` value
 type, and the built-in ``dark`` palette loaded from the theme JSON this package
-ships (a verbatim copy of the TS ``theme/dark.json``, so the two cannot drift by
-transcription).
+ships (verbatim copies of the TS ``theme/dark.json`` and ``theme/light.json``,
+so the two cannot drift by transcription).
+
+Step 7.9 added what the settings and theme overlays drive: listing the palettes,
+switching between them, and the :class:`SettingsListTheme` the settings list is
+drawn with. Themes contributed by extensions and a user ``themes/`` directory are
+the two sources ``getAvailableThemes`` merges in and this does not — both are
+loaders this port has not reached, and both add names to the same list rather
+than changing what happens to a name that is on it.
 """
 
 from __future__ import annotations
@@ -16,19 +23,29 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from cortex.tui.components import EditorTheme, MarkdownTheme, SelectListTheme
+from cortex.tui.components import (
+    EditorTheme,
+    MarkdownTheme,
+    SelectListTheme,
+    SettingsListTheme,
+)
 
 __all__ = [
     "ColorMode",
+    "SetThemeResult",
     "Theme",
     "detect_color_mode",
+    "get_available_themes",
     "get_editor_theme",
     "get_markdown_theme",
     "get_select_list_theme",
+    "get_settings_list_theme",
     "get_theme",
+    "get_theme_name",
     "hex_to_256",
     "hex_to_rgb",
     "load_builtin_theme",
+    "set_theme",
     "set_theme_instance",
 ]
 
@@ -182,6 +199,17 @@ _BG_TOKENS = (
 )
 
 
+#: Thinking level -> the palette token its editor border uses.
+_THINKING_BORDER_TOKENS = {
+    "off": "thinkingOff",
+    "minimal": "thinkingMinimal",
+    "low": "thinkingLow",
+    "medium": "thinkingMedium",
+    "high": "thinkingHigh",
+    "xhigh": "thinkingXhigh",
+}
+
+
 class Theme:
     """A resolved palette: token name -> the ANSI prefix that selects it."""
 
@@ -232,6 +260,18 @@ class Theme:
     def inverse(self, text: str) -> str:
         return f"\x1b[7m{text}\x1b[27m"
 
+    def get_thinking_border_color(self, level: str) -> Callable[[str], str]:
+        """The editor border for a thinking level.
+
+        One token per level rather than a gradient computed here: the palette
+        decides what "high" looks like, which is the point of a palette.
+        """
+        token = _THINKING_BORDER_TOKENS.get(level, "thinkingOff")
+        return lambda text: self.fg(token, text)
+
+    def get_bash_mode_border_color(self) -> Callable[[str], str]:
+        return lambda text: self.fg("bashMode", text)
+
 
 @dataclass(frozen=True)
 class _ThemeJson:
@@ -266,7 +306,55 @@ def load_builtin_theme(name: str, mode: ColorMode | None = None) -> Theme:
     )
 
 
+def get_available_themes() -> list[str]:
+    """Every palette that can be selected, sorted.
+
+    The built-ins are the JSON files shipped beside this module, read off the
+    directory rather than listed in code so adding a palette is adding a file —
+    which is how the TS's ``getBuiltinThemes`` behaves too, its object being
+    generated from the same directory at build time.
+    """
+    return sorted(path.stem for path in _THEME_DIR.glob("*.json"))
+
+
+@dataclass(frozen=True)
+class SetThemeResult:
+    """Whether :func:`set_theme` took, and why not when it did not."""
+
+    success: bool
+    error: str | None = None
+
+
 _active: Theme | None = None
+_active_name: str = "dark"
+
+
+def set_theme(name: str) -> SetThemeResult:
+    """Switch the active palette, falling back to ``dark`` if it will not load.
+
+    A failure still leaves a usable theme installed, as in the TS: the settings
+    overlay reports the error into the transcript, and a half-applied palette
+    would take the frame it was reported on down with it.
+
+    The TS also starts a file watcher here so an edited theme file reloads live;
+    that watcher is part of the resource-loading half this port has not reached,
+    and its absence changes nothing about what a selected theme looks like.
+    """
+    global _active, _active_name
+    try:
+        instance = load_builtin_theme(name)
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        _active_name = "dark"
+        _active = load_builtin_theme("dark")
+        return SetThemeResult(False, str(error))
+    _active_name = name
+    _active = instance
+    return SetThemeResult(True)
+
+
+def get_theme_name() -> str:
+    """The name of the active palette. The TS's ``currentThemeName``."""
+    return _active_name
 
 
 def get_theme() -> Theme:
@@ -296,6 +384,17 @@ def get_select_list_theme() -> SelectListTheme:
         description=lambda text: theme.fg("muted", text),
         scroll_info=lambda text: theme.fg("muted", text),
         no_match=lambda text: theme.fg("muted", text),
+    )
+
+
+def get_settings_list_theme() -> SettingsListTheme:
+    theme = get_theme()
+    return SettingsListTheme(
+        label=lambda text, selected: theme.fg("accent", text) if selected else text,
+        value=lambda text, selected: theme.fg("accent" if selected else "muted", text),
+        description=lambda text: theme.fg("dim", text),
+        cursor=theme.fg("accent", "→ "),
+        hint=lambda text: theme.fg("dim", text),
     )
 
 
