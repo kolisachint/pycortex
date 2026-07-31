@@ -332,7 +332,7 @@ requires-dist = [
 
 [[package]]
 name = "cortexcode-ai-provider-openai"
-version = "0.0.1"
+version = "0.0.3"
 source = { editable = "packages/ai/provider-openai" }
 dependencies = [
     { name = "cortexcode-ai-env" },
@@ -417,7 +417,7 @@ requires-dist = [
 
 [[package]]
 name = "cortexcode-cli-e2e"
-version = "0.0.1"
+version = "0.0.3"
 source = { editable = "packages/code/e2e" }
 dependencies = [
     { name = "cortexcode-ai-provider-anthropic" },
@@ -444,12 +444,12 @@ requires-dist = [
 
 [[package]]
 name = "cortexcode-cli-extensions"
-version = "0.0.1"
+version = "0.0.3"
 source = { editable = "packages/code/extensions" }
 
 [[package]]
 name = "cortexcode-cli-interactive"
-version = "0.0.1"
+version = "0.0.3"
 source = { editable = "packages/code/interactive" }
 dependencies = [
     { name = "cortexcode-ai-models" },
@@ -560,7 +560,7 @@ requires-dist = [
 
 [[package]]
 name = "cortexcode-cli-subagents"
-version = "0.0.1"
+version = "0.0.3"
 source = { editable = "packages/code/subagents" }
 
 [[package]]

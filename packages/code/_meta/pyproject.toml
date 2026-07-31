@@ -18,7 +18,7 @@ dependencies = [
     "cortexcode-cli-subagents>=0.0.3,<0.1.0",
     "cortexcode-cli-rpc>=0.0.3,<0.1.0",
     "cortexcode-cli-print>=0.0.3,<0.1.0",
-    "cortexcode-cli-interactive>=0.0.1,<0.1.0",
+    "cortexcode-cli-interactive>=0.0.3,<0.1.0",
     "cortexcode-cli-main>=0.0.3,<0.1.0",
 ]
 
@@ -30,7 +30,7 @@ dependencies = [
 pycortex = "cortex.code.main:main"
 
 [tool.cortex]
-publish = false
+publish = true
 
 [tool.hatch.build.targets.wheel]
 packages = [
