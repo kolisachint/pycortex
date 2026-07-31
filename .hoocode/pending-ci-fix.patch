@@ -1,5 +1,5 @@
 diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
-index c2269c7..0fb5936 100644
+index c2269c7..7151949 100644
 --- a/.github/workflows/ci.yml
 +++ b/.github/workflows/ci.yml
 @@ -28,7 +28,7 @@ jobs:
@@ -11,7 +11,7 @@ index c2269c7..0fb5936 100644
      steps:
        - uses: actions/checkout@v4
        - uses: astral-sh/setup-uv@v5
-@@ -36,9 +36,41 @@ jobs:
+@@ -36,9 +36,53 @@ jobs:
            python-version: "3.11"
        - name: Sync workspace
          run: uv sync --all-packages
@@ -49,10 +49,22 @@ index c2269c7..0fb5936 100644
 +        run: uv run scripts/tui_e2e.py
 +      - name: Report is current
 +        # The report is an audited input to `migrate_next.py`; a stale one lets a
-+        # Phase 7 box be ticked against yesterday's results.
++        # Phase 7 box be ticked against yesterday's results. `generated_from` is the
++        # HEAD the report was written at, which can never equal the commit that
++        # carries it — compare the results, which is what the audit reads.
 +        run: |
++          cp docs/tui-e2e-report.json "$RUNNER_TEMP/report-committed.json"
 +          uv run scripts/tui_e2e.py --refresh
-+          git diff --exit-code docs/tui-e2e-report.json
++          python3 - "$RUNNER_TEMP/report-committed.json" <<'PY'
++          import json, sys
++
++          committed = json.load(open(sys.argv[1]))
++          fresh = json.load(open("docs/tui-e2e-report.json"))
++          for report in (committed, fresh):
++              report.pop("generated_from", None)
++          if committed != fresh:
++              sys.exit("docs/tui-e2e-report.json is stale — run `uv run scripts/tui_e2e.py --refresh`")
++          PY
  
    build:
      runs-on: ubuntu-latest
