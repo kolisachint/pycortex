@@ -13,7 +13,7 @@ from typing import Any
 
 import pytest
 from cortex.ai.providers.faux import faux_assistant_message, register_faux_provider
-from cortex.code.config import SettingsManager
+from cortex.code.config import ResolvedRequestAuth, SettingsManager
 from cortex.code.config.settings_storage import InMemorySettingsStorage
 from cortex.code.session import (
     AgentSession,
@@ -184,6 +184,9 @@ class TestPrompt:
 
             def is_using_oauth(self, model: Any) -> bool:
                 return False
+
+            async def get_api_key_and_headers(self, model: Any) -> ResolvedRequestAuth:
+                return ResolvedRequestAuth(ok=True, api_key="k")
 
         faux.set_responses([faux_assistant_message("ok")])
         session = _session(faux, model_registry=_Registry())
@@ -572,6 +575,11 @@ class _Registry:
 
     def is_using_oauth(self, model: Any) -> bool:
         return False
+
+    async def get_api_key_and_headers(self, model: Any) -> ResolvedRequestAuth:
+        if self._authed:
+            return ResolvedRequestAuth(ok=True, api_key="k")
+        return ResolvedRequestAuth(ok=False, error=f'No API key found for "{model.provider}"')
 
     def refresh(self) -> None:
         self.refreshes += 1

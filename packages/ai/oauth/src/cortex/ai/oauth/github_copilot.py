@@ -12,7 +12,12 @@ from typing import Any
 from urllib.parse import urlparse
 
 import httpx
-from cortex.ai.oauth.types import LOGIN_CANCELLED, OAuthCredentials
+from cortex.ai.oauth.types import (
+    LOGIN_CANCELLED,
+    OAuthAuthInfo,
+    OAuthCredentials,
+    OAuthPrompt,
+)
 
 __all__ = [
     "GitHubCopilotOAuthProvider",
@@ -252,11 +257,11 @@ async def login_github_copilot(
     """Login with GitHub Copilot OAuth (device code flow)."""
     if on_prompt:
         input_str = await on_prompt(
-            {
-                "message": "GitHub Enterprise URL/domain (blank for github.com)",
-                "placeholder": "company.ghe.com",
-                "allow_empty": True,
-            }
+            OAuthPrompt(
+                message="GitHub Enterprise URL/domain (blank for github.com)",
+                placeholder="company.ghe.com",
+                allow_empty=True,
+            )
         )
     else:
         input_str = ""
@@ -271,10 +276,10 @@ async def login_github_copilot(
 
     if on_auth:
         on_auth(
-            {
-                "url": device["verification_uri"],
-                "instructions": f"Enter code: {device['user_code']}",
-            }
+            OAuthAuthInfo(
+                url=device["verification_uri"],
+                instructions=f"Enter code: {device['user_code']}",
+            )
         )
 
     github_access_token = await _poll_for_access_token(

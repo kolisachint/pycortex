@@ -2831,3 +2831,77 @@ Two things had to be true first, and neither was:
 
 Still open, and still not ours to close: the parity gaps listed under 7.12, and
 `.github/workflows/` (both files) until someone applies the patch.
+
+## After the plan — `uv run pycortex` could not log in, or use a stored key
+
+Two bugs that the whole corpus was blind to, both found by running the product
+rather than the tests.
+
+**1. Every OAuth login crashed on its first callback.** `ai/oauth`'s providers
+invoked `on_auth`/`on_prompt` with dict literals (`{"message": …}`,
+`{"url": …}`) while `login_controller` reads `prompt.message` and `info.url` —
+the shape `types.py` had declared as `OAuthPrompt`/`OAuthAuthInfo` all along. So
+`/login` ended in "Failed to login to GitHub Copilot: 'dict' object has no
+attribute 'message'", for every provider, every time. `github_copilot.py` and
+`anthropic.py` construct the dataclasses now; `openai_codex.py` never reached a
+callback (its `login` is a `NotImplementedError`) and needed no change.
+
+The port-wide lesson: **a Protocol of dataclasses is not enforced at the call
+site.** Both ends type-checked — the providers' `callbacks` parameter is `Any`,
+which is what the TS's structural typing becomes here — and nothing but running
+it could tell.
+
+**2. A credential in `auth.json` never reached a request.** `sdk.ts:424` wraps
+the Agent's `streamFn` in one that resolves `modelRegistry.getApiKeyAndHeaders`
+per request and puts the key, the headers and the retry budget on the options.
+`create_agent_session` built `Agent(AgentOptions(…, stream_fn=stream_fn))` with
+no such wrapper, so the loop sent `api_key=None` and every provider fell through
+to `get_env_api_key`. That is fine for `ANTHROPIC_API_KEY` and fatal for a
+subscription provider, which has no env var to fall through *to* — hence "No API
+key for provider: github-copilot" for a user who had just logged in.
+
+Ported with it: `SettingsManager.get_provider_retry_settings`,
+`get_attribution_headers` (and `config/telemetry.py`, which it asks). Three
+things the wrapper needed that were subtly wrong:
+
+- **The loop did not `await` the stream function.** `agent-loop.ts:341` does
+  (`StreamFn` returns the stream *or a promise of it*), and without that the
+  wrapper cannot be a coroutine at all. It also cannot be an async *generator*:
+  the loop iterates the stream **and** awaits `response.result()`, so what comes
+  back has to be the `EventStream`, not a yielding-through wrapper.
+- **`ResolvedRequestAuth` was read as a camelCase dict by every consumer** —
+  `agent_harness.py` and `session/compaction.py` both did `auth.get("apiKey")`
+  on a frozen dataclass. Worse, the `if not auth:` guards ported from the TS's
+  `if (!auth)` can never fire here: in TS that catches `getApiKeyAndHeaders?.()`
+  returning `undefined`, but a dataclass is always truthy, so a *failed* lookup
+  sailed straight through. They check `ok`/`api_key` now.
+- **`AgentSession._get_required_request_auth` was a stub that always raised.**
+  Ported from `agent-session.ts:416` — the four branches, including the one that
+  tells a dead subscription ("run `/login` again") apart from a missing key.
+
+`ModelRegistryLike` grew `get_api_key_and_headers`, so the stand-in registries in
+`code/e2e` and `test_agent_session.py` implement it.
+
+### Why the corpus did not catch either
+
+`e2e/first-run` — the one scenario that runs the real provider — injects
+`ANTHROPIC_API_KEY` into the environment, which is *exactly* the path that masks
+bug 2: the provider finds that key by itself, so the request goes out with a key
+whether or not anything above resolved one. Two scenarios close the gap:
+
+- `e2e/stored-key` — clean install, **no** env key, an `ApiKeyCredential` in
+  `auth.json`, asserting the key on the stub's `x-api-key` header. Verified to
+  fail with "No API key for provider: anthropic" against the pre-fix tree.
+- `auth/copilot-device-code` — `/login` → subscription → GitHub Copilot, through
+  the enterprise-domain prompt to the device code on screen, with no error toast
+  and none on Escape either. Verified to fail with the exact `'dict' object has
+  no attribute 'message'` toast against the pre-fix tree.
+
+The Copilot scenario stubs `github_copilot._fetch_json` rather than an endpoint:
+the provider builds `https://{domain}/…` from the domain, so unlike
+`AnthropicApiStub` there is no `base_url` override to aim at localhost. That
+function is the last seam before the socket; everything above it is real code.
+
+`clean_install` takes `env_key` and `stored_keys` for this, and the two are not
+interchangeable — which of them supplies the credential *is* the thing under
+test.

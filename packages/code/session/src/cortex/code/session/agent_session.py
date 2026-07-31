@@ -60,6 +60,7 @@ from cortex.ai.models import (
     models_are_equal,
 )
 from cortex.code.config import (
+    ResolvedRequestAuth,
     format_no_api_key_found_message,
     format_no_model_selected_message,
 )
@@ -154,6 +155,8 @@ class ModelRegistryLike(Protocol):
     def has_configured_auth(self, model: Any) -> bool: ...
 
     def is_using_oauth(self, model: Any) -> bool: ...
+
+    async def get_api_key_and_headers(self, model: Any) -> ResolvedRequestAuth: ...
 
     def refresh(self) -> None: ...
 
@@ -474,14 +477,46 @@ class AgentSession:
         """Cancel the branch summarisation a tree navigation is waiting on."""
         self._tree.abort_branch_summary()
 
-    async def _get_required_request_auth(self, model: Any) -> Any:
-        """Credentials for a request. The auth storage that answers is 7.11's.
+    async def _get_required_request_auth(self, model: Any) -> ResolvedRequestAuth:
+        """Credentials for a request, or the reason there are none — as a raise.
 
-        Reached only by summarising branch navigation, which is why it can say
-        so rather than block the rest of ``/tree``: navigating without a summary
-        never asks.
+        Port of ``_getRequiredRequestAuth``. The registry's answer is a result
+        type because *its* caller may be mid-turn; this one's callers (the
+        branch summariser, the manual compaction) need a key or nothing, so the
+        four ways there isn't one all become an exception here.
+
+        The two ``ok`` failures are told apart on the registry's own wording: a
+        message that starts with "No API key found" is the registry saying the
+        provider has no credentials, which this re-words through
+        :func:`format_no_api_key_found_message` so the user gets the ``/login``
+        guidance; anything else is a real failure (an unreadable ``!command``, a
+        header that would not resolve) and is reported as-is.
+
+        ``ok`` with no key is the subscription case: the credential exists but
+        the token could not be produced, so the fix is to log in again, not to
+        supply a key.
         """
-        raise RuntimeError(format_no_api_key_found_message(getattr(model, "provider", "")))
+        registry = self._model_registry
+        if registry is None:
+            raise RuntimeError(format_no_api_key_found_message(getattr(model, "provider", "")))
+
+        result = await registry.get_api_key_and_headers(model)
+        if not result.ok:
+            error = result.error or ""
+            if error.startswith("No API key found"):
+                raise RuntimeError(format_no_api_key_found_message(model.provider))
+            raise RuntimeError(error)
+
+        if result.api_key:
+            return ResolvedRequestAuth(ok=True, api_key=result.api_key, headers=result.headers)
+
+        if registry.is_using_oauth(model):
+            raise RuntimeError(
+                f'Authentication failed for "{model.provider}". '
+                f"Credentials may have expired or network is unavailable. "
+                f"Run '/login {model.provider}' to re-authenticate."
+            )
+        raise RuntimeError(format_no_api_key_found_message(model.provider))
 
     def _set_agent_messages(self, messages: list[Any]) -> None:
         """Replace the agent's context. What a tree navigation ends with."""

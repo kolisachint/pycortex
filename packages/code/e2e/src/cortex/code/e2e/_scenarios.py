@@ -192,6 +192,19 @@ class FauxModelRegistry:
     def is_using_oauth(self, model: Any) -> bool:
         return False
 
+    async def get_api_key_and_headers(self, model: Any) -> Any:
+        """A key for anything this registry lists — the faux provider ignores it.
+
+        The session wraps the agent's stream function around this the moment a
+        registry is present, so a stand-in that did not answer would take every
+        faux scenario's turn down with it.
+        """
+        from cortex.code.config import ResolvedRequestAuth
+
+        if self.has_configured_auth(model):
+            return ResolvedRequestAuth(ok=True, api_key="faux-key")
+        return ResolvedRequestAuth(ok=False, error=f'No API key found for "{model.provider}"')
+
     def refresh(self) -> None:
         self.refreshes += 1
 
@@ -1710,6 +1723,127 @@ def auth_login_dialog() -> None:
         faux.unregister()
 
 
+@contextmanager
+def github_device_endpoint(
+    *, user_code: str = "ABCD-1234", verification_uri: str = "https://github.com/login/device"
+) -> Generator[list[str]]:
+    """GitHub's device-flow endpoints, on the near side of `httpx`.
+
+    The provider builds its URLs from the domain (`https://github.com/...`), so
+    there is no `base_url` override to point at a local server the way
+    `models.json` lets :class:`AnthropicApiStub` be reached. The tightest seam
+    left is the one function that makes the call: everything above it —
+    `_start_device_flow`'s field validation, `login_github_copilot`, the
+    callbacks it invokes, the dialog they draw — is the real code.
+
+    The access-token endpoint answers `authorization_pending` forever, which is
+    what GitHub really says while the user is still on the device page: the login
+    stays on the waiting screen until the scenario cancels it.
+
+    Yields the list of URLs called, so a scenario can assert the flow got as far
+    as asking.
+    """
+    from cortex.ai.oauth import github_copilot
+
+    module: Any = github_copilot
+    called: list[str] = []
+    original = module._fetch_json
+
+    async def fake_fetch_json(url: str, **_kwargs: Any) -> Any:
+        called.append(url)
+        if url.endswith("/login/device/code"):
+            return {
+                "device_code": "device-code",
+                "user_code": user_code,
+                "verification_uri": verification_uri,
+                "interval": 1,
+                "expires_in": 900,
+            }
+        return {"error": "authorization_pending"}
+
+    module._fetch_json = fake_fetch_json
+    try:
+        yield called
+    finally:
+        module._fetch_json = original
+
+
+@scenario("auth/copilot-device-code", "`/login` to GitHub Copilot reaches the device code", "7.11")
+def auth_copilot_device_code() -> None:
+    """The whole subscription login, down to the code the user has to type in.
+
+    Every OAuth provider used to die on the first callback: they invoked
+    `on_auth`/`on_prompt` with dict literals while `login_controller` reads
+    `info.url` and `prompt.message`, so `/login` ended in "Failed to login to
+    GitHub Copilot: 'dict' object has no attribute 'message'". Nothing below the
+    controller could catch that — the dialog is the only thing that reads those
+    objects — which is why this is a scenario and not a unit test.
+
+    So: three screens to the provider, answer its enterprise-domain prompt, and
+    the device code has to be on screen with no error toast anywhere. Escape then
+    cancels a *polling* flow, which must also be quiet: "Login cancelled" is
+    something the user did on purpose.
+    """
+    from cortex.code.config import AuthStorage, ModelRegistry, SettingsManager
+    from cortex.code.config.settings_storage import InMemorySettingsStorage
+
+    settings = SettingsManager.from_storage(InMemorySettingsStorage())
+    registry = ModelRegistry.in_memory(AuthStorage.in_memory())
+    faux = faux_session(cwd="/w/project", settings=settings, model_registry=registry)
+    try:
+        with (
+            github_device_endpoint() as called,
+            boot_shell(settings=settings, session=faux.session) as h,
+        ):
+            h.type("/login")
+            h.key("enter")
+            h.wait_for(lambda: _overlay_open(h))
+
+            # Screen one: "Use a subscription" is the first row, so Enter takes it.
+            h.assert_shows("Select authentication method:", "Use a subscription", scrollback=False)
+            h.key("enter")
+            h.wait_for(lambda: "Select provider to configure:" in h.snapshot())
+
+            # Screen two: the subscription providers, sorted by name — Anthropic,
+            # GitHub Copilot, OpenAI Codex — so one Down lands on Copilot.
+            h.assert_shows("GitHub Copilot", scrollback=False)
+            h.key("down")
+            h.key("enter")
+
+            # Screen three is the provider's own: its first callback is the
+            # enterprise-domain prompt, and reaching it at all is the fix.
+            h.wait_for(lambda: h.contains("GitHub Enterprise URL", scrollback=False), timeout=5)
+            h.assert_hides("Failed to login", scrollback=False)
+
+            # Blank means github.com, which starts the device flow.
+            h.key("enter")
+            h.wait_for(lambda: h.contains("ABCD-1234", scrollback=False), timeout=5)
+
+            # The device-code screen: the URL to visit, the code to type, and the
+            # line that says the app is now polling.
+            h.assert_shows(
+                "https://github.com/login/device",
+                "Enter code: ABCD-1234",
+                "Waiting for browser authentication...",
+                scrollback=False,
+            )
+            assert any(url.endswith("/login/device/code") for url in called), (
+                f"the device flow was never started: {called!r}"
+            )
+
+            # No toast, at any point — not on the prompt, not on the code.
+            h.assert_hides("Failed to login")
+
+            # Escape backs out of a flow that is mid-poll, and says nothing.
+            h.key("escape")
+            h.wait_for(lambda: not _overlay_open(h), timeout=5)
+            h.assert_hides("Failed to login", "Login cancelled")
+            h.type("back in the editor")
+            h.assert_shows("> back in the editor", scrollback=False)
+    finally:
+        faux.unregister()
+
+
 @scenario(
     "auth/missing-key-message", "A missing API key explains itself instead of crashing", "7.11"
 )
@@ -1792,7 +1926,12 @@ class CleanInstall:
 
 
 @contextmanager
-def clean_install(*, reply: str) -> Generator[CleanInstall]:
+def clean_install(
+    *,
+    reply: str = "Hello from the stand-in.",
+    env_key: str | None = "sk-ant-first-run",
+    stored_keys: dict[str, str] | None = None,
+) -> Generator[CleanInstall]:
     """A fresh config directory, one credential, and an endpoint that answers.
 
     What a first run really is, minus the network: nothing in the agent
@@ -1801,6 +1940,15 @@ def clean_install(*, reply: str) -> Generator[CleanInstall]:
     the fastest of the ways the TS lets a new user supply a key; and a
     `models.json` pointing the provider at :class:`AnthropicApiStub`, which is
     the same override a user aims at a gateway.
+
+    `env_key` and `stored_keys` are what let a scenario pick *which* of those
+    ways supplies the credential. They are not interchangeable, which is the
+    whole point of `e2e/stored-key`: an environment key is found by the provider
+    itself, so a request reaches the endpoint with it even when nothing above the
+    provider passed one — and that is exactly what hid the missing `stream_fn`
+    wrapper. `stored_keys` writes `auth.json` the way `/login` does, which is the
+    path that only works if the session resolves the key and puts it on the
+    request.
 
     The environment is restored afterwards — the corpus runs in one process, and
     a scenario that leaked `HOOCODE_CODING_AGENT_DIR` would point every scenario
@@ -1820,8 +1968,23 @@ def clean_install(*, reply: str) -> Generator[CleanInstall]:
         with open(os.path.join(agent_dir, "models.json"), "w", encoding="utf-8") as handle:
             json.dump({"providers": {"anthropic": {"base_url": api.base_url}}}, handle)
 
+        if stored_keys:
+            auth_path = os.path.join(agent_dir, "auth.json")
+            with open(auth_path, "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        provider: {"type": "api_key", "key": key}
+                        for provider, key in stored_keys.items()
+                    },
+                    handle,
+                )
+            os.chmod(auth_path, 0o600)
+
         os.environ[ENV_AGENT_DIR] = agent_dir
-        os.environ["ANTHROPIC_API_KEY"] = "sk-ant-first-run"
+        if env_key is None:
+            os.environ.pop("ANTHROPIC_API_KEY", None)
+        else:
+            os.environ["ANTHROPIC_API_KEY"] = env_key
         # Nothing should read `HOME` once the agent dir is set; pointing it at the
         # sandbox too means a component that does writes there rather than into a
         # real home directory.
@@ -1923,6 +2086,59 @@ def e2e_first_run() -> None:
         written = open(sessions[0], encoding="utf-8").read()
         assert "who wrote the first algorithm?" in written, "the question was not persisted"
         assert "Ada Lovelace wrote the first algorithm." in written, "the answer was not persisted"
+
+
+@scenario("e2e/stored-key", "A key in `auth.json` reaches the request", "7.12")
+def e2e_stored_key() -> None:
+    """The credential path `/login` writes to, with no environment key to mask it.
+
+    `e2e/first-run` puts `ANTHROPIC_API_KEY` in the environment, and that is a
+    key the *provider* finds for itself: `stream_simple_anthropic` falls back to
+    `get_env_api_key` when nothing above it supplied one. So it passes whether or
+    not the session ever resolves a credential — which is why it went on passing
+    while every logged-in user got "No API key for provider: github-copilot".
+
+    Here the only credential is an `ApiKeyCredential` in `auth.json`, which no
+    provider can find on its own. The key can only reach the endpoint if the
+    session wrapped the agent's stream function around
+    `ModelRegistry.get_api_key_and_headers` — so the assertion on the header is
+    an assertion that the wrapper is installed and used.
+    """
+    from cortex.code.interactive import build_startup_session
+
+    with clean_install(
+        reply="A stored credential is enough.",
+        env_key=None,
+        stored_keys={"anthropic": "sk-ant-from-auth-json"},
+    ) as install:
+        session_manager = resolve_session_manager(install.cwd)
+        startup = build_startup_session(cwd=install.cwd, session_manager=session_manager)
+
+        # The stored credential is what makes the provider reachable at all: with
+        # no environment key, `find_initial_model` has only `auth.json` to go on.
+        assert startup.error is None, f"startup failed: {startup.error}"
+        model = startup.session.agent.state.model
+        assert model is not None and model.provider == "anthropic", (
+            f"a stored Anthropic key did not open an Anthropic model: {model!r}"
+        )
+
+        with boot_app(
+            cwd=install.cwd,
+            settings=startup.settings,
+            session=startup.session,
+        ) as h:
+            h.type("does a stored key work?")
+            h.key("enter")
+            h.wait_for(lambda: h.contains("A stored credential is enough."), timeout=10)
+
+            assert len(install.api.requests) == 1, (
+                f"expected one provider request, got {len(install.api.requests)}"
+            )
+            request = install.api.requests[0]
+            assert request.headers.get("x-api-key") == "sk-ant-from-auth-json", (
+                "the stored API key never reached the request: "
+                f"{request.headers.get('x-api-key')!r}"
+            )
 
 
 # ---------------------------------------------------------------------------

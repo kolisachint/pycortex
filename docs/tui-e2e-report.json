@@ -1,7 +1,8 @@
 {
-  "generated_from": "164a989",
+  "generated_from": "8f83ffe",
   "note": "Written by scripts/tui_e2e.py. Consumed by scripts/migrate_next.py --status. A Phase 7 step cannot be ticked while it still owns unmet scenarios.",
   "passing": [
+    "auth/copilot-device-code",
     "auth/login-dialog",
     "auth/missing-key-message",
     "chat/abort-turn",
@@ -16,6 +17,7 @@
     "commands/help",
     "commands/slash-autocomplete",
     "e2e/first-run",
+    "e2e/stored-key",
     "footer/context-meter",
     "footer/git-branch",
     "footer/model-and-tokens",

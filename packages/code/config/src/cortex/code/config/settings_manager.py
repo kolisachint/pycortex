@@ -559,6 +559,19 @@ class SettingsManager:
     def get_retry_base_delay_ms(self) -> int:
         return self._settings.retry.base_delay_ms
 
+    def get_provider_retry_settings(self) -> ProviderRetrySettings:
+        """The per-request retry budget handed to the provider.
+
+        Port of ``getProviderRetrySettings``. The TS spreads the defaults under
+        the user's block; here the merge already happened when the settings were
+        loaded, so ``retry.provider`` *is* that result — with
+        ``max_retry_delay_ms`` defaulted by
+        :class:`~cortex.code.config.settings_types.ProviderRetrySettings` and the
+        other two left ``None``, which is what lets the caller's own
+        ``timeout_ms``/``max_retries`` win.
+        """
+        return self._settings.retry.provider
+
     def get_hide_thinking_block(self) -> bool:
         return self._settings.hide_thinking_block
 
