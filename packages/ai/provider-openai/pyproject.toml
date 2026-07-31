@@ -1,6 +1,6 @@
 [project]
 name = "cortexcode-ai-provider-openai"
-version = "0.0.1"
+version = "0.0.3"
 description = "Cortex AI leaf: provider-openai"
 readme = "README.md"
 requires-python = ">=3.11"

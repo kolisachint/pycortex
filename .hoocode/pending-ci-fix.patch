@@ -68,3 +68,25 @@ index c2269c7..7151949 100644
  
    build:
      runs-on: ubuntu-latest
+diff --git a/.github/workflows/release.yml b/.github/workflows/release.yml
+index 96cdcd4..9a23012 100644
+--- a/.github/workflows/release.yml
++++ b/.github/workflows/release.yml
+@@ -34,7 +34,16 @@ jobs:
+           uv run ruff check .
+           uv run ruff format --check .
+           uv run pyright packages
+-          uv run pytest || { c=$?; [ "$c" -eq 5 ] && echo "no tests yet" || exit "$c"; }
++          # Per leaf: a repo-wide `uv run pytest` exits 2 without running anything,
++          # because every leaf names its test dir `tests` and collection aborts on
++          # the duplicate basenames. Same targeting as ci.yml and `migrate_next.gates`.
++          # Exit code 5 = no tests collected (the umbrellas) — not a failure.
++          failed=0
++          for leaf in packages/*/*/; do
++            [ -f "$leaf/pyproject.toml" ] || continue
++            uv run pytest "$leaf" || { c=$?; [ "$c" -eq 5 ] && echo "no tests in $leaf" || failed=1; }
++          done
++          exit "$failed"
+       - name: Bump versions
+         id: bump
+         run: |

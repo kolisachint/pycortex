@@ -1120,6 +1120,8 @@ legitimately, by an audit doing exactly what it was written to do.
   `publish = false` while `tui/_meta`, `ai/_meta` and `agent/_meta` are all
   `true`. 5.6 promised the CLI umbrella would be publishable. Flipping it is a
   release decision (it puts `cortexcode-code` on PyPI), so it is left for a human.
+  **Resolved after the plan** — the owner took the decision; see the closing
+  section. The audit is clean.
 - The stub markers in `agent/loop`, `code/subagents`, `code/session/compaction`,
   `ai/images/openrouter` and `ai/oauth/openai_codex` are untouched. Phase 7 owns
   `agent/loop` (step 7.5); the others are outside its scope and remain honest
@@ -2786,8 +2788,46 @@ running each job's commands by hand:
   what the audit reads (`migrate_next.py` never looks at that field). Tested both
   directions: current report passes, a report with one scenario removed fails.
 
-The rest of the gates were run against this tree at the same time and are green:
-`ruff check`, `ruff format --check`, `pyright packages` (0 errors).
+- **`release.yml`'s gate had the same shape of bug** and is now in the same patch.
+  It ran a repo-wide `uv run pytest`, which exits **2** here — collection aborts on
+  the duplicate `tests` basenames before a single test runs — and 2 is neither 0
+  nor the tolerated 5, so *every* release would have failed at its gate. It now
+  loops leaves like ci.yml does. Ran the step's script verbatim: exit 0, 4 leaves
+  reporting no tests, the rest green.
 
-Still open, and still not ours to close: 5.6's `publish = false` on `code/_meta`
-(a release decision), and the parity gaps listed under 7.12.
+The rest of the gates were run against this tree at the same time and are green:
+`ruff check`, `ruff format --check`, `pyright packages` (0 errors), corpus 38/38,
+`uv build --all-packages`.
+
+## After the plan — 5.6 closed, and the release train unblocked
+
+The owner took the release decision 7.1–7.12 kept deferring, so `code/_meta` is
+`publish = true` and **the audit is now clean** — `--status` is 77/77 with no
+findings. `publish_packages.py --dry-run` picks up `cortexcode-code 0.0.3`, and
+the built wheel carries the `pycortex` console script, so the entry point finally
+ships with a distribution.
+
+Flipping the flag alone would have shipped something that could not install.
+Two things had to be true first, and neither was:
+
+- **The workspace was not in lockstep.** `ai/provider-openai`, `code/e2e`,
+  `code/extensions`, `code/interactive` and `code/subagents` sat at `0.0.1` while
+  the other 40 were at `0.0.3` — they were added after the last train. The
+  umbrellas pin siblings by version, so `code/_meta` required
+  `cortexcode-cli-extensions>=0.0.3` and `cortexcode-cli-subagents>=0.0.3`
+  against leaves that were `0.0.1`, and `ai/_meta` (already publishable) had the
+  same hole for `provider-openai`. All five are `0.0.3` now, the two
+  `cortexcode-cli-interactive>=0.0.1` pins are `>=0.0.3`, and `uv.lock` is
+  refreshed. Nothing is on PyPI yet — the repo has no tags, so no release has
+  ever run — so no version number is being reused.
+- **`bump_versions.py` refuses a workspace that is not in lockstep**, by design
+  (`Packages are not in lockstep: ['0.0.1', '0.0.3']`), which means the release
+  job could not have bumped anything even if its gate had passed. It bumps
+  cleanly now: 0.0.3 → 0.0.4 across all 45, pins rewritten with it.
+
+  Watch out when testing that script: its `REPO_ROOT` is derived from
+  `__file__`, so running it against a copied tree rewrites **this** repo instead.
+  It did exactly that here; the tree was reset and the edits redone.
+
+Still open, and still not ours to close: the parity gaps listed under 7.12, and
+`.github/workflows/` (both files) until someone applies the patch.
