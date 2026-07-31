@@ -2141,6 +2141,93 @@ def e2e_stored_key() -> None:
             )
 
 
+@scenario(
+    "e2e/openai-completions-turn",
+    "An `openai-completions` model streams a turn through the real provider",
+    "7.12",
+)
+def e2e_openai_completions_turn() -> None:
+    """The provider path every `openai-completions` model takes, end to end.
+
+    `e2e/first-run` and `e2e/stored-key` both go through Anthropic, so the whole
+    OpenAI half of the provider layer had no scenario at all — and it was broken:
+    `OpenAICompletionsOptions` carried a `@dataclass` on top of a Pydantic
+    `StreamOptions`, which builds an `__init__` from the local fields only. Every
+    first message died on `OpenAICompletionsOptions.__init__() got an unexpected
+    keyword argument 'temperature'`.
+
+    The entry point matters more than the assertions. `stream_simple_openai_
+    completions` is where the crash happened, because it is what converts a
+    `SimpleStreamOptions` into the provider's own options class — constructing
+    `OpenAICompletionsOptions(...)` directly in a unit test exercises the class
+    but not the splat that broke. So the scenario calls the simple entry point
+    with a `temperature` set, and lets it build the options itself.
+    """
+    import asyncio
+
+    from cortex.ai.providers.openai.openai_completions import stream_simple_openai_completions
+    from cortex.ai.types import Context, Model, SimpleStreamOptions, TextContent, UserMessage
+    from cortex.code.e2e._api_stub import OpenAICompletionsApiStub
+
+    reply = "Chat Completions answered."
+
+    with OpenAICompletionsApiStub(reply=reply) as api:
+        model = Model(
+            id="stub-model",
+            name="Stub Model",
+            api="openai-completions",
+            provider="demo",
+            base_url=api.base_url,
+            reasoning=False,
+            input=["text"],
+            cost={"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+            context_window=100000,
+            max_tokens=8000,
+        )
+        context = Context(
+            messages=[
+                UserMessage(
+                    role="user",
+                    content=[TextContent(text="does this stream?")],
+                    timestamp=0,
+                )
+            ]
+        )
+
+        async def run() -> Any:
+            stream = stream_simple_openai_completions(
+                model,
+                context,
+                # `temperature` is the keyword the crash named; `max_tokens` is
+                # the other inherited field the synthesized `__init__` dropped.
+                SimpleStreamOptions(temperature=0.5, max_tokens=100, api_key="sk-stub-openai"),
+            )
+            events = [event async for event in stream]
+            return events, await stream.result()
+
+        events, message = asyncio.run(run())
+
+    error_events = [event for event in events if event.type == "error"]
+    assert not error_events, f"the stream errored: {error_events!r}"
+
+    text = "".join(block.text for block in message.content if isinstance(block, TextContent))
+    assert text == reply, f"the reply did not come back intact: {text!r}"
+
+    assert len(api.requests) == 1, f"expected one provider request, got {len(api.requests)}"
+    request = api.requests[0]
+    assert request.headers.get("authorization") == "Bearer sk-stub-openai", (
+        f"the API key never reached the request: {request.headers.get('authorization')!r}"
+    )
+    # The options really were carried through, not merely accepted: both
+    # inherited fields have to land in the request body.
+    assert request.body.get("temperature") == 0.5, (
+        f"temperature never reached the request: {request.body.get('temperature')!r}"
+    )
+    assert request.body.get("max_completion_tokens") == 100, (
+        f"max_tokens never reached the request: {request.body!r}"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Running
 # ---------------------------------------------------------------------------

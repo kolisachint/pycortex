@@ -88,7 +88,10 @@ def find_env_keys(provider: str) -> list[str] | None:
     if not env_vars:
         return None
 
-    found = [env_var for env_var in env_vars if os.environ.get(env_var)]
+    # Whitespace-only counts as unset. A key of `" "` otherwise makes a provider
+    # look configured all the way to the wire, where h11 rejects the blank header
+    # value with `Illegal header value b' '` on the first request.
+    found = [env_var for env_var in env_vars if (os.environ.get(env_var) or "").strip()]
     return found if found else None
 
 
@@ -99,7 +102,9 @@ def get_env_api_key(provider: str) -> str | None:
     """
     env_keys = find_env_keys(provider)
     if env_keys:
-        return os.environ.get(env_keys[0])
+        # `find_env_keys` already dropped blank/whitespace-only values, so this
+        # strip only trims the surrounding whitespace off a real key.
+        return (os.environ.get(env_keys[0]) or "").strip() or None
 
     # Vertex AI supports either an explicit API key or Application Default Credentials.
     # Auth is configured via `gcloud auth application-default login`.

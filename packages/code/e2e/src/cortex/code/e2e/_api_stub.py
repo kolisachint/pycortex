@@ -24,9 +24,15 @@ import json
 import threading
 from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Any
+from typing import Any, Self
 
-__all__ = ["AnthropicApiStub", "RecordedRequest", "anthropic_sse"]
+__all__ = [
+    "AnthropicApiStub",
+    "OpenAICompletionsApiStub",
+    "RecordedRequest",
+    "anthropic_sse",
+    "openai_completions_sse",
+]
 
 
 @dataclass
@@ -103,14 +109,62 @@ def anthropic_sse(
     return "\n".join(lines).encode("utf-8")
 
 
+def openai_completions_sse(
+    text: str, *, prompt_tokens: int = 11, completion_tokens: int = 7, finish_reason: str = "stop"
+) -> bytes:
+    """One complete text response, as Chat Completions streams it.
+
+    The chunk sequence the `openai` SDK's stream parser expects: an opening
+    delta carrying the role, a content delta, a chunk bearing `finish_reason`,
+    a choice-less usage chunk (what `stream_options.include_usage` produces),
+    and the `[DONE]` sentinel that ends the iteration.
+    """
+    chunk_base: dict[str, Any] = {
+        "id": "chatcmpl-stub",
+        "object": "chat.completion.chunk",
+        "created": 0,
+        "model": "stub-model",
+    }
+    chunks: list[dict[str, Any]] = [
+        {**chunk_base, "choices": [{"index": 0, "delta": {"role": "assistant"}}]},
+        {**chunk_base, "choices": [{"index": 0, "delta": {"content": text}}]},
+        {**chunk_base, "choices": [{"index": 0, "delta": {}, "finish_reason": finish_reason}]},
+        {
+            **chunk_base,
+            "choices": [],
+            "usage": {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": prompt_tokens + completion_tokens,
+                "prompt_tokens_details": {"cached_tokens": 0},
+            },
+        },
+    ]
+    lines: list[str] = []
+    for chunk in chunks:
+        lines.append(f"data: {json.dumps(chunk)}")
+        lines.append("")
+    lines.append("data: [DONE]")
+    lines.append("")
+    return "\n".join(lines).encode("utf-8")
+
+
 @dataclass
-class AnthropicApiStub:
-    """A Messages API on 127.0.0.1 that answers with `reply`, and records asks."""
+class _ApiStub:
+    """The server half, shared by the per-API stubs below.
+
+    Only the response body differs between them; the socket, the recording and
+    the shutdown are identical, and a second copy of them is a second place for
+    a leaked thread to hide.
+    """
 
     reply: str = "Hello from the stand-in."
     requests: list[RecordedRequest] = field(default_factory=list)
     _server: ThreadingHTTPServer | None = None
     _thread: threading.Thread | None = None
+
+    def _response_body(self) -> bytes:
+        raise NotImplementedError
 
     @property
     def base_url(self) -> str:
@@ -119,7 +173,7 @@ class AnthropicApiStub:
         host, port = self._server.server_address[:2]
         return f"http://{host}:{port}"
 
-    def start(self) -> AnthropicApiStub:
+    def start(self) -> Self:
         stub = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -135,7 +189,7 @@ class AnthropicApiStub:
                         body=json.loads(raw or b"{}"),
                     )
                 )
-                body = anthropic_sse(stub.reply)
+                body = stub._response_body()
                 self.send_response(200)
                 self.send_header("content-type", "text/event-stream")
                 self.send_header("content-length", str(len(body)))
@@ -159,8 +213,29 @@ class AnthropicApiStub:
             self._thread.join(timeout=2)
             self._thread = None
 
-    def __enter__(self) -> AnthropicApiStub:
+    def __enter__(self) -> Self:
         return self.start()
 
     def __exit__(self, *_exc: object) -> None:
         self.stop()
+
+
+@dataclass
+class AnthropicApiStub(_ApiStub):
+    """A Messages API on 127.0.0.1 that answers with `reply`, and records asks."""
+
+    def _response_body(self) -> bytes:
+        return anthropic_sse(self.reply)
+
+
+@dataclass
+class OpenAICompletionsApiStub(_ApiStub):
+    """A Chat Completions API on 127.0.0.1, for the `openai-completions` path.
+
+    The Anthropic stub cannot stand in here: `stream_openai_completions` drives
+    the official `openai` SDK, which parses a different wire format and would
+    reject the Messages API's event stream.
+    """
+
+    def _response_body(self) -> bytes:
+        return openai_completions_sse(self.reply)
