@@ -65,6 +65,24 @@ TS `packages/ai/src/` is split across MULTIPLE python packages:
 - Reset global registries between tests (`clear_api_providers()` in a fixture).
 
 ## Gotchas
+- **Never put `@dataclass` on a class that inherits from a pydantic model.**
+  A TS interface spreads its parent's fields (`interface Foo extends Bar`), so
+  the shape a subclass declares is *additive*. A Python dataclass only inherits
+  fields from **dataclass** bases: decorating a `BaseModel` subclass synthesizes
+  an `__init__` from the locally declared fields alone and silently drops every
+  inherited one. It fails at the first call site that passes an inherited field
+  — `TypeError: … got an unexpected keyword argument 'temperature'` — not at
+  class definition, so nothing before runtime says a word.
+  For a provider options class extending `StreamOptions`, there are exactly two
+  correct shapes, and they must not be mixed:
+  1. **plain pydantic subclass** — `class XOptions(StreamOptions):` with no
+     decorator, adding only the provider-specific fields (what `openai-completions`
+     and `openai-responses` use);
+  2. **standalone `@dataclass`** that does *not* subclass `StreamOptions` and
+     re-declares every field it needs (what `AnthropicOptions` does).
+  `packages/ai/provider-openai/tests/test_provider_options.py` holds the guard
+  that no class under `cortex.ai.*` is both — see the incident at the end of
+  this file for why a guard rather than a note.
 - `structuredClone` → deep copy (pydantic `model_copy(deep=True)`).
 - `Date.now()` → `time.time()`*1000 or int(time.time()*1000) (ms). Check usage.
 - `queueMicrotask` → `asyncio.ensure_future`/`create_task` or `await asyncio.sleep(0)`.
@@ -2905,3 +2923,72 @@ function is the last seam before the socket; everything above it is real code.
 `clean_install` takes `env_key` and `stored_keys` for this, and the two are not
 interchangeable — which of them supplies the credential *is* the thing under
 test.
+
+## `@dataclass` over a pydantic base — the port losing base-class fields, again
+
+**Every `openai-completions` and `openai-responses` model crashed on its first
+message** with `OpenAICompletionsOptions.__init__() got an unexpected keyword
+argument 'temperature'`. `github-copilot/claude-sonnet-5` is the model most
+users hit it on.
+
+`StreamOptions` (`ai/types/_types.py:80`) is a pydantic `BaseModel`. Both
+`OpenAICompletionsOptions` and `OpenAIResponsesOptions` were declared as
+`@dataclass class XOptions(StreamOptions)`. A dataclass inherits fields only
+from dataclass bases, so the synthesized `__init__` took `reasoning_effort`,
+`service_tier` and `reasoning_summary` and rejected `temperature`, `max_tokens`
+and the other thirteen inherited request options.
+
+Nothing gated it. It is legal Python, it type-checks (pyright reads the pydantic
+fields on the base and never asks whether the dataclass `__init__` accepts
+them), and the class imports fine. The failure needs a call that passes an
+inherited field — and both `stream_simple_*` entry points do, unconditionally:
+they build `OpenAICompletionsOptions(**base.__dict__, reasoning_effort=…)` from
+a `StreamOptions`, so the *first* request on either API died regardless of what
+the user configured.
+
+The fix is the decorator's removal, nothing more; the field declarations and
+defaults were always right.
+
+### Why it is the second one, and what changed because of that
+
+The `_create_loop_config` finding above (eight request-shaping fields "accepted
+and dropped") was the same shape of mistake: a TS type spreads its parent's
+fields freely, the Python stand-in re-declares a subset, and the missing ones
+are not an error anywhere — they are silently absent. That one was found by
+reading the TS beside the Python. This one was found by a user's first message.
+
+So the rule is now enforced rather than written down. `test_provider_options.py`
+imports every `cortex.ai.*` module and asserts no class is both a dataclass and
+a `BaseModel` — a guard, because the two instances so far were in different
+packages written months apart, and the next one will be too. The guard walks the
+filesystem to find modules: `cortex` and its subpackages are **namespace**
+packages, and `pkgutil.walk_packages` does not descend into them — it yields
+nothing and the assertion passes over an empty set.
+
+### Why the corpus did not catch it
+
+Both provider-exercising scenarios (`e2e/first-run`, `e2e/stored-key`) go
+through Anthropic, whose options class is the standalone-dataclass shape and so
+was never affected. The OpenAI half of the provider layer had no scenario at
+all. `e2e/openai-completions-turn` closes that: a `SimpleStreamOptions` with a
+`temperature` through `stream_simple_openai_completions` against
+`OpenAICompletionsApiStub`, asserting the reply, the key on the `authorization`
+header, and `temperature`/`max_completion_tokens` in the request body. Verified
+to fail against the pre-fix tree with the exact reported `TypeError`.
+
+Entry point matters more than the assertions here: constructing
+`OpenAICompletionsOptions(...)` directly exercises the class but not the
+`**base.__dict__` splat, which is where production actually broke.
+
+### Found here, deliberately not fixed
+
+- **`openai-completions` drops every token count.** The chunk loop `break`s on
+  `finish_reason` (`openai_completions.py:722`), but the usage chunk arrives
+  *after* it — `stream_options.include_usage` puts usage in a trailing
+  choice-less chunk, which is what the `if not chunk.choices and chunk.usage`
+  branch above is waiting for and now never sees. The TS has no such break: the
+  `break` at `openai-completions.ts:316` belongs to the inner reasoning-field
+  loop, and its chunk loop reads `chunk.usage` at the top of every iteration.
+  So the footer's token counters and every cost number read zero on these
+  models. `OpenAICompletionsApiStub` sends the usage chunk where the real API
+  does, and `test_api_stub.py` documents the gap instead of asserting a zero.

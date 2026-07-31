@@ -13,7 +13,12 @@ import json
 from typing import Any
 
 import pytest
-from cortex.code.e2e._api_stub import AnthropicApiStub, anthropic_sse
+from cortex.code.e2e._api_stub import (
+    AnthropicApiStub,
+    OpenAICompletionsApiStub,
+    anthropic_sse,
+    openai_completions_sse,
+)
 
 
 @pytest.fixture
@@ -98,5 +103,106 @@ class TestServer:
 
     def test_stopping_it_twice_is_harmless(self) -> None:
         running = AnthropicApiStub().start()
+        running.stop()
+        running.stop()
+
+
+@pytest.fixture
+def openai_stub() -> Any:
+    with OpenAICompletionsApiStub(reply="stubbed completion") as running:
+        yield running
+
+
+class TestOpenAICompletionsSseBody:
+    def test_it_carries_the_chunks_the_sdk_requires(self) -> None:
+        body = openai_completions_sse("hello").decode("utf-8")
+        payloads = [
+            line.removeprefix("data: ") for line in body.splitlines() if line.startswith("data: ")
+        ]
+
+        assert payloads[-1] == "[DONE]", "the SDK iterates until the sentinel"
+        chunks = [json.loads(payload) for payload in payloads[:-1]]
+        assert any(
+            chunk["choices"] and chunk["choices"][0]["delta"].get("content") == "hello"
+            for chunk in chunks
+        )
+        assert any(
+            chunk["choices"] and chunk["choices"][0].get("finish_reason") == "stop"
+            for chunk in chunks
+        )
+        assert any(not chunk["choices"] and "usage" in chunk for chunk in chunks)
+
+
+class TestOpenAICompletionsServer:
+    async def test_the_real_provider_reads_it(self, openai_stub: Any) -> None:
+        """`cortex.ai.providers.openai` against this server, same claim as above."""
+        from cortex.ai.providers.openai.openai_completions import stream_simple_openai_completions
+        from cortex.ai.types import Context, Model, SimpleStreamOptions, TextContent, UserMessage
+
+        model = Model(
+            id="stub-model",
+            name="Stub Model",
+            api="openai-completions",
+            provider="demo",
+            base_url=openai_stub.base_url,
+            reasoning=False,
+            input=["text"],
+            cost={"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+            context_window=100000,
+            max_tokens=8000,
+        )
+        stream = stream_simple_openai_completions(
+            model,
+            Context(messages=[UserMessage(content=[TextContent(text="hi")], timestamp=0)]),
+            SimpleStreamOptions(api_key="sk-openai-test"),
+        )
+
+        message = await stream.result()
+
+        assert message.stop_reason == "stop"
+        block = message.content[0]
+        assert isinstance(block, TextContent)
+        assert block.text == "stubbed completion"
+        # Usage is deliberately not asserted here, unlike the Anthropic case.
+        # The stub sends the trailing usage chunk where the real API does —
+        # after the chunk carrying `finish_reason` — and this port's chunk loop
+        # `break`s on `finish_reason`, so it never reads it. The TS it was
+        # ported from has no such break (the `break` at openai-completions.ts:316
+        # belongs to the inner reasoning-field loop), which makes the dropped
+        # token counts a separate porting bug, not something this stub should
+        # paper over by sending usage early.
+
+    async def test_it_records_what_it_was_asked(self, openai_stub: Any) -> None:
+        from cortex.ai.providers.openai.openai_completions import stream_simple_openai_completions
+        from cortex.ai.types import Context, Model, SimpleStreamOptions, TextContent, UserMessage
+
+        model = Model(
+            id="stub-model",
+            name="Stub Model",
+            api="openai-completions",
+            provider="demo",
+            base_url=openai_stub.base_url,
+            reasoning=False,
+            input=["text"],
+            cost={"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+            context_window=100000,
+            max_tokens=8000,
+        )
+        await stream_simple_openai_completions(
+            model,
+            Context(
+                messages=[UserMessage(content=[TextContent(text="remember this")], timestamp=0)]
+            ),
+            SimpleStreamOptions(api_key="sk-openai-recorded"),
+        ).result()
+
+        assert len(openai_stub.requests) == 1
+        request = openai_stub.requests[0]
+        assert request.path == "/chat/completions"
+        assert request.headers["authorization"] == "Bearer sk-openai-recorded"
+        assert "remember this" in json.dumps(request.body)
+
+    def test_stopping_it_twice_is_harmless(self) -> None:
+        running = OpenAICompletionsApiStub().start()
         running.stop()
         running.stop()

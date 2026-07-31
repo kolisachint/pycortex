@@ -57,9 +57,15 @@ OPENAI_TOOL_CALL_PROVIDERS: frozenset[str] = frozenset(["openai", "openai-codex"
 # ---------------------------------------------------------------------------
 
 
-@dataclass
 class OpenAICompletionsOptions(StreamOptions):
-    """OpenAI Chat Completions-specific options."""
+    """OpenAI Chat Completions-specific options.
+
+    A plain Pydantic subclass, **not** a ``@dataclass``. Decorating it would
+    synthesize an ``__init__`` from this class's own fields only — a dataclass
+    inherits fields from dataclass bases, and ``StreamOptions`` is a
+    ``BaseModel`` — so ``temperature``, ``max_tokens`` and every other inherited
+    request option would be rejected as unexpected keyword arguments.
+    """
 
     reasoning_effort: str | None = None
     service_tier: str | None = None
