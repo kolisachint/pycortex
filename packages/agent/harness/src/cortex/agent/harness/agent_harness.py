@@ -145,7 +145,7 @@ class AgentHarness:
         if not self.get_api_key_and_headers or self.model.provider != provider:
             return None
         result = await self.get_api_key_and_headers(self.model)
-        return result.get("apiKey") if result else None
+        return result.api_key if result else None
 
     async def _transform_context(self, messages: list[AgentMessage]) -> list[AgentMessage]:
         """Transform context messages via hook."""
@@ -649,7 +649,11 @@ class AgentHarness:
                 if self.get_api_key_and_headers
                 else None
             )
-            if not auth:
+            # The TS's `if (!auth)` catches only the missing-callback case, because
+            # `getApiKeyAndHeaders?.()` is `undefined` without one. Here the
+            # resolved value is a `ResolvedRequestAuth` dataclass, which is always
+            # truthy — so the failed lookup it stands for has to be read off `ok`.
+            if auth is None or not auth.ok or not auth.api_key:
                 raise ValueError("No auth available for compaction")
 
             # Get branch entries
@@ -689,8 +693,8 @@ class AgentHarness:
                 result = await compact(
                     preparation,
                     self.model,
-                    auth.get("apiKey", ""),
-                    auth.get("headers"),
+                    auth.api_key,
+                    auth.headers,
                     custom_instructions,
                     None,
                     self.thinking_level,
@@ -798,7 +802,8 @@ class AgentHarness:
                     if self.get_api_key_and_headers
                     else None
                 )
-                if not auth:
+                # See `compact` above: a dataclass is truthy, so `ok` is the check.
+                if auth is None or not auth.ok or not auth.api_key:
                     raise ValueError("No auth available for branch summary")
 
                 from cortex.agent.compaction import generate_branch_summary
@@ -807,8 +812,8 @@ class AgentHarness:
                     entries,
                     {
                         "model": self.model,
-                        "apiKey": auth.get("apiKey", ""),
-                        "headers": auth.get("headers"),
+                        "apiKey": auth.api_key,
+                        "headers": auth.headers,
                         "signal": None,
                         "customInstructions": (
                             hook_result.custom_instructions

@@ -682,7 +682,10 @@ class AgentLoop:
 
         options = stream_options_of(config, api_key=resolved_api_key, signal=self.signal)
 
-        response = stream_function(config.model, llm_context, options)
+        # The TS awaits this: `StreamFn` returns the stream *or a promise of it*,
+        # and the wrapper `createAgentSession` installs is the case that needs it —
+        # it resolves the request's credentials before the provider is called.
+        response = await _maybe_await(stream_function(config.model, llm_context, options))
 
         partial_message: AssistantMessage | None = None
         added_partial = False

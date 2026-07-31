@@ -44,7 +44,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-from cortex.code.config import SettingsManager, get_agent_dir
+from cortex.ai.types import SimpleStreamOptions
+from cortex.code.config import SettingsManager, get_agent_dir, is_install_telemetry_enabled
 from cortex.code.session.agent_session import AgentSession, AgentSessionConfig, ModelRegistryLike
 from cortex.code.session.cwd import assert_session_cwd_exists
 from cortex.code.session.manager import SessionManager, get_default_session_dir
@@ -59,6 +60,7 @@ __all__ = [
     "SessionReplacementResult",
     "create_agent_session",
     "create_agent_session_runtime",
+    "get_attribution_headers",
 ]
 
 DiagnosticType = Literal["info", "warning", "error"]
@@ -129,6 +131,92 @@ class SessionImportFileNotFoundError(Exception):
         super().__init__(f"File not found: {file_path}")
 
 
+#: The headers an install that opted into telemetry adds to an OpenRouter
+#: request, so the traffic is attributable to this tool on their dashboard.
+_OPENROUTER_ATTRIBUTION_HEADERS = {
+    "HTTP-Referer": "https://github.com/kolisachint/hoocode",
+    "X-OpenRouter-Title": "hoocode",
+    "X-OpenRouter-Categories": "cli-agent",
+}
+
+
+def get_attribution_headers(model: Any, settings_manager: SettingsManager) -> dict[str, str] | None:
+    """Who is asking, when the provider is one that shows it. Port of ``getAttributionHeaders``.
+
+    Only OpenRouter has anywhere to put this, and it is reached two ways — the
+    built-in provider, and any custom provider a user has pointed at
+    ``openrouter.ai`` — so both are matched.
+    """
+    if not is_install_telemetry_enabled(settings_manager):
+        return None
+
+    base_url = getattr(model, "base_url", "") or ""
+    if getattr(model, "provider", None) == "openrouter" or "openrouter.ai" in base_url:
+        return dict(_OPENROUTER_ATTRIBUTION_HEADERS)
+
+    return None
+
+
+def _registry_stream_fn(
+    model_registry: ModelRegistryLike, settings_manager: SettingsManager
+) -> Any:
+    """The agent's stream function, with the user's credentials on it.
+
+    Port of the ``streamFn`` ``createAgentSession`` wraps the Agent in. Without
+    it every request leaves here with ``api_key=None`` and each provider falls
+    back to :func:`~cortex.ai.env.get_env_api_key` — which is fine for a machine
+    with ``ANTHROPIC_API_KEY`` set and fatal for one whose only credential is in
+    ``auth.json``, because a subscription provider like ``github-copilot`` has no
+    environment variable to fall back *to*. That is the "No API key for provider:
+    github-copilot" a logged-in user was getting.
+
+    It has to be a coroutine — the credentials are resolved with an ``await`` —
+    and it returns the provider's stream rather than yielding through it, because
+    the loop wants the :class:`~cortex.ai.stream.EventStream` itself: it iterates
+    the events *and* awaits ``result()`` for the assembled message. That is the
+    TS's ``async (…) => streamSimple(…)``, and its ``await streamFunction(…)``.
+
+    Header precedence is the TS's spread order — attribution first, then what the
+    registry resolved for the provider, then whatever the caller passed — so the
+    most specific source wins. The retry budget is the mirror image: the caller's
+    value wins and the settings only fill in what it left unset.
+    """
+    from cortex.ai.stream import stream_simple
+
+    async def registry_stream_fn(model: Any, context: Any, options: Any = None) -> Any:
+        auth = await model_registry.get_api_key_and_headers(model)
+        if not auth.ok:
+            raise RuntimeError(auth.error)
+
+        retry = settings_manager.get_provider_retry_settings()
+        attribution = get_attribution_headers(model, settings_manager)
+        option_headers = getattr(options, "headers", None)
+
+        headers: dict[str, str] | None = None
+        if attribution or auth.headers or option_headers:
+            headers = {**(attribution or {}), **(auth.headers or {}), **(option_headers or {})}
+
+        base = options if isinstance(options, SimpleStreamOptions) else SimpleStreamOptions()
+        resolved = base.model_copy(
+            update={
+                "api_key": auth.api_key,
+                "timeout_ms": _first_set(base.timeout_ms, retry.timeout_ms),
+                "max_retries": _first_set(base.max_retries, retry.max_retries),
+                "max_retry_delay_ms": _first_set(base.max_retry_delay_ms, retry.max_retry_delay_ms),
+                "headers": headers,
+            }
+        )
+
+        return stream_simple(model, context, resolved)
+
+    return registry_stream_fn
+
+
+def _first_set(value: int | None, fallback: int | None) -> int | None:
+    """The TS's ``??``: ``0`` is a value the caller meant, ``None`` is not."""
+    return fallback if value is None else value
+
+
 def _extract_user_message_text(content: Any) -> str:
     """The text of a user message, for the editor to be refilled with."""
     if isinstance(content, str):
@@ -187,6 +275,12 @@ def create_agent_session(
         model_registry=model_registry,
     )
 
+    # An explicit `stream_fn` still wins: the faux provider and the e2e sessions
+    # substitute one precisely so no credential is resolved and no socket opens.
+    effective_stream_fn = stream_fn
+    if effective_stream_fn is None and model_registry is not None:
+        effective_stream_fn = _registry_stream_fn(model_registry, settings)
+
     agent = Agent(
         AgentOptions(
             initial_state={
@@ -195,7 +289,7 @@ def create_agent_session(
                 "thinking_level": thinking_level,
                 "tools": list(tools) if tools else [],
             },
-            stream_fn=stream_fn,
+            stream_fn=effective_stream_fn,
             session_id=sessions.get_session_id(),
         )
     )

@@ -15,7 +15,7 @@ from urllib.parse import parse_qs, urlparse
 
 import httpx
 from cortex.ai.oauth.pkce import generate_pkce
-from cortex.ai.oauth.types import OAuthCredentials
+from cortex.ai.oauth.types import OAuthAuthInfo, OAuthCredentials, OAuthPrompt
 
 __all__ = [
     "AnthropicOAuthProvider",
@@ -170,22 +170,22 @@ async def login_anthropic(
 
     if on_auth:
         on_auth(
-            {
-                "url": auth_url,
-                "instructions": (
+            OAuthAuthInfo(
+                url=auth_url,
+                instructions=(
                     "Complete login in your browser. If the browser is on another machine, "
                     "paste the final redirect URL here."
                 ),
-            }
+            )
         )
 
     # For now, prompt user to paste the code
     if on_prompt:
         input_str = await on_prompt(
-            {
-                "message": "Paste the authorization code or full redirect URL:",
-                "placeholder": _REDIRECT_URI,
-            }
+            OAuthPrompt(
+                message="Paste the authorization code or full redirect URL:",
+                placeholder=_REDIRECT_URI,
+            )
         )
         parsed = _parse_authorization_input(input_str)
         code = parsed.get("code")

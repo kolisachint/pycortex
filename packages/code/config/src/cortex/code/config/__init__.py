@@ -113,6 +113,9 @@ from cortex.code.config.settings_types import (
     WebtoolsSettings,
 )
 
+# Re-export telemetry
+from cortex.code.config.telemetry import is_install_telemetry_enabled
+
 __all__ = [
     # Config constants
     "APP_NAME",
@@ -212,4 +215,6 @@ __all__ = [
     "resolve_config_value_uncached",
     "resolve_headers",
     "resolve_headers_or_throw",
+    # Telemetry
+    "is_install_telemetry_enabled",
 ]

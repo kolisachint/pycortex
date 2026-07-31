@@ -63,8 +63,8 @@ class CompactionController:
                 raise ValueError("No model selected")
 
             auth_result = await self._deps.get_required_request_auth(model)
-            api_key = auth_result.get("apiKey", "")
-            headers = auth_result.get("headers")
+            api_key = auth_result.api_key or ""
+            headers = auth_result.headers
 
             path_entries = self._deps.session_manager.get_branch()
             settings = self._deps.settings_manager.get_compaction_settings()
@@ -301,7 +301,7 @@ class CompactionController:
                 return
 
             auth_result = await self._deps.model_registry.get_api_key_and_headers(model)
-            if not auth_result.get("ok") or not auth_result.get("apiKey"):
+            if not auth_result.ok or not auth_result.api_key:
                 self._deps.emit(
                     {
                         "type": "compaction_end",
@@ -331,8 +331,8 @@ class CompactionController:
                 preparation=preparation,
                 branch_entries=path_entries,
                 model=model,
-                api_key=auth_result["apiKey"],
-                headers=auth_result.get("headers"),
+                api_key=auth_result.api_key,
+                headers=auth_result.headers,
                 signal=self._auto_compaction_abort,
             )
 
