@@ -33,9 +33,11 @@ pycortex = "cortex.code.main:main"
 publish = true
 
 [tool.hatch.build.targets.wheel]
-packages = [
-    "src/cortex",
-]
+# Metadata-only distribution — there is no `cortex/` tree to select here, and
+# selecting an empty one shipped a stray `.gitkeep` into site-packages. The
+# `pycortex` script above is metadata too; it reaches code that lives in the
+# leaves this umbrella depends on.
+bypass-selection = true
 
 [tool.uv.sources]
 cortexcode-cli-config = { workspace = true }

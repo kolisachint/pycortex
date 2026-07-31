@@ -24,5 +24,8 @@ venv/
 packages/tui/testkit/reference/node_modules/
 packages/tui/testkit/reference/.hoocode-src/
 
+# Local agent-harness state (scheduled tasks carry this machine's timestamps).
+.agents/
+
 # OS
 .DS_Store

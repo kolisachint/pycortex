@@ -10,9 +10,9 @@ dependencies = []
 publish = true
 
 [tool.hatch.build.targets.wheel]
-packages = [
-    "src/cortex",
-]
+# Metadata-only distribution — there is no `cortex/` tree to select here, and
+# selecting an empty one shipped a stray `.gitkeep` into site-packages.
+bypass-selection = true
 
 [build-system]
 requires = [
