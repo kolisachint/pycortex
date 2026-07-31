@@ -871,6 +871,18 @@ class ModelRegistry:
                     provider_config.api_key, f'API key for provider "{model.provider}"'
                 )
 
+            # Last line of defence for a blank key. `" "` is truthy, so it slips
+            # past every `if api_key` between here and the transport, where h11
+            # rejects it as `Illegal header value b' '` — an error that names
+            # neither the provider nor the env var it came from. A key that is
+            # only whitespace is no key, and is reported as one.
+            if api_key is not None:
+                api_key = api_key.strip()
+                if not api_key:
+                    return ResolvedRequestAuth(
+                        ok=False, error=f'No API key found for "{model.provider}"'
+                    )
+
             provider_headers = resolve_headers_or_throw(
                 provider_config.headers if provider_config else None,
                 f'provider "{model.provider}"',

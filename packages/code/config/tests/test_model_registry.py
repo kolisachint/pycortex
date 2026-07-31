@@ -1155,6 +1155,101 @@ class TestApiKeyResolution:
         assert await registry.get_api_key_for_provider("demo") == "from-auth-json"
 
 
+class TestBlankApiKeyIsRejected:
+    """A whitespace-only key never reaches the wire.
+
+    ``" "`` is truthy, so it passes every ``if api_key`` on the way out and only
+    fails at the transport — h11 raises ``Illegal header value b' '``, naming
+    neither the provider nor where the key came from. This port's own group;
+    the TS has no equivalent because its header layer accepts the blank value.
+    """
+
+    def _demo_provider(self, api_key: str) -> dict[str, Any]:
+        return {
+            "demo": {
+                "base_url": "https://example.com/v1",
+                "api_key": api_key,
+                "api": "openai-completions",
+                "models": [{"id": "demo-model", "reasoning": False, "input": ["text"]}],
+            }
+        }
+
+    def _demo_model(self, registry: ModelRegistry) -> Model:
+        model = registry.find("demo", "demo-model")
+        assert model is not None
+        return model
+
+    @pytest.mark.parametrize("key", [" ", "   ", "\t", "\n"])
+    async def test_blank_key_from_auth_storage_is_reported_as_missing(
+        self, models_json_path: str, auth_storage: AuthStorage, key: str
+    ):
+        write_models_json(models_json_path, self._demo_provider("sk-unused"))
+        registry = ModelRegistry.create(auth_storage, models_json_path)
+        registry.auth_storage.set("demo", ApiKeyCredential(key=key))
+
+        auth = await registry.get_api_key_and_headers(self._demo_model(registry))
+        assert auth.ok is False
+        assert auth.error == 'No API key found for "demo"'
+        assert auth.api_key is None
+
+    async def test_blank_key_from_an_env_var_is_reported_as_missing(
+        self, models_json_path: str, auth_storage: AuthStorage, monkeypatch: pytest.MonkeyPatch
+    ):
+        """The reported case: ``ANTHROPIC_API_KEY=" "`` in the user's shell."""
+        monkeypatch.setenv("TEST_REGISTRY_BLANK_KEY", " ")
+        write_models_json(models_json_path, self._demo_provider("TEST_REGISTRY_BLANK_KEY"))
+        registry = ModelRegistry.create(auth_storage, models_json_path)
+
+        auth = await registry.get_api_key_and_headers(self._demo_model(registry))
+        assert auth.ok is False
+        assert auth.error == 'No API key found for "demo"'
+
+    async def test_blank_key_is_rejected_before_it_becomes_an_auth_header(
+        self, models_json_path: str, auth_storage: AuthStorage
+    ):
+        """``auth_header`` would otherwise send ``Authorization: Bearer  ``."""
+        providers = self._demo_provider("sk-unused")
+        providers["demo"]["auth_header"] = True
+        write_models_json(models_json_path, providers)
+        registry = ModelRegistry.create(auth_storage, models_json_path)
+        registry.auth_storage.set("demo", ApiKeyCredential(key=" "))
+
+        auth = await registry.get_api_key_and_headers(self._demo_model(registry))
+        assert auth.ok is False
+        assert auth.headers is None
+
+    async def test_surrounding_whitespace_is_stripped_off_a_real_key(
+        self, models_json_path: str, auth_storage: AuthStorage
+    ):
+        write_models_json(models_json_path, self._demo_provider("sk-unused"))
+        registry = ModelRegistry.create(auth_storage, models_json_path)
+        registry.auth_storage.set("demo", ApiKeyCredential(key="  sk-real\n"))
+
+        auth = await registry.get_api_key_and_headers(self._demo_model(registry))
+        assert auth.ok is True
+        assert auth.api_key == "sk-real"
+
+    async def test_a_provider_with_no_key_at_all_is_still_ok(
+        self, models_json_path: str, auth_storage: AuthStorage, monkeypatch: pytest.MonkeyPatch
+    ):
+        """Absent is not blank: an unauthenticated provider still resolves.
+
+        ``ok=True, api_key=None`` is a real answer — the transport just sends no
+        key header — so the blank check must reject ``" "`` without catching it.
+        """
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.delenv("ANTHROPIC_OAUTH_TOKEN", raising=False)
+        write_models_json(
+            models_json_path, {"anthropic": {"headers": {"X-Custom-Header": "custom-value"}}}
+        )
+        registry = ModelRegistry.create(auth_storage, models_json_path)
+        model = next(iter(models_for(registry, "anthropic")))
+
+        auth = await registry.get_api_key_and_headers(model)
+        assert auth.ok is True
+        assert auth.api_key is None
+
+
 class TestAuthAndAvailability:
     def test_has_configured_auth_via_auth_storage(
         self, models_json_path: str, auth_storage: AuthStorage
